@@ -1,0 +1,819 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <title>Carbon Emission Trading System Simulation</title>
+  <!-- Bootstrap Core CSS -->
+  <link rel="stylesheet" type="text/css" href="/static/dependencies/bootstrap-3.2.0-cust-xs0-sm0/css/bootstrap.min.css" />
+  <!--[if lt IE 9]><script src="/static/dependencies/excanvas.compiled.js"></script><![endif]-->
+  <script src="/static/generated/scripts/mvc-vendor.js"></script>
+  <script src="/static/generated/scripts/mvc-bundle.js"></script>
+    <script src="/home/resourcestrings/en-US?v=1786574359-372029177"></script>
+  <script src="/static/scripts/locale.js"></script>
+  <script>
+    $.extend(window, Locale('en-US', { Symbol: Strings.CurrencySymbol }, Strings));
+  </script>
+
+
+  <style type="text/css">
+
+    html,
+    body {
+      height: 100%;
+    }
+
+    .carousel {
+      height: 60%;
+    }
+
+    .item,
+    .active,
+    .carousel-inner {
+      height: 100%;
+    }
+
+    /* Background images are set within the HTML using inline CSS, not here */
+
+    .fill {
+      width: 100%;
+      height: 100%;
+      background-position: center;
+      -webkit-background-size: cover;
+      -moz-background-size: cover;
+      background-size: cover;
+      -o-background-size: cover;
+    }
+
+    div.container-content {
+      background-color: #DFDFDF;
+      width: 100%;
+      height: 27%;
+      font-family: 'Open Sans', sans-serif;
+      font-size: 17px;
+      color: #666;
+      padding-top: 30px;
+      overflow: hidden;
+    }
+
+    div.container-footer {
+      background-color: #fff;
+      color: #888;
+    }
+
+    div.container-footer a {
+      color: #888;
+      background-color: #fff;
+      -webkit-transition: color 100ms linear;
+      -moz-transition: color 100ms linear;
+      -o-transition: color 100ms linear;
+      -ms-transition: color 100ms linear;
+      transition: color 100ms linear;
+    }
+
+    div.container-footer li:hover,
+    div.container-footer a:hover {
+      color: #355068;
+      background-color: #fff;
+      text-decoration: underline;
+    }
+
+    div.container-footer li a {
+      border-right: 1px solid #888;
+      padding: 0px 10px;
+    }
+
+    div.container-footer li:last-child,
+    div.container-footer li:last-child a {
+      border-right: 0;
+      margin-right: 0px;
+      padding-right: 0px;
+    }
+
+    footer {
+      margin: 20px 0;
+    }
+
+    .carousel-fade .carousel-inner .item {
+      opacity: 0;
+      transition-property: opacity;
+      transition-duration: 2s;
+    }
+
+    .carousel-fade .carousel-inner .active {
+      opacity: 1;
+    }
+
+    .carousel-fade .carousel-inner .active.left,
+    .carousel-fade .carousel-inner .active.right {
+      left: 0;
+      opacity: 0;
+      z-index: 1;
+    }
+
+    .carousel-fade .carousel-inner .next.left,
+    .carousel-fade .carousel-inner .prev.right {
+      opacity: 1;
+    }
+
+    .carousel-control {
+      z-index: 2;
+    }
+
+    .nav > li {
+      display: inline-block;
+    }
+
+    .slider-text-overlay {
+      width: 100%;
+      height: 60%;
+      position: absolute;
+      z-index: 999;
+      color: #ffffff;
+    }
+
+    .intro-screen {
+      max-width: 470px;
+      margin: 0 auto;
+    }
+
+    .intro-screen h1 {
+      font-weight: 100;
+      padding-top: 120px;
+      text-align: center;
+    }
+
+    .btn-wrapper {
+      display: inline-block;
+      width: 49%;
+      text-align: center;
+    }
+
+    .btn-white {
+      border: 2px solid white;
+      display: inline-block;
+      text-align: center;
+      width: 150px;
+      padding: 2px 0;
+      font-size: 21px;
+      margin-top: 74px;
+      background-color: rgba(255, 255, 255, 0.12);
+
+      -webkit-transition: background-color 100ms linear;
+      -moz-transition: background-color 100ms linear;
+      -o-transition: background-color 100ms linear;
+      -ms-transition: background-color 100ms linear;
+      transition: background-color 100ms linear;
+    }
+
+    .btn-white:hover {
+      background-color: rgba(197, 197, 197, 0.54);
+      cursor: pointer;
+    }
+
+    .btn:focus, .btn:active:focus, .btn.active:focus {
+      outline: thin dotted;
+      outline: none;
+      outline-offset: 2px;
+      border-color: #66afe9;
+      outline: 0;
+      -webkit-box-shadow: inset 0 1px 1px rgba(0, 0, 0, .075), 0 0 8px rgba(102, 175, 233, 0.6);
+      box-shadow: inset 0 1px 1px rgba(0, 0, 0, .075), 0 0 8px rgba(102, 175, 233, 0.6);
+    }
+
+    .login-form {
+      max-width: 770px;
+      margin: 0 auto;
+      background-color: rgba(238, 238, 238, 0.90);
+      margin-top: 100px;
+      padding: 20px;
+      color: #666;
+      font-size: 14px;
+    }
+
+    .login-form .col-xs-6 {
+      padding: 20px 70px;
+    }
+
+    .login-form label {
+      font-weight: 100;
+    }
+
+    .login-form .col-xs-6:nth-child(2) {
+      border-left: 1px solid #666;
+    }
+
+    .login-form h2 {
+      color: #283e51;
+      font-family: 'Open Sans', sans-serif;
+      font-size: 30px;
+      font-weight: bold;
+      line-height: 20px;
+    }
+
+    .login-form .col-xs-6 > h2 {
+      margin-bottom: 20px;
+    }
+
+    .btn-close {
+      width: 200px;
+      border-radius: 8px;
+      padding: 9px;
+    }
+
+    .btn-dark-green,
+    .btn-dark-green:visited {
+      background-color: #283e51;
+      color: #ebebeb;
+      width: 200px;
+      border-radius: 8px;
+      padding: 9px;
+      -webkit-transition: background-color 100ms linear;
+      -moz-transition: background-color 100ms linear;
+      -o-transition: background-color 100ms linear;
+      -ms-transition: background-color 100ms linear;
+      transition: background-color 100ms linear;
+    }
+
+    .btn-dark-green:hover,
+    .btn-dark-green:focus,
+    .btn-dark-green:active {
+      background-color: #355068;
+      color: #ebebeb;
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+      margin-top: 15px;
+    }
+
+    #login-back {
+      -webkit-transition: color 100ms linear;
+      -moz-transition: color 100ms linear;
+      -o-transition: color 100ms linear;
+      -ms-transition: color 100ms linear;
+      transition: color 100ms linear;
+    }
+
+    #login-back:hover {
+      cursor: pointer;
+      color: #355068;
+    }
+
+    #login-back .glyphicon {
+      top: 2px;
+    }
+
+    .has-error .field-validation-error {
+      vertical-align: text-top;
+      color: #a94442;
+    }
+
+    .lightbox-background {
+      top: 0;
+      right: 0;
+      bottom: 0;
+      left: 0;
+      position: fixed;
+      overflow: hidden;
+      background-color: rgba(172, 172, 172, 0.7);
+      z-index: 1031;
+    }
+  </style>
+  <script>
+
+    if (!window.connection) {
+      window.connection = $.hubConnection();
+    }
+    connection.received(function(data) {
+      if (data.H && data.M)
+        console.log('SignalR: '
+          + data.H
+          + '.'
+          + data.M
+          + '()'
+          + (connection.proxies[data.H.toLowerCase()] && connection.proxies[data.H.toLowerCase()]._.callbackMap[data.M.toLowerCase()] ? ' [handled]' : ''));
+    });
+    if (!window.eventHubProxy) {
+      window.eventHubProxy = connection.createHubProxy('eventHub');
+    }
+    window.eventHubProxy.on('UpdateCompaniesEvent',
+      function() {
+        RefreshCompanies();
+      });
+
+    $(function() {
+      window.setTimeout(function() {
+          connection.start();
+        },
+        0);
+    });
+
+    function RefreshCompanies() {
+      $.getJSON("/register/AvailablesCompanies",
+        function(data) {
+
+          var selectedCompany = $('#Company option:selected').val();
+
+          $('#Company').empty();
+
+          // populate list
+          $.each(data.AvailablesCompanies,
+            function(index, item) {
+              var $option = $("<option></option>")
+                .attr("value", item.Value)
+                .text(item.Text);
+              $('#Company').append($option);
+            });
+
+          if ($('#Company').find('option').length == 0) {
+            // no companies in list, set a default message
+            var $option = $("<option></option>")
+              .attr("value", "empty")
+              .text(Strings.RegistrationCurrentlyUnavailable);
+            $('#Company').append($option);
+          } else if ($('#Company').find('option[value=' + selectedCompany + ']').length > 0) {
+            // we still have the previously selected company, so re-select it.
+            $('#Company').val(selectedCompany).attr("selected", "selected");
+          } else {
+            // we don't have the previously selected company, but the list is not blank
+            var $option = $("<option></option>")
+              .attr("value", "empty")
+              .text(Strings.ChooseCompany);
+            $('#Company').prepend($option);
+          }
+        });
+    }
+
+  </script>
+</head>
+<body>
+<header class="carousel slide carousel-fade">
+  <div class="slider-text-overlay">
+    <div class="container">
+      <div id="intro-screen-wrapper" class="row">
+        <div class="intro-screen">
+          <h1>Carbon Emission Trading System Simulation</h1>
+          <div class="btn-wrapper">
+            <div class="btn-white" onclick="ShowLoginForm()">Login</div>
+          </div>
+          <div class="btn-wrapper">
+            <div class="btn-white" onclick="ShowLoginForm(true)">Register</div>
+          </div>
+        </div>
+      </div>
+      <div id="login-form-wrapper" style="display: none;" class="row">
+        <div class="login-form">
+          <div class="row">
+            <div class="col-xs-6">
+              <h2>Login</h2>
+              <div class="lightbox-background password-reset" style="display: none;">
+  <div class="panel panel-default" style="width: 40%; margin-left: 16%; margin-top: 16%;">
+    <div class="panel-heading">
+      <h2 class="panel-title">Password Reset</h2>
+    </div>
+    <div class="panel-body">
+      <form class="email-verify" action="/register/passwordresetemailverify" method="post">
+        <p>Enter your account address to email a verification code that will enable you to reset your password.</p>
+        <input class="form-control" name="email" type="email" placeholder="Email" data-val-email="Must be a valid email address" />
+        <div class="form-group">
+          <button class="btn btn-primary" type="submit">
+            <span class="glyphicon glyphicon-envelope"></span> Send</button>&nbsp;
+          <a href="#" onclick="event.preventDefault();$('.password-reset form.password-change').slideDown();">I already have a code</a>
+        </div>
+      </form>
+      <form class="password-change" action="/register/passwordchange" method="post" style="padding-top: 1px; display: none;">
+        <div class="form-group">
+          <label for="prpc-code" class="control-label">Verification code</label>
+          <input id="prpc-code" name="code" class="form-control" placeholder="Verification code" autocomplete="verification-code" />
+        </div>
+        <div class="form-group">
+          <label for="prpc-password" class="control-label">New password</label>
+          <input id="prpc-password" name="password" type="password" class="form-control" placeholder="New password" autocomplete="new-password" />
+        </div>
+        <div class="form-group">
+          <button class="btn btn-primary" type="submit">
+            <span class="glyphicon glyphicon-pencil"></span> Change Password</button>
+        </div>
+      </form>
+      <p class="password-reset-done alert alert-success" style="display: none;">
+        <span class="glyphicon glyphicon-ok"></span> Password changed successfully.
+      </p>
+      <button class="btn" style="float: right;" type="button" onclick="event.preventDefault();passwordResetClose();">
+        <span class="glyphicon glyphicon-remove"></span> Close</button>
+    </div>
+  </div>
+</div>
+
+<form action="/register/login" class="form-horizontal" id="loginForm" method="post" role="form">  <div class="hidden alert alert-danger form-errors">
+    <div class="validationFailAlert hidden">There was a problem with your submission. Please review it and try again.</div>
+    <div class="general-error"></div>
+  </div>
+  <div class="hidden alert alert-success form-success">
+
+  </div>
+  <div id="successPanel"></div>
+  <div class="form-group">
+    <label for="loginEmailAddress">Email Address</label>
+    <input class="form-control" data-val="true" data-val-email="Must be a valid email address" data-val-required="Required" id="loginEmailAddress" name="Email" placeholder="Enter email" type="text" value="" />
+    <span class="field-validation-valid" data-valmsg-for="Email" data-valmsg-replace="true"></span>
+  </div>
+  <div class="form-group">
+    <label for="Password">Password</label>
+    <input class="form-control" data-val="true" data-val-required="Required" id="Password" name="Password" placeholder="Enter password" type="password" />
+    <span class="field-validation-valid" data-valmsg-for="Password" data-valmsg-replace="true"></span>
+  </div>
+  <button type="submit" class="btn btn-default btn-dark-green">Login</button>
+</form>
+  <div class="password-reset-link" style="text-align: right; margin: 30px -12px 0 0;">
+    <a href="#" onclick="event.preventDefault();var panel = $('.password-reset');panel.find('input[name=email]').val($('#loginEmailAddress').val());panel.fadeIn();">Forgot your password?</a>
+  </div>
+
+<script>
+  var passwordResetClose = function() {
+    $('.password-reset').fadeOut();
+  }
+
+  $(function() {
+
+    setupUnobtrusiveBootstrap($('#loginForm'), null, true);
+
+    processForm($('#loginForm'),
+      function(data) {
+        if (data.success != null && data.success == false) {
+          displayErrorsFromModelState($('#loginForm'), data.Errors);
+          return false;
+        }
+        if (data.type && data.type == "admin") {
+          window.location = "/admin";
+          return false;
+        }
+        window.location = "/waiting";
+        return false;
+      });
+
+    var formEmailVerify = $('.password-reset form.email-verify');
+    var formPasswordChange = $('.password-reset form.password-change');
+    processForm(formEmailVerify,
+      function(data) {
+        formPasswordChange.slideDown();
+      },
+      null,
+      function(jqXhr, textStatus, errorThrown) {
+        setValidityFromAjaxException(formEmailVerify.find('input[name=email]'), jqXhr);
+      });
+
+    processForm(formPasswordChange,
+      function(data) {
+        $('.password-reset-done').slideDown().delay(1000 * 5).slideUp();
+      },
+      function() {
+        var data = formPasswordChange.serializeObject();
+        data.email = $('.password-reset input[name=email]').val();
+        return data;
+      },
+      function(jqXhr, textStatus, errorThrown) {
+        setValidityFromAjaxException(formPasswordChange.find('input[name=code]'), jqXhr);
+      });
+
+  });
+</script>
+
+
+            </div>
+            <div class="col-xs-6">
+              <h2>Register</h2>
+
+              
+<form action="/register" class="form-horizontal" id="registerForm" method="post" role="form">  <div class="hidden alert alert-danger form-errors">
+    <div class="validationFailAlert hidden" id="registrationErrors">There was a problem with your submission. Please review it and try again.</div>
+    <div class="general-error"></div>
+  </div>
+  <div class="hidden alert alert-success form-success">
+
+  </div>
+  <div id="successPanel"></div>
+    <div class="form-group">
+      <label for="AccessPin">Access Pin</label>
+      <input class="form-control" data-val="true" data-val-number="The field AccessPin must be a number." id="AccessPin" max="9999" name="AccessPin" onchange="if (this.value == -1) this.value = &#39;&#39;; else if (this.value &lt; 0) this.value = -this.value;
+                        if (this.value != &#39;&#39; &amp;&amp; this.value.length &lt; 4) this.value = &#39;0&#39;.repeat(4 - this.value.length) + this.value;
+                        if (this.value.length > 4) this.value = this.value.substr(0, 4);" placeholder="Access Requires Pin Code" required="required" type="number" value="" />
+      <span class="field-validation-valid" data-valmsg-for="AccessPin" data-valmsg-replace="true"></span>
+    </div>
+  <div class="form-group">
+    <label for="registerPlayerName">Player Name</label>
+    <input class="form-control" data-val="true" data-val-required="Required" id="registerPlayerName" name="Name" placeholder="Enter name" type="text" value="" />
+    <span class="field-validation-valid" data-valmsg-for="Name" data-valmsg-replace="true"></span>
+
+  </div>
+  <div class="form-group">
+    <label for="Email">Email Address</label>
+    <input class="form-control" data-val="true" data-val-email="Must be a valid email address" data-val-required="Required" id="Email" name="Email" onChange="CheckEmail(&#39;/register/checkemail&#39;, $(this))" placeholder="Enter email" type="text" value="" />
+    <span class="field-validation-valid" data-valmsg-for="Email" data-valmsg-replace="true"></span>
+  </div>
+  <div class="form-group">
+    <label for="Password">Password</label>
+    <input class="form-control" data-val="true" data-val-required="Required" id="Password" name="Password" placeholder="Enter password" type="password" />
+    <span class="field-validation-valid" data-valmsg-for="Password" data-valmsg-replace="true"></span>
+  </div>
+  <div class="form-group">
+    <label for="Company">Company Name</label>
+
+
+
+    <select class="form-control" data-val="true" data-val-required="Required" id="Company" name="Company"><option value="13c6a6c6-6883-4b3b-9164-b4a5008e926a">CONG TY DIEN LUC LINH ANH</option>
+<option value="38669ef4-2f9f-453a-b3b8-b4a5008e9216">CONG TY DIEN LUC MAT TRANG</option>
+<option value="583e814f-ad03-418d-9de4-b4a5008e92ac">CONG TY DIEN LUC MIEN TAY</option>
+<option value="2bd46194-682b-4113-913d-b4a5008e92ee">CONG TY DIEN LUC NAM ANH</option>
+<option value="ce6eb526-2d94-44f6-9630-b4a5008e924e">CONG TY DIEN LUC NAM CUC</option>
+<option value="11177e29-64e5-42a3-b448-b4a5008e9258">CONG TY DIEN LUC VU CA</option>
+<option value="f5136b04-9729-4783-b4e6-b4a5008e92e9">CONG TY DIEN VA KHI DOT ANH SANG</option>
+<option value="4893eec0-50de-42a9-a064-b4a5008e9240">CONG TY DIEN VA KHI DOT BEN KHA</option>
+<option value="1f208186-956b-4a87-879b-b4a5008e924a">CONG TY DIEN VA KHI DOT BEN TRE</option>
+<option value="f29b6c3a-862b-420f-b500-b4a5008e9299">CONG TY DIEN VA KHI DOT HA HO</option>
+<option value="a73777bc-ae4f-4c12-a0c1-b4a5008e9295">CONG TY NANG LUONG BAU TROI</option>
+<option value="5f1e47f8-6ced-4147-b849-b4a5008e925c">CONG TY NANG LUONG T&amp;L</option>
+<option value="06501c2b-0c2d-4727-bd2d-b4a5008e9208">CONG TY NANG LUONG VIET NAM</option>
+<option value="43d104da-25e1-4470-9256-b4a5008e92fc">CONG TY SAT THEP VIET NAM</option>
+<option value="4c3949b2-2edf-4fc2-a31d-b4a5008e921f">CONG TY XANG DAU CROWN 1</option>
+<option value="e90b34e2-dc2c-4373-95b6-b4a5008e9224">CONG TY XANG DAU CROWN 2</option>
+<option value="54d867e1-d4c4-4f24-8f7b-b4a5008e92b5">CONG TY XANG DAU TAP NANG</option>
+<option value="339feb0f-efba-4120-b2c7-b4a5008e92f7">CONG TY XI MANG THE KY VIET NAM</option>
+<option value="0b3e9fad-2392-4fb3-a326-b4a5008e92a3">NHA MAY NHIET ĐIEN AN NAM</option>
+<option value="2838d0de-6d9f-46b3-a85a-b4a5008e92e4">NHA MAY NHIET ĐIEN DAI AN</option>
+<option value="f27c50ac-80c4-4173-8999-b4a5008e9211">NHA MAY NHIET DIEN DAI DUONG</option>
+<option value="56d6e8c6-e75c-4cfd-a206-b4a5008e926f">NHA MAY NHIET DIEN DAI VINH</option>
+<option value="9b8733ed-7c3d-4ac4-a822-b4a5008e92ba">NHA MAY NHIET ĐIEN DOI MOI 1</option>
+<option value="1d300117-6da2-425f-aca6-b4a5008e92c3">NHA MAY NHIET ĐIEN DOI MOI 2</option>
+<option value="d46609fb-9fc3-42a3-bf01-b4a5008e92c8">NHA MAY NHIET ĐIEN DOI MOI 3</option>
+<option value="c396f35a-b407-47cd-8e0e-b4a5008e92d1">NHA MAY NHIET ĐIEN DOI MOI 5</option>
+<option value="3d5b288e-0502-486b-838d-b4a5008e92a7">NHA MAY NHIET DIEN HAI MINH</option>
+<option value="7d80bd1d-dbf4-432f-8426-b4a5008e92d6">NHA MAY NHIET ĐIEN HOA LY</option>
+<option value="7d7b7ca0-aa1b-4d48-8387-b4a5008e922d">NHA MAY NHIET ĐIEN KIM ANH 1</option>
+<option value="95909607-4aec-428c-86ff-b4a5008e9232">NHA MAY NHIET ĐIEN KIM ANH 2</option>
+<option value="5e67bccf-b934-4d9f-ae7c-b4a5008e923b">NHA MAY NHIET ĐIEN KIM ANH 3</option>
+<option value="ad0da2b2-8ec9-4ab5-bd8e-b4a5008e920d">NHA MAY NHIET ĐIEN NAM AN</option>
+<option value="0578e150-f9e9-4920-937c-b4a5008e92db">NHA MAY NHIET DIEN NAM HA</option>
+<option value="60e558a4-4861-46b8-b38d-b4a5008e9278">NHA MAY NHIET ĐIEN TRA MY 1</option>
+<option value="b882e344-d265-462f-ac59-b4a5008e927d">NHA MAY NHIET ĐIEN TRA MY 2</option>
+<option value="95da8f37-f568-45f9-b06e-b4a5008e9287">NHA MAY NHIET ĐIEN TRA MY 3</option>
+<option value="f003883f-a9d0-4176-aa2d-b4a5008e928b">NHA MAY NHIET ĐIEN TRAMY 4</option>
+</select>
+
+  </div>
+    <div class="form-group">
+      <label for="TermsAndConditionsAccepted">
+        <input data-val="true" data-val-required="The TermsAndConditionsAccepted field is required." id="TermsAndConditionsAccepted" name="TermsAndConditionsAccepted" type="checkbox" value="true" /><input name="TermsAndConditionsAccepted" type="hidden" value="false" />
+        I accept the   <a href="#" onclick="event.preventDefault();$('.termsandconditions').fadeIn();">Terms &amp; Conditions</a>
+
+      </label>
+      <span class="field-validation-valid" data-valmsg-for="TermsAndConditionsAccepted" data-valmsg-replace="true"></span>
+      <div class="lightbox-background termsandconditions" style="display: none;">
+        <div class="panel panel-default" style="width: 40%; max-height: 75%; margin: 5% auto; overflow-y: scroll;">
+          <div class="panel-body">
+            <div><strong>CarbonSim Terms and Conditions</strong></div><div>&nbsp;</div><div>Environmental Defense Fund, Incorporated ("EDF," “we,” “us,” or “our”) hereby grants permission to any person or entity (“Licensor,” “you,” or “your”) lawfully obtaining a copy of the Carbon Simulation tool software (“CarbonSim”) a limited license to use CarbonSim subject to the terms contained in this limited Software License Agreement (the “Agreement”).&nbsp;</div><div>&nbsp;</div><div>1.&nbsp; &nbsp; &nbsp; ACCEPTANCE OF THE TERMS AND CONDITIONS.</div><div>&nbsp;</div><div>1.1.&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;This Agreement is a binding legal agreement between you and EDF. Please read the terms and conditions of this Agreement carefully before using CarbonSim.&nbsp;</div><div>&nbsp;</div><div>1.2.&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;By clicking “accept” and accessing or otherwise using CarbonSim, you agree to be bound by the terms of this Agreement.&nbsp;</div><div>&nbsp;</div><div>1.3.&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;If you are not willing to be bound by the terms of this Agreement, you may not access or otherwise use any portion of CarbonSim.&nbsp;</div><div>&nbsp;</div><div>1.4.&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;You may access, view, print, and retain for your records a copy of this Agreement by clicking on the “Terms and Conditions” link at the bottom of the CarbonSim home page.&nbsp;</div><div>&nbsp;</div><div>2.&nbsp; &nbsp; &nbsp; GRANT OF LICENSE.&nbsp;</div><div>&nbsp;</div><div>Subject to the terms of this Agreement, EDF grants you a limited, revocable, non-exclusive, non-transferable, non-sublicensable license (the “License”) to access CarbonSim and otherwise view and use CarbonSim to the extent permitted by its intended functionality, for non-commercial purposes. You may only access and use CarbonSim though the methods or servers that EDF makes available to you. Any access or use of CarbonSim through an application, service, server, or method provided by any other party than EDF, or one of our licensed partners, is strictly prohibited under the terms of this Agreement.&nbsp;</div><div>&nbsp;</div><div>2.1.&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;CarbonSim is "in use" on a computer when it is loaded into the temporary memory (i.e., RAM) or installed into the permanent memory (e.g., hard disk, CD-ROM, or other storage device) of your computer. If the anticipated number of users of CarbonSim will exceed the number of applicable Licenses, then you must have a reasonable mechanism or process in place to assure that the number of persons using CarbonSim concurrently does not exceed the number of Licenses.&nbsp;</div><div>&nbsp;</div><div>2.2.&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;If you have downloaded CarbonSim as part of a demonstration monitored by EDF, then this License shall apply to you only during the demonstration. You expressly agree that you shall use CarbonSim during the demonstration.&nbsp;</div><div>&nbsp;<br><br></div><div>2.3.&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;This Agreement will remain in effect for as long as you use CarbonSim. We may terminate this Agreement and your access to the Services at any time and for any reason. Upon any termination of this Agreement, the rights and licenses granted to you hereunder, including your ability to access and use CarbonSim, will immediately terminate, and you shall immediately cease using any and all materials and other similar content in your possession or control that are proprietary to EDF. You agree that we will have no liability to you for any costs, losses, damages, or liabilities arising out of or related to the termination of this Agreement. Any provision of this Agreement that, by its nature, should survive termination of this Agreement will survive its termination.&nbsp;<br><br></div><div>3.&nbsp; &nbsp; &nbsp; OWNERSHIP OF INTELLECTUAL PROPERTY.&nbsp;<br><br></div><div>EDF owns CarbonSim and all trade secrets, copyrights, patents and other intellectual property rights therein (other than open source, or intellectual property rights licensed from third parties. Therefore, you must treat CarbonSim like any other copyrighted material (e.g., a book or musical recording). You may not copy the written materials accompanying CarbonSim. All other rights not expressly provided herein are hereby reserved by EDF.&nbsp;<br><br></div><div>3.1.&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;You agree not to use any trademarks, brand names or logos owned by EDF, or that accompany CarbonSim, without the prior written consent of EDF.<br><br></div><div>3.2.&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;Except as otherwise specifically permitted in this Agreement, you shall not: (a) modify, download, intercept, or create any derivative works of CarbonSim, including any translations or localizations thereof; (b) access or use CarbonSim through an application or means not authorized by EDF; (c) copy, store, edit, change, exploit, download, prepare any derivative work of, or alter in any way any of the content made available through CarbonSim; (d) license, sell, rent, lease, encumber, transfer, assign, distribute, disclose, post, make available, permit time sharing or simultaneous use of, or otherwise exploit CarbonSim to or for the benefit of any third party; (e) reverse engineer, decompile, disassemble, or otherwise attempt to derive the source code, algorithms, underlying ideas, or structure or organization of CarbonSim; (f) remove or alter any trademark, logo, copyright or other proprietary notices, legends, symbols, or labels on CarbonSim; (g) publish any results of your use of CarbonSim, in whole or in part, aggregated or otherwise, to a third party without EDF’s prior written consent; (h) provide your username and password used to access CarbonSim to any third party; (i) use any systems or means, automated or otherwise, to access, acquire, copy, scrape, harvest, or monitor any part of CarbonSim; (j) circumvent any technological measures employed by or on behalf of EDF to protect CarbonSim; (k) use any other technologies or initiate any other activities that may harm CarbonSim, or the interests or property of EDF or other users of CarbonSim; or (i) aid or encourage any third party to engage in any activity that would constitute a breach of this Agreement.</div><div>&nbsp;</div><div>4.&nbsp; &nbsp; &nbsp; UPDATES.&nbsp;</div><div>&nbsp;</div><div>If the Software is an update to a previous version (the "Update"), you must possess a valid License for the previous version, in order to use the Update. All Updates are provided to you on a “license exchange” basis and you agree that by using an Update, you no longer have a License to use any previous version of the Software. Any Transfer of the SOFTWARE must include the most recent update and all prior versions.<br><br></div><div>5.&nbsp; &nbsp; &nbsp; NO WARRANTIES.&nbsp;<br><br></div><div>CarbonSim (INCLUDING ANY SOFTWARE AND CONTENT CONTAINED THEREIN) ARE LICENSED AND PROVIDED "AS IS" AND "AS AVAILABLE". ANY USE OF CarbonSim WILL BE AT YOUR OWN RISK. TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, EDF DISCLAIMS ANY AND ALL WARRANTIES, WHETHER EXPRESS OR IMPLIED, INCLUDING, WITHOUT LIMITATION, ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, TITLE, AND NON-INFRINGEMENT. EDF MAKES NO REPRESENTATIONS OR GUARANTEES THAT CarbonSim WILL BE FREE FROM LOSS, DESTRUCTION, DAMAGE, CORRUPTION, ATTACK, VIRUSES, INTERFERENCE, HACKING, OR OTHER SECURITY INTRUSION, OR WILL NOT CONTAIN CONTENT YOU DEEM OFFENSIVE, INDECENT, OR OTHERWISE OBJECTIONABLE, AND EDF DISCLAIMS ANY LIABILITY RELATING THERETO. EDF MAKES NO GUARANTEES, REPRESENTATIONS, OR WARRANTIES THAT THE USE OF OR THE RESULTS OF THE USE OF CarbonSim WILL MEET YOUR REQUIREMENTS, BE ACCURATE, RELIABLE, CURRENT, OR THAT OPERATION OF THE SERVICES WILL BE UNINTERRUPTED OR ERROR FREE.&nbsp;<br><br></div><div>6.&nbsp; &nbsp; &nbsp;LIMITATIONS OF LIABILITY.&nbsp;<br><br></div><div><em>SOME JURISDICTIONS MAY NOT PERMIT THE EXCLUSION OF CERTAIN WARRANTIES. TO THE EXTENT APPLICABLE LOCAL LAW SPECIFICALLY AND EXPRESSLY PROHIBITS SUCH EXCLUSIONS, THOSE SUCH EXCLUSIONS SET FORTH BELOW MAY NOT APPLY TO YOU. IN SUCH A CASE, THEN THE AGGREGATE LIABILITY FOR ANY CLAIMS, LOSSES OR DAMAGES SHALL NOT EXCEED US $2,500.<br></em><br></div><div>IN NO EVENT SHALL EDF, ITS SUPPLIERS OR LICENSORS, BE LIABLE FOR ANY DAMAGES WHATSOEVER (INCLUDING, WITHOUT LIMITATION, DIRECT, INDIRECT, PUNITIVE, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES, OR DAMAGES FOR LOSS OF BUSINESS PROFITS, BUSINESS INTERRUPTION, LOSS OF BUSINESS INFORMATION, OR OTHER PECUNIARY LOSS) ARISING OUT OF THE USE OF OR INABILITY TO USE CarbonSim, OR ARISING OUT OF ANY SUPPORT WHICH EDF MAY EXTEND TO YOU, EVEN IF EDF HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGES. THIS LIMITATION APPLIES TO ALL CAUSES OF ACTION OR CLAIMS IN THE AGGREGATE, INCLUDING, WITHOUT LIMITATION, BREACH OF CONTRACT, BREACH OF WARRANTY, INDEMNITY, NEGLIGENCE, STRICT LIABILITY, MISREPRESENTATION, AND OTHER TORTS. THIS LIMITATION OF LIABILITY IS COMPLETE AND EXCLUSIVE, SHALL APPLY EVEN IF EDF HAS BEEN ADVISED OF THE POSSIBILITY OF CLAIMS, LOSSES, OR DAMAGES EXCEEDING SUCH LIMIT, AND SHALL APPLY REGARDLESS OF THE SUCCESS OR EFFECTIVENESS OF ANY OTHER REMEDIES POSSESSED BY EDF. THE LIMITATION OF LIABILITY REFLECTS AN ALLOCATION OF RISK BETWEEN YOU AND EDF.<br><br></div><div>7.&nbsp; &nbsp; &nbsp;INDEMNIFICATION.&nbsp;<br><br></div><div>You agree to defend (at our option), hold harmless, and indemnify us from and against all third party claims and all liabilities, assessments, losses, costs, or damages resulting from or arising out of (a) your alleged or actual breach of this Agreement, including your express representations and warranties; (b) your use or misuse of CarbonSim; and (c) your alleged or actual infringement or violation of the rights of a third party, including without limitation any intellectual property rights, rights of publicity, and rights of privacy.&nbsp;<br><br></div><div>8.&nbsp; &nbsp; &nbsp; GENERAL PROVISIONS.&nbsp;</div><div>&nbsp;</div><div>8.1.&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;Governing Jurisdiction. New York State law shall govern the interpretation and enforceability of this Agreement, and any dispute hereunder shall be adjudicated in the sole and exclusive jurisdiction of the competent court in New York County. &nbsp;<br><br></div><div>8.2.&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;Entire Agreement. In the absence of a written agreement signed by you and EDF, this Agreement shall be the sole and complete agreement between you and EDF, regarding CarbonSim. This Agreement expressly supersedes and replaces any other license agreement for CarbonSim.<br><br></div><div>8.3.&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;Waiver. The waiver by either party of any breach of any provision of this Agreement shall not operate or be construed as a waiver of any other or a subsequent breach of the same or different provision.<br><br></div><div>8.4.&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;Severability. In the event that any provision of this Agreement is determined to be invalid, unenforceable or unlawful, such invalidity, unenforceability or unlawfulness shall not affect any other provisions of this Agreement, and the Agreement shall be construed as if the challenged provision had never been contained herein.<br><br></div><div>8.5.&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;Assignment. EDF may assign this Agreement or delegate any of our rights or obligations hereunder, any part thereof, to any third party, including our successor in interest, without requiring your written consent. You may not assign this Agreement in whole or in part, for any reason. This Agreement will be binding upon and will inure to the benefit of the parties and their heirs, executors, administrators, successors, and assigns.<br><br>9.&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;CONFIDENTIALITY&nbsp;<br><br></div><div>9.1&nbsp; &nbsp; &nbsp; &nbsp;This Section 9 only applies to you if your License in CarbonSim is through participating in affiliation with MEXICO2. &nbsp;<br><br></div><div>9.2&nbsp; &nbsp; &nbsp; &nbsp;You understand that all information relating to the virtual companies in this simulation -- including but not limited to everything related to financial resources, emissions, emissions allowances and emissions reductions (“Information”) -- are fictitious. &nbsp;<br><br></div><div>9.3&nbsp; &nbsp; &nbsp; &nbsp;Except as authorized by you in the Section 9.4 below, while using CarbonSim and for a period of five subsequent years, you will be required to keep the confidentiality of any information you obtain regarding the use of CarbonSim, except in the case that you are treating non-real information transmitted through the CarbonSim system.&nbsp; This obligation must be transmitted to its employees, agents, or representatives.&nbsp; .<br><br></div><div>9.4&nbsp; &nbsp; &nbsp; &nbsp;By using CarbonSim, you accept and confirm that EDF and MEXICO2 may publish the names and/or logos of your company in promoting the use of CarbonSim.&nbsp; You also agree that information generated through CarbonSim (section 9.2 – “Fictitious Information”) may be used by MEXICO2 and EDF to develop analyses that can be used to prepare individual reports that may be provided to each company on its performance within the simulation.<br><br></div>
+            <button class="btn btn-close pull-right" style="width: 30%;" onclick="$(this).closest('.lightbox-background').fadeOut();">Close</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  <button type="submit" class="btn btn-default btn-dark-green">Register</button>
+</form>
+<script>
+  $(function() {
+
+    setupUnobtrusiveBootstrap($('#registerForm'), null, true);
+
+    processForm($('#registerForm'),
+      function(data) {
+        if (data.success != null && data.success == false) {
+          displayErrorsFromModelState($('#registerForm'), data.Errors);
+          if (data.HideGeneralError) {
+            $('#registrationErrors').addClass("hidden");
+          }
+          RefreshCompanies();
+          return false;
+        }
+        window.location = "/waiting";
+        return false;
+      });
+
+    RefreshCompanies();
+
+  });
+
+  function CheckEmail(url, field) {
+    if (!field.valid())
+      return;
+    var email = field.val();
+    //field.attr('disabled', 'disabled');
+    var form = field.closest('form');
+    $.getJSON(url,
+      { email: email },
+      function(data) {
+
+        if (data.emailExists) {
+          var validator = form.validate();
+          validator.showErrors({ Email: "Email already exists" });
+        }
+        RefreshCompanies();
+      });
+  }
+</script>
+
+            </div>
+          </div><!--/row-->
+          <div class="row">
+            <div class="col-xs-2">
+              <div id="login-back">
+                <span class="glyphicon glyphicon-chevron-left"></span> Back</div>
+            </div>
+          </div><!--/row-->
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="carousel-inner">
+    <div class="item active">
+      <!-- Set the first background image using inline CSS below. -->
+      <div class="fill" style="background-image: url('/static/images/login-backgrounds/login-bg-01.jpg');"></div>
+    </div>
+    <div class="item">
+      <!-- Set the second background image using inline CSS below. -->
+      <div class="fill" style="background-image: url('/static/images/login-backgrounds/login-bg-02.jpg');"></div>
+    </div>
+    <div class="item">
+      <!-- Set the second background image using inline CSS below. -->
+      <div class="fill" style="background-image: url('/static/images/login-backgrounds/login-bg-03.jpg');"></div>
+    </div>
+    <div class="item">
+      <!-- Set the second background image using inline CSS below. -->
+      <div class="fill" style="background-image: url('/static/images/login-backgrounds/login-bg-04.jpg');"></div>
+    </div>
+    <div class="item">
+      <!-- Set the second background image using inline CSS below. -->
+      <div class="fill" style="background-image: url('/static/images/login-backgrounds/login-bg-05.jpg');"></div>
+    </div>
+    <div class="item">
+      <!-- Set the second background image using inline CSS below. -->
+      <div class="fill" style="background-image: url('/static/images/login-backgrounds/login-bg-06.jpg');"></div>
+    </div>
+  </div>
+</header>
+
+<div class="container-content" style="display: none">
+  <div class="container">
+    <div class="row">
+      <div class="col-xs-12">
+        <p></p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="container container-footer">
+  <footer>
+    <div class="row">
+      <div class="col-xs-6">
+        <img src="/static/images/edf-logo-alternate.png" />
+      </div>
+      <div class="col-xs-6" style="text-align: right;">
+        <p>&copy;<script>document.write(new Date().getFullYear())</script> Environmental Defense Fund</p>
+          <style>
+    .language-selector {
+      margin-top: 8px;
+      text-align: right;
+    }
+
+    .language-selector a {
+      margin-left: 5px;
+    }
+
+    .language-selector a[data-missing-flag] img {
+      display: none;
+    }
+
+    .language-selector a[data-missing-flag]:after {
+      display: inline-block;
+      width: 16px;
+      height: 12px;
+      background: #777;
+      color: #fff;
+      text-align: center;
+      font-size: 9px;
+      content: attr(alt);
+    }
+  </style>
+  <div class="language-selector">
+        <a href="#" onclick="document.cookie = 'cultureName=-; path=/';location.href = location.href;" alt="gb">
+          <img src="/static/images/flags/gb.gif" alt="gb" onerror="this.parentElement.setAttribute('data-missing-flag', 'true');" />
+        </a>
+        <a href="#" onclick="document.cookie = 'cultureName=zh-CN; path=/';location.href = location.href;" alt="cn">
+          <img src="/static/images/flags/cn.gif" alt="cn" onerror="this.parentElement.setAttribute('data-missing-flag', 'true');" />
+        </a>
+        <a href="#" onclick="document.cookie = 'cultureName=ko-KR; path=/';location.href = location.href;" alt="kr">
+          <img src="/static/images/flags/kr.gif" alt="kr" onerror="this.parentElement.setAttribute('data-missing-flag', 'true');" />
+        </a>
+        <a href="#" onclick="document.cookie = 'cultureName=pt-BR; path=/';location.href = location.href;" alt="br">
+          <img src="/static/images/flags/br.gif" alt="br" onerror="this.parentElement.setAttribute('data-missing-flag', 'true');" />
+        </a>
+        <a href="#" onclick="document.cookie = 'cultureName=vi-VN; path=/';location.href = location.href;" alt="vn">
+          <img src="/static/images/flags/vn.gif" alt="vn" onerror="this.parentElement.setAttribute('data-missing-flag', 'true');" />
+        </a>
+        <a href="#" onclick="document.cookie = 'cultureName=fr; path=/';location.href = location.href;" alt="fr">
+          <img src="/static/images/flags/fr.gif" alt="fr" onerror="this.parentElement.setAttribute('data-missing-flag', 'true');" />
+        </a>
+        <a href="#" onclick="document.cookie = 'cultureName=es; path=/';location.href = location.href;" alt="es">
+          <img src="/static/images/flags/es.gif" alt="es" onerror="this.parentElement.setAttribute('data-missing-flag', 'true');" />
+        </a>
+        <a href="#" onclick="document.cookie = 'cultureName=ja-JP; path=/';location.href = location.href;" alt="jp">
+          <img src="/static/images/flags/jp.gif" alt="jp" onerror="this.parentElement.setAttribute('data-missing-flag', 'true');" />
+        </a>
+        <a href="#" onclick="document.cookie = 'cultureName=th-TH; path=/';location.href = location.href;" alt="th">
+          <img src="/static/images/flags/th.gif" alt="th" onerror="this.parentElement.setAttribute('data-missing-flag', 'true');" />
+        </a>
+
+  </div>
+
+      </div>
+    </div><!--/row-->
+  </footer>
+</div>
+<!-- jQuery Version 1.11.0 -->
+
+<!-- Bootstrap Core JavaScript -->
+<script src="/static/dependencies/bootstrap-3.2.0-cust-xs0-sm0/js/bootstrap.min.js"></script>
+<!-- Script to Activate the Carousel -->
+<script>
+  $(function() {
+    $('.carousel').carousel({
+      interval: 6000, //changes the speed
+      pause: false
+    });
+
+    var pin = getQueryValue('pin');
+    if (typeof(pin) != 'undefined') {
+      ShowLoginForm(true);
+      $('#registerForm input[name=AccessPin]')
+        .val(pin)
+        .change();
+    }
+  });
+  var ShowLoginForm = function(isRegister) {
+
+    $('.carousel').carousel('pause');
+    $(".container-content").animate({
+        height: "0%",
+        paddingTop: "0px"
+      },
+      { duration: 400, queue: false });
+
+    $(".carousel").animate({
+        height: "87%"
+      },
+      { duration: 400, queue: false });
+
+    $("#intro-screen-wrapper").fadeOut(400,
+      function() {
+        $("#login-form-wrapper").fadeIn(400);
+        if (isRegister) {
+          _.find($('#registerForm')[0], function(e) { return e.value == ''; }).focus();
+        } else {
+          $('#loginEmailAddress').focus();
+        }
+      });
+  };
+  var HideLoginForm = function() {
+    $(".container-content").animate({
+        height: "27%",
+        paddingTop: "30px"
+      },
+      { duration: 400, queue: false });
+
+    $(".carousel").animate({
+        height: "60%"
+      },
+      { duration: 400, queue: false });
+
+    $("#login-form-wrapper").fadeOut(400,
+      function() {
+        $("#intro-screen-wrapper").fadeIn(400,
+          function() {
+            $('.carousel').carousel('cycle');
+          });
+      });
+  };
+
+  $('#login-back').click(function() {
+    HideLoginForm();
+  });
+</script>
+</body>
+</html>
