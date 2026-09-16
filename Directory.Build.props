@@ -1,0 +1,20 @@
+<Project>
+
+  <!-- Shared settings for every project. Changing TargetFramework here is the single
+       place to switch the solution to the .NET 10 SDK once it is installed. -->
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <!-- Globalization stays on: the player UI is localised for Vietnam (culture cookie,
+         vi-VN resources), and the engine formats money and emissions invariantly in its own
+         messages instead of relying on the runtime's invariant mode. -->
+    <InvariantGlobalization>false</InvariantGlobalization>
+  </PropertyGroup>
+
+</Project>

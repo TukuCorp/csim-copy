@@ -1,0 +1,3 @@
+# Keep LF in the repository and in the working tree on every platform, which is what
+# .editorconfig asks for; without this, a Windows checkout turns every file into CRLF.
+* text=auto eol=lf

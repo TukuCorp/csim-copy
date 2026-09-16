@@ -1,0 +1,3531 @@
+{
+  "name": "Vietnam ETS Pilot 2024",
+  "seed": 20240916,
+  "notes": "Placeholder scenario for engine development, built from public documentation only; no content is taken from the CarbonSim application. Parameters follow the Vietnam training exercise as documented publicly: cap 355,850,000 t, -3%/yr, 90% free, 4 auctions per year, price collar 100/300, 10% offset limit, penalty 300 plus one allowance, 10% exchange volatility band, auctions open 45% of the year, 20 minutes per virtual year. Sector emission shares follow the covered-emissions split in the ETS Task 9 technical report (power 43%, cement 33%, steel 24%). All company names are original fiction written for this project. AI participants are placeholders named 'AI <Sector> NN'. Unit baseline emissions are placeholders: year-1 business-as-usual totals exactly the cap, split evenly inside each sector, so the fleet starts short by the volume auctioned and the gap widens as the cap falls. Company capital is a placeholder at 500 x the unit's baseline emissions, with a credit limit of half that and 7%/yr interest on a negative balance. Unit operating profit is a placeholder at 40 currency units per tonne of baseline emissions. Abatement menus are placeholders, sized as a share of each unit's baseline and priced per tonne. Replace these placeholders when the Vietnam instance data or the trainer parameter sheets are available.",
+  "parameters": {
+    "cap": 355850000,
+    "annualCapReductionRate": 0.03,
+    "freeAllocationShare": 0.9,
+    "years": 3,
+    "offsetUsageLimit": 0.1,
+    "bankingLimit": 1,
+    "penaltyPerTonne": 300,
+    "penaltyAllowanceDebit": 1,
+    "auctionFloorPrice": 100,
+    "auctionCeilingPrice": 300,
+    "auctionsPerYear": 4,
+    "yearLengthMinutes": 20,
+    "auctionDurationMinutes": 2.25,
+    "tradingOpenShareOfYear": 0.45,
+    "volatilityBand": 0.1,
+    "bausGrowthBySector": [
+      {
+        "sector": "Power",
+        "minAnnualRate": 0.02,
+        "maxAnnualRate": 0.06
+      },
+      {
+        "sector": "Cement",
+        "minAnnualRate": 0.02,
+        "maxAnnualRate": 0.06
+      },
+      {
+        "sector": "Steel",
+        "minAnnualRate": 0.02,
+        "maxAnnualRate": 0.06
+      }
+    ],
+    "overdraftInterestRate": 0.07
+  },
+  "sectors": [
+    {
+      "name": "Power",
+      "emissionShare": 0.43,
+      "abatementOptions": [
+        {
+          "code": "P1",
+          "name": "Boiler and turbine efficiency",
+          "annualReductionShare": 0.01,
+          "upfrontCostPerTonne": 30,
+          "annualNetRevenuePerTonne": -2,
+          "implementationYears": 1,
+          "lifetimeYears": 10
+        },
+        {
+          "code": "P2",
+          "name": "Waste heat recovery and fuel switch",
+          "annualReductionShare": 0.05,
+          "upfrontCostPerTonne": 1800,
+          "annualNetRevenuePerTonne": -10,
+          "implementationYears": 1,
+          "lifetimeYears": 12
+        },
+        {
+          "code": "P3",
+          "name": "Biomass co-firing and carbon capture",
+          "annualReductionShare": 0.15,
+          "upfrontCostPerTonne": 3600,
+          "annualNetRevenuePerTonne": -40,
+          "implementationYears": 2,
+          "lifetimeYears": 20
+        }
+      ]
+    },
+    {
+      "name": "Cement",
+      "emissionShare": 0.33,
+      "abatementOptions": [
+        {
+          "code": "C1",
+          "name": "Kiln thermal efficiency",
+          "annualReductionShare": 0.01,
+          "upfrontCostPerTonne": 40,
+          "annualNetRevenuePerTonne": -3,
+          "implementationYears": 1,
+          "lifetimeYears": 12
+        },
+        {
+          "code": "C2",
+          "name": "Alternative fuels and raw materials",
+          "annualReductionShare": 0.08,
+          "upfrontCostPerTonne": 1500,
+          "annualNetRevenuePerTonne": -8,
+          "implementationYears": 1,
+          "lifetimeYears": 15
+        },
+        {
+          "code": "C3",
+          "name": "Clinker substitution",
+          "annualReductionShare": 0.12,
+          "upfrontCostPerTonne": 2400,
+          "annualNetRevenuePerTonne": 5,
+          "implementationYears": 2,
+          "lifetimeYears": 20
+        }
+      ]
+    },
+    {
+      "name": "Steel",
+      "emissionShare": 0.24,
+      "abatementOptions": [
+        {
+          "code": "S1",
+          "name": "Process efficiency and yield",
+          "annualReductionShare": 0.01,
+          "upfrontCostPerTonne": 50,
+          "annualNetRevenuePerTonne": -4,
+          "implementationYears": 1,
+          "lifetimeYears": 12
+        },
+        {
+          "code": "S2",
+          "name": "Electric arc furnace scrap route",
+          "annualReductionShare": 0.1,
+          "upfrontCostPerTonne": 2400,
+          "annualNetRevenuePerTonne": -20,
+          "implementationYears": 2,
+          "lifetimeYears": 20
+        },
+        {
+          "code": "S3",
+          "name": "Hydrogen direct reduced iron",
+          "annualReductionShare": 0.2,
+          "upfrontCostPerTonne": 4800,
+          "annualNetRevenuePerTonne": -50,
+          "implementationYears": 2,
+          "lifetimeYears": 25
+        }
+      ]
+    }
+  ],
+  "companies": [
+    {
+      "name": "Công ty Điện lực Bình Minh",
+      "sector": "Power",
+      "ownerKind": "human",
+      "capital": 1275129000,
+      "units": [
+        {
+          "name": "Công ty Điện lực Bình Minh",
+          "baselineEmissions": 2550258,
+          "normalOperatingProfit": 102010320
+        }
+      ],
+      "overdraftLimit": 637564500
+    },
+    {
+      "name": "Công ty Điện lực Hồng Hà",
+      "sector": "Power",
+      "ownerKind": "human",
+      "capital": 1275129000,
+      "units": [
+        {
+          "name": "Công ty Điện lực Hồng Hà",
+          "baselineEmissions": 2550258,
+          "normalOperatingProfit": 102010320
+        }
+      ],
+      "overdraftLimit": 637564500
+    },
+    {
+      "name": "Công ty Điện lực Trường Sơn",
+      "sector": "Power",
+      "ownerKind": "human",
+      "capital": 1275129000,
+      "units": [
+        {
+          "name": "Công ty Điện lực Trường Sơn",
+          "baselineEmissions": 2550258,
+          "normalOperatingProfit": 102010320
+        }
+      ],
+      "overdraftLimit": 637564500
+    },
+    {
+      "name": "Công ty Điện lực Đông Dương",
+      "sector": "Power",
+      "ownerKind": "human",
+      "capital": 1275129000,
+      "units": [
+        {
+          "name": "Công ty Điện lực Đông Dương",
+          "baselineEmissions": 2550258,
+          "normalOperatingProfit": 102010320
+        }
+      ],
+      "overdraftLimit": 637564500
+    },
+    {
+      "name": "Công ty Điện lực Tân Hưng",
+      "sector": "Power",
+      "ownerKind": "human",
+      "capital": 1275129000,
+      "units": [
+        {
+          "name": "Công ty Điện lực Tân Hưng",
+          "baselineEmissions": 2550258,
+          "normalOperatingProfit": 102010320
+        }
+      ],
+      "overdraftLimit": 637564500
+    },
+    {
+      "name": "Công ty Điện lực Kim Long",
+      "sector": "Power",
+      "ownerKind": "human",
+      "capital": 1275129000,
+      "units": [
+        {
+          "name": "Công ty Điện lực Kim Long",
+          "baselineEmissions": 2550258,
+          "normalOperatingProfit": 102010320
+        }
+      ],
+      "overdraftLimit": 637564500
+    },
+    {
+      "name": "Công ty Điện lực Thăng Long",
+      "sector": "Power",
+      "ownerKind": "human",
+      "capital": 1275129000,
+      "units": [
+        {
+          "name": "Công ty Điện lực Thăng Long",
+          "baselineEmissions": 2550258,
+          "normalOperatingProfit": 102010320
+        }
+      ],
+      "overdraftLimit": 637564500
+    },
+    {
+      "name": "Công ty Điện lực Hải Đăng",
+      "sector": "Power",
+      "ownerKind": "human",
+      "capital": 1275129000,
+      "units": [
+        {
+          "name": "Công ty Điện lực Hải Đăng",
+          "baselineEmissions": 2550258,
+          "normalOperatingProfit": 102010320
+        }
+      ],
+      "overdraftLimit": 637564500
+    },
+    {
+      "name": "Công ty Điện lực Phú An",
+      "sector": "Power",
+      "ownerKind": "human",
+      "capital": 1275129000,
+      "units": [
+        {
+          "name": "Công ty Điện lực Phú An",
+          "baselineEmissions": 2550258,
+          "normalOperatingProfit": 102010320
+        }
+      ],
+      "overdraftLimit": 637564500
+    },
+    {
+      "name": "Công ty Điện lực Nam Việt",
+      "sector": "Power",
+      "ownerKind": "human",
+      "capital": 1275129000,
+      "units": [
+        {
+          "name": "Công ty Điện lực Nam Việt",
+          "baselineEmissions": 2550258,
+          "normalOperatingProfit": 102010320
+        }
+      ],
+      "overdraftLimit": 637564500
+    },
+    {
+      "name": "Công ty Điện và Khí đốt Bình Nguyên",
+      "sector": "Power",
+      "ownerKind": "human",
+      "capital": 1275129000,
+      "units": [
+        {
+          "name": "Công ty Điện và Khí đốt Bình Nguyên",
+          "baselineEmissions": 2550258,
+          "normalOperatingProfit": 102010320
+        }
+      ],
+      "overdraftLimit": 637564500
+    },
+    {
+      "name": "Công ty Điện và Khí đốt Tân Lộc",
+      "sector": "Power",
+      "ownerKind": "human",
+      "capital": 1275129000,
+      "units": [
+        {
+          "name": "Công ty Điện và Khí đốt Tân Lộc",
+          "baselineEmissions": 2550258,
+          "normalOperatingProfit": 102010320
+        }
+      ],
+      "overdraftLimit": 637564500
+    },
+    {
+      "name": "Công ty Điện và Khí đốt Vân Sơn",
+      "sector": "Power",
+      "ownerKind": "human",
+      "capital": 1275129000,
+      "units": [
+        {
+          "name": "Công ty Điện và Khí đốt Vân Sơn",
+          "baselineEmissions": 2550258,
+          "normalOperatingProfit": 102010320
+        }
+      ],
+      "overdraftLimit": 637564500
+    },
+    {
+      "name": "Công ty Điện và Khí đốt Thái Hòa",
+      "sector": "Power",
+      "ownerKind": "human",
+      "capital": 1275129000,
+      "units": [
+        {
+          "name": "Công ty Điện và Khí đốt Thái Hòa",
+          "baselineEmissions": 2550258,
+          "normalOperatingProfit": 102010320
+        }
+      ],
+      "overdraftLimit": 637564500
+    },
+    {
+      "name": "Công ty Điện và Khí đốt Hùng Vương",
+      "sector": "Power",
+      "ownerKind": "human",
+      "capital": 1275129000,
+      "units": [
+        {
+          "name": "Công ty Điện và Khí đốt Hùng Vương",
+          "baselineEmissions": 2550258,
+          "normalOperatingProfit": 102010320
+        }
+      ],
+      "overdraftLimit": 637564500
+    },
+    {
+      "name": "Công ty Điện và Khí đốt Đông Á",
+      "sector": "Power",
+      "ownerKind": "human",
+      "capital": 1275129000,
+      "units": [
+        {
+          "name": "Công ty Điện và Khí đốt Đông Á",
+          "baselineEmissions": 2550258,
+          "normalOperatingProfit": 102010320
+        }
+      ],
+      "overdraftLimit": 637564500
+    },
+    {
+      "name": "Công ty Năng lượng Sao Mai",
+      "sector": "Power",
+      "ownerKind": "human",
+      "capital": 1275129000,
+      "units": [
+        {
+          "name": "Công ty Năng lượng Sao Mai",
+          "baselineEmissions": 2550258,
+          "normalOperatingProfit": 102010320
+        }
+      ],
+      "overdraftLimit": 637564500
+    },
+    {
+      "name": "Công ty Năng lượng Ánh Dương",
+      "sector": "Power",
+      "ownerKind": "human",
+      "capital": 1275129000,
+      "units": [
+        {
+          "name": "Công ty Năng lượng Ánh Dương",
+          "baselineEmissions": 2550258,
+          "normalOperatingProfit": 102010320
+        }
+      ],
+      "overdraftLimit": 637564500
+    },
+    {
+      "name": "Công ty Năng lượng Núi Rồng",
+      "sector": "Power",
+      "ownerKind": "human",
+      "capital": 1275129000,
+      "units": [
+        {
+          "name": "Công ty Năng lượng Núi Rồng",
+          "baselineEmissions": 2550258,
+          "normalOperatingProfit": 102010320
+        }
+      ],
+      "overdraftLimit": 637564500
+    },
+    {
+      "name": "Công ty Năng lượng Đại Phát",
+      "sector": "Power",
+      "ownerKind": "human",
+      "capital": 1275129000,
+      "units": [
+        {
+          "name": "Công ty Năng lượng Đại Phát",
+          "baselineEmissions": 2550258,
+          "normalOperatingProfit": 102010320
+        }
+      ],
+      "overdraftLimit": 637564500
+    },
+    {
+      "name": "Công ty Năng lượng Tiên Sơn",
+      "sector": "Power",
+      "ownerKind": "human",
+      "capital": 1275129000,
+      "units": [
+        {
+          "name": "Công ty Năng lượng Tiên Sơn",
+          "baselineEmissions": 2550258,
+          "normalOperatingProfit": 102010320
+        }
+      ],
+      "overdraftLimit": 637564500
+    },
+    {
+      "name": "Công ty Năng lượng Hưng Thịnh",
+      "sector": "Power",
+      "ownerKind": "human",
+      "capital": 1275129000,
+      "units": [
+        {
+          "name": "Công ty Năng lượng Hưng Thịnh",
+          "baselineEmissions": 2550258,
+          "normalOperatingProfit": 102010320
+        }
+      ],
+      "overdraftLimit": 637564500
+    },
+    {
+      "name": "Nhà máy Nhiệt điện Sông Xanh",
+      "sector": "Power",
+      "ownerKind": "human",
+      "capital": 1275129000,
+      "units": [
+        {
+          "name": "Nhà máy Nhiệt điện Sông Xanh",
+          "baselineEmissions": 2550258,
+          "normalOperatingProfit": 102010320
+        }
+      ],
+      "overdraftLimit": 637564500
+    },
+    {
+      "name": "Nhà máy Nhiệt điện Đồng Xuân",
+      "sector": "Power",
+      "ownerKind": "human",
+      "capital": 1275129000,
+      "units": [
+        {
+          "name": "Nhà máy Nhiệt điện Đồng Xuân",
+          "baselineEmissions": 2550258,
+          "normalOperatingProfit": 102010320
+        }
+      ],
+      "overdraftLimit": 637564500
+    },
+    {
+      "name": "Nhà máy Nhiệt điện Cẩm Phú",
+      "sector": "Power",
+      "ownerKind": "human",
+      "capital": 1275129000,
+      "units": [
+        {
+          "name": "Nhà máy Nhiệt điện Cẩm Phú",
+          "baselineEmissions": 2550258,
+          "normalOperatingProfit": 102010320
+        }
+      ],
+      "overdraftLimit": 637564500
+    },
+    {
+      "name": "Nhà máy Nhiệt điện Yên Khánh",
+      "sector": "Power",
+      "ownerKind": "human",
+      "capital": 1275129000,
+      "units": [
+        {
+          "name": "Nhà máy Nhiệt điện Yên Khánh",
+          "baselineEmissions": 2550258,
+          "normalOperatingProfit": 102010320
+        }
+      ],
+      "overdraftLimit": 637564500
+    },
+    {
+      "name": "Nhà máy Nhiệt điện Vĩnh An",
+      "sector": "Power",
+      "ownerKind": "human",
+      "capital": 1275129000,
+      "units": [
+        {
+          "name": "Nhà máy Nhiệt điện Vĩnh An",
+          "baselineEmissions": 2550258,
+          "normalOperatingProfit": 102010320
+        }
+      ],
+      "overdraftLimit": 637564500
+    },
+    {
+      "name": "Nhà máy Nhiệt điện Trung Hà",
+      "sector": "Power",
+      "ownerKind": "human",
+      "capital": 1275129000,
+      "units": [
+        {
+          "name": "Nhà máy Nhiệt điện Trung Hà",
+          "baselineEmissions": 2550258,
+          "normalOperatingProfit": 102010320
+        }
+      ],
+      "overdraftLimit": 637564500
+    },
+    {
+      "name": "Nhà máy Nhiệt điện Lạc Hồng",
+      "sector": "Power",
+      "ownerKind": "human",
+      "capital": 1275129000,
+      "units": [
+        {
+          "name": "Nhà máy Nhiệt điện Lạc Hồng",
+          "baselineEmissions": 2550258,
+          "normalOperatingProfit": 102010320
+        }
+      ],
+      "overdraftLimit": 637564500
+    },
+    {
+      "name": "Nhà máy Nhiệt điện Nam Cường",
+      "sector": "Power",
+      "ownerKind": "human",
+      "capital": 1275129000,
+      "units": [
+        {
+          "name": "Nhà máy Nhiệt điện Nam Cường",
+          "baselineEmissions": 2550258,
+          "normalOperatingProfit": 102010320
+        }
+      ],
+      "overdraftLimit": 637564500
+    },
+    {
+      "name": "Nhà máy Nhiệt điện Tân Phú",
+      "sector": "Power",
+      "ownerKind": "human",
+      "capital": 1275129000,
+      "units": [
+        {
+          "name": "Nhà máy Nhiệt điện Tân Phú",
+          "baselineEmissions": 2550258,
+          "normalOperatingProfit": 102010320
+        }
+      ],
+      "overdraftLimit": 637564500
+    },
+    {
+      "name": "Nhà máy Nhiệt điện Hải Yến",
+      "sector": "Power",
+      "ownerKind": "human",
+      "capital": 1275129000,
+      "units": [
+        {
+          "name": "Nhà máy Nhiệt điện Hải Yến",
+          "baselineEmissions": 2550258,
+          "normalOperatingProfit": 102010320
+        }
+      ],
+      "overdraftLimit": 637564500
+    },
+    {
+      "name": "Nhà máy Nhiệt điện Phú Khang",
+      "sector": "Power",
+      "ownerKind": "human",
+      "capital": 1275129000,
+      "units": [
+        {
+          "name": "Nhà máy Nhiệt điện Phú Khang",
+          "baselineEmissions": 2550258,
+          "normalOperatingProfit": 102010320
+        }
+      ],
+      "overdraftLimit": 637564500
+    },
+    {
+      "name": "Nhà máy Nhiệt điện Tân Thịnh",
+      "sector": "Power",
+      "ownerKind": "human",
+      "capital": 1275129000,
+      "units": [
+        {
+          "name": "Nhà máy Nhiệt điện Tân Thịnh",
+          "baselineEmissions": 2550258,
+          "normalOperatingProfit": 102010320
+        }
+      ],
+      "overdraftLimit": 637564500
+    },
+    {
+      "name": "Nhà máy Nhiệt điện Mai Trang",
+      "sector": "Power",
+      "ownerKind": "human",
+      "capital": 1275129000,
+      "units": [
+        {
+          "name": "Nhà máy Nhiệt điện Mai Trang",
+          "baselineEmissions": 2550258,
+          "normalOperatingProfit": 102010320
+        }
+      ],
+      "overdraftLimit": 637564500
+    },
+    {
+      "name": "AI Power 01",
+      "sector": "Power",
+      "ownerKind": "ai",
+      "capital": 1275129000,
+      "units": [
+        {
+          "name": "AI Power 01",
+          "baselineEmissions": 2550258,
+          "normalOperatingProfit": 102010320
+        }
+      ],
+      "overdraftLimit": 637564500
+    },
+    {
+      "name": "AI Power 02",
+      "sector": "Power",
+      "ownerKind": "ai",
+      "capital": 1275129000,
+      "units": [
+        {
+          "name": "AI Power 02",
+          "baselineEmissions": 2550258,
+          "normalOperatingProfit": 102010320
+        }
+      ],
+      "overdraftLimit": 637564500
+    },
+    {
+      "name": "AI Power 03",
+      "sector": "Power",
+      "ownerKind": "ai",
+      "capital": 1275129000,
+      "units": [
+        {
+          "name": "AI Power 03",
+          "baselineEmissions": 2550258,
+          "normalOperatingProfit": 102010320
+        }
+      ],
+      "overdraftLimit": 637564500
+    },
+    {
+      "name": "AI Power 04",
+      "sector": "Power",
+      "ownerKind": "ai",
+      "capital": 1275129000,
+      "units": [
+        {
+          "name": "AI Power 04",
+          "baselineEmissions": 2550258,
+          "normalOperatingProfit": 102010320
+        }
+      ],
+      "overdraftLimit": 637564500
+    },
+    {
+      "name": "AI Power 05",
+      "sector": "Power",
+      "ownerKind": "ai",
+      "capital": 1275129000,
+      "units": [
+        {
+          "name": "AI Power 05",
+          "baselineEmissions": 2550258,
+          "normalOperatingProfit": 102010320
+        }
+      ],
+      "overdraftLimit": 637564500
+    },
+    {
+      "name": "AI Power 06",
+      "sector": "Power",
+      "ownerKind": "ai",
+      "capital": 1275129000,
+      "units": [
+        {
+          "name": "AI Power 06",
+          "baselineEmissions": 2550258,
+          "normalOperatingProfit": 102010320
+        }
+      ],
+      "overdraftLimit": 637564500
+    },
+    {
+      "name": "AI Power 07",
+      "sector": "Power",
+      "ownerKind": "ai",
+      "capital": 1275129000,
+      "units": [
+        {
+          "name": "AI Power 07",
+          "baselineEmissions": 2550258,
+          "normalOperatingProfit": 102010320
+        }
+      ],
+      "overdraftLimit": 637564500
+    },
+    {
+      "name": "AI Power 08",
+      "sector": "Power",
+      "ownerKind": "ai",
+      "capital": 1275129000,
+      "units": [
+        {
+          "name": "AI Power 08",
+          "baselineEmissions": 2550258,
+          "normalOperatingProfit": 102010320
+        }
+      ],
+      "overdraftLimit": 637564500
+    },
+    {
+      "name": "AI Power 09",
+      "sector": "Power",
+      "ownerKind": "ai",
+      "capital": 1275129000,
+      "units": [
+        {
+          "name": "AI Power 09",
+          "baselineEmissions": 2550258,
+          "normalOperatingProfit": 102010320
+        }
+      ],
+      "overdraftLimit": 637564500
+    },
+    {
+      "name": "AI Power 10",
+      "sector": "Power",
+      "ownerKind": "ai",
+      "capital": 1275129000,
+      "units": [
+        {
+          "name": "AI Power 10",
+          "baselineEmissions": 2550258,
+          "normalOperatingProfit": 102010320
+        }
+      ],
+      "overdraftLimit": 637564500
+    },
+    {
+      "name": "AI Power 11",
+      "sector": "Power",
+      "ownerKind": "ai",
+      "capital": 1275129000,
+      "units": [
+        {
+          "name": "AI Power 11",
+          "baselineEmissions": 2550258,
+          "normalOperatingProfit": 102010320
+        }
+      ],
+      "overdraftLimit": 637564500
+    },
+    {
+      "name": "AI Power 12",
+      "sector": "Power",
+      "ownerKind": "ai",
+      "capital": 1275129000,
+      "units": [
+        {
+          "name": "AI Power 12",
+          "baselineEmissions": 2550258,
+          "normalOperatingProfit": 102010320
+        }
+      ],
+      "overdraftLimit": 637564500
+    },
+    {
+      "name": "AI Power 13",
+      "sector": "Power",
+      "ownerKind": "ai",
+      "capital": 1275129000,
+      "units": [
+        {
+          "name": "AI Power 13",
+          "baselineEmissions": 2550258,
+          "normalOperatingProfit": 102010320
+        }
+      ],
+      "overdraftLimit": 637564500
+    },
+    {
+      "name": "AI Power 14",
+      "sector": "Power",
+      "ownerKind": "ai",
+      "capital": 1275129000,
+      "units": [
+        {
+          "name": "AI Power 14",
+          "baselineEmissions": 2550258,
+          "normalOperatingProfit": 102010320
+        }
+      ],
+      "overdraftLimit": 637564500
+    },
+    {
+      "name": "AI Power 15",
+      "sector": "Power",
+      "ownerKind": "ai",
+      "capital": 1275129000,
+      "units": [
+        {
+          "name": "AI Power 15",
+          "baselineEmissions": 2550258,
+          "normalOperatingProfit": 102010320
+        }
+      ],
+      "overdraftLimit": 637564500
+    },
+    {
+      "name": "AI Power 16",
+      "sector": "Power",
+      "ownerKind": "ai",
+      "capital": 1275129000,
+      "units": [
+        {
+          "name": "AI Power 16",
+          "baselineEmissions": 2550258,
+          "normalOperatingProfit": 102010320
+        }
+      ],
+      "overdraftLimit": 637564500
+    },
+    {
+      "name": "AI Power 17",
+      "sector": "Power",
+      "ownerKind": "ai",
+      "capital": 1275129000,
+      "units": [
+        {
+          "name": "AI Power 17",
+          "baselineEmissions": 2550258,
+          "normalOperatingProfit": 102010320
+        }
+      ],
+      "overdraftLimit": 637564500
+    },
+    {
+      "name": "AI Power 18",
+      "sector": "Power",
+      "ownerKind": "ai",
+      "capital": 1275129000,
+      "units": [
+        {
+          "name": "AI Power 18",
+          "baselineEmissions": 2550258,
+          "normalOperatingProfit": 102010320
+        }
+      ],
+      "overdraftLimit": 637564500
+    },
+    {
+      "name": "AI Power 19",
+      "sector": "Power",
+      "ownerKind": "ai",
+      "capital": 1275129000,
+      "units": [
+        {
+          "name": "AI Power 19",
+          "baselineEmissions": 2550258,
+          "normalOperatingProfit": 102010320
+        }
+      ],
+      "overdraftLimit": 637564500
+    },
+    {
+      "name": "AI Power 20",
+      "sector": "Power",
+      "ownerKind": "ai",
+      "capital": 1275129000,
+      "units": [
+        {
+          "name": "AI Power 20",
+          "baselineEmissions": 2550258,
+          "normalOperatingProfit": 102010320
+        }
+      ],
+      "overdraftLimit": 637564500
+    },
+    {
+      "name": "AI Power 21",
+      "sector": "Power",
+      "ownerKind": "ai",
+      "capital": 1275129000,
+      "units": [
+        {
+          "name": "AI Power 21",
+          "baselineEmissions": 2550258,
+          "normalOperatingProfit": 102010320
+        }
+      ],
+      "overdraftLimit": 637564500
+    },
+    {
+      "name": "AI Power 22",
+      "sector": "Power",
+      "ownerKind": "ai",
+      "capital": 1275129000,
+      "units": [
+        {
+          "name": "AI Power 22",
+          "baselineEmissions": 2550258,
+          "normalOperatingProfit": 102010320
+        }
+      ],
+      "overdraftLimit": 637564500
+    },
+    {
+      "name": "AI Power 23",
+      "sector": "Power",
+      "ownerKind": "ai",
+      "capital": 1275129000,
+      "units": [
+        {
+          "name": "AI Power 23",
+          "baselineEmissions": 2550258,
+          "normalOperatingProfit": 102010320
+        }
+      ],
+      "overdraftLimit": 637564500
+    },
+    {
+      "name": "AI Power 24",
+      "sector": "Power",
+      "ownerKind": "ai",
+      "capital": 1275129000,
+      "units": [
+        {
+          "name": "AI Power 24",
+          "baselineEmissions": 2550258,
+          "normalOperatingProfit": 102010320
+        }
+      ],
+      "overdraftLimit": 637564500
+    },
+    {
+      "name": "AI Power 25",
+      "sector": "Power",
+      "ownerKind": "ai",
+      "capital": 1275139000,
+      "units": [
+        {
+          "name": "AI Power 25",
+          "baselineEmissions": 2550278,
+          "normalOperatingProfit": 102011120
+        }
+      ],
+      "overdraftLimit": 637569500
+    },
+    {
+      "name": "Công ty Xi măng Đá Trắng",
+      "sector": "Cement",
+      "ownerKind": "human",
+      "capital": 652391500,
+      "units": [
+        {
+          "name": "Công ty Xi măng Đá Trắng",
+          "baselineEmissions": 1304783,
+          "normalOperatingProfit": 52191320
+        }
+      ],
+      "overdraftLimit": 326195750
+    },
+    {
+      "name": "AI Cement 01",
+      "sector": "Cement",
+      "ownerKind": "ai",
+      "capital": 652391500,
+      "units": [
+        {
+          "name": "AI Cement 01",
+          "baselineEmissions": 1304783,
+          "normalOperatingProfit": 52191320
+        }
+      ],
+      "overdraftLimit": 326195750
+    },
+    {
+      "name": "AI Cement 02",
+      "sector": "Cement",
+      "ownerKind": "ai",
+      "capital": 652391500,
+      "units": [
+        {
+          "name": "AI Cement 02",
+          "baselineEmissions": 1304783,
+          "normalOperatingProfit": 52191320
+        }
+      ],
+      "overdraftLimit": 326195750
+    },
+    {
+      "name": "AI Cement 03",
+      "sector": "Cement",
+      "ownerKind": "ai",
+      "capital": 652391500,
+      "units": [
+        {
+          "name": "AI Cement 03",
+          "baselineEmissions": 1304783,
+          "normalOperatingProfit": 52191320
+        }
+      ],
+      "overdraftLimit": 326195750
+    },
+    {
+      "name": "AI Cement 04",
+      "sector": "Cement",
+      "ownerKind": "ai",
+      "capital": 652391500,
+      "units": [
+        {
+          "name": "AI Cement 04",
+          "baselineEmissions": 1304783,
+          "normalOperatingProfit": 52191320
+        }
+      ],
+      "overdraftLimit": 326195750
+    },
+    {
+      "name": "AI Cement 05",
+      "sector": "Cement",
+      "ownerKind": "ai",
+      "capital": 652391500,
+      "units": [
+        {
+          "name": "AI Cement 05",
+          "baselineEmissions": 1304783,
+          "normalOperatingProfit": 52191320
+        }
+      ],
+      "overdraftLimit": 326195750
+    },
+    {
+      "name": "AI Cement 06",
+      "sector": "Cement",
+      "ownerKind": "ai",
+      "capital": 652391500,
+      "units": [
+        {
+          "name": "AI Cement 06",
+          "baselineEmissions": 1304783,
+          "normalOperatingProfit": 52191320
+        }
+      ],
+      "overdraftLimit": 326195750
+    },
+    {
+      "name": "AI Cement 07",
+      "sector": "Cement",
+      "ownerKind": "ai",
+      "capital": 652391500,
+      "units": [
+        {
+          "name": "AI Cement 07",
+          "baselineEmissions": 1304783,
+          "normalOperatingProfit": 52191320
+        }
+      ],
+      "overdraftLimit": 326195750
+    },
+    {
+      "name": "AI Cement 08",
+      "sector": "Cement",
+      "ownerKind": "ai",
+      "capital": 652391500,
+      "units": [
+        {
+          "name": "AI Cement 08",
+          "baselineEmissions": 1304783,
+          "normalOperatingProfit": 52191320
+        }
+      ],
+      "overdraftLimit": 326195750
+    },
+    {
+      "name": "AI Cement 09",
+      "sector": "Cement",
+      "ownerKind": "ai",
+      "capital": 652391500,
+      "units": [
+        {
+          "name": "AI Cement 09",
+          "baselineEmissions": 1304783,
+          "normalOperatingProfit": 52191320
+        }
+      ],
+      "overdraftLimit": 326195750
+    },
+    {
+      "name": "AI Cement 10",
+      "sector": "Cement",
+      "ownerKind": "ai",
+      "capital": 652391500,
+      "units": [
+        {
+          "name": "AI Cement 10",
+          "baselineEmissions": 1304783,
+          "normalOperatingProfit": 52191320
+        }
+      ],
+      "overdraftLimit": 326195750
+    },
+    {
+      "name": "AI Cement 11",
+      "sector": "Cement",
+      "ownerKind": "ai",
+      "capital": 652391500,
+      "units": [
+        {
+          "name": "AI Cement 11",
+          "baselineEmissions": 1304783,
+          "normalOperatingProfit": 52191320
+        }
+      ],
+      "overdraftLimit": 326195750
+    },
+    {
+      "name": "AI Cement 12",
+      "sector": "Cement",
+      "ownerKind": "ai",
+      "capital": 652391500,
+      "units": [
+        {
+          "name": "AI Cement 12",
+          "baselineEmissions": 1304783,
+          "normalOperatingProfit": 52191320
+        }
+      ],
+      "overdraftLimit": 326195750
+    },
+    {
+      "name": "AI Cement 13",
+      "sector": "Cement",
+      "ownerKind": "ai",
+      "capital": 652391500,
+      "units": [
+        {
+          "name": "AI Cement 13",
+          "baselineEmissions": 1304783,
+          "normalOperatingProfit": 52191320
+        }
+      ],
+      "overdraftLimit": 326195750
+    },
+    {
+      "name": "AI Cement 14",
+      "sector": "Cement",
+      "ownerKind": "ai",
+      "capital": 652391500,
+      "units": [
+        {
+          "name": "AI Cement 14",
+          "baselineEmissions": 1304783,
+          "normalOperatingProfit": 52191320
+        }
+      ],
+      "overdraftLimit": 326195750
+    },
+    {
+      "name": "AI Cement 15",
+      "sector": "Cement",
+      "ownerKind": "ai",
+      "capital": 652391500,
+      "units": [
+        {
+          "name": "AI Cement 15",
+          "baselineEmissions": 1304783,
+          "normalOperatingProfit": 52191320
+        }
+      ],
+      "overdraftLimit": 326195750
+    },
+    {
+      "name": "AI Cement 16",
+      "sector": "Cement",
+      "ownerKind": "ai",
+      "capital": 652391500,
+      "units": [
+        {
+          "name": "AI Cement 16",
+          "baselineEmissions": 1304783,
+          "normalOperatingProfit": 52191320
+        }
+      ],
+      "overdraftLimit": 326195750
+    },
+    {
+      "name": "AI Cement 17",
+      "sector": "Cement",
+      "ownerKind": "ai",
+      "capital": 652391500,
+      "units": [
+        {
+          "name": "AI Cement 17",
+          "baselineEmissions": 1304783,
+          "normalOperatingProfit": 52191320
+        }
+      ],
+      "overdraftLimit": 326195750
+    },
+    {
+      "name": "AI Cement 18",
+      "sector": "Cement",
+      "ownerKind": "ai",
+      "capital": 652391500,
+      "units": [
+        {
+          "name": "AI Cement 18",
+          "baselineEmissions": 1304783,
+          "normalOperatingProfit": 52191320
+        }
+      ],
+      "overdraftLimit": 326195750
+    },
+    {
+      "name": "AI Cement 19",
+      "sector": "Cement",
+      "ownerKind": "ai",
+      "capital": 652391500,
+      "units": [
+        {
+          "name": "AI Cement 19",
+          "baselineEmissions": 1304783,
+          "normalOperatingProfit": 52191320
+        }
+      ],
+      "overdraftLimit": 326195750
+    },
+    {
+      "name": "AI Cement 20",
+      "sector": "Cement",
+      "ownerKind": "ai",
+      "capital": 652391500,
+      "units": [
+        {
+          "name": "AI Cement 20",
+          "baselineEmissions": 1304783,
+          "normalOperatingProfit": 52191320
+        }
+      ],
+      "overdraftLimit": 326195750
+    },
+    {
+      "name": "AI Cement 21",
+      "sector": "Cement",
+      "ownerKind": "ai",
+      "capital": 652391500,
+      "units": [
+        {
+          "name": "AI Cement 21",
+          "baselineEmissions": 1304783,
+          "normalOperatingProfit": 52191320
+        }
+      ],
+      "overdraftLimit": 326195750
+    },
+    {
+      "name": "AI Cement 22",
+      "sector": "Cement",
+      "ownerKind": "ai",
+      "capital": 652391500,
+      "units": [
+        {
+          "name": "AI Cement 22",
+          "baselineEmissions": 1304783,
+          "normalOperatingProfit": 52191320
+        }
+      ],
+      "overdraftLimit": 326195750
+    },
+    {
+      "name": "AI Cement 23",
+      "sector": "Cement",
+      "ownerKind": "ai",
+      "capital": 652391500,
+      "units": [
+        {
+          "name": "AI Cement 23",
+          "baselineEmissions": 1304783,
+          "normalOperatingProfit": 52191320
+        }
+      ],
+      "overdraftLimit": 326195750
+    },
+    {
+      "name": "AI Cement 24",
+      "sector": "Cement",
+      "ownerKind": "ai",
+      "capital": 652391500,
+      "units": [
+        {
+          "name": "AI Cement 24",
+          "baselineEmissions": 1304783,
+          "normalOperatingProfit": 52191320
+        }
+      ],
+      "overdraftLimit": 326195750
+    },
+    {
+      "name": "AI Cement 25",
+      "sector": "Cement",
+      "ownerKind": "ai",
+      "capital": 652391500,
+      "units": [
+        {
+          "name": "AI Cement 25",
+          "baselineEmissions": 1304783,
+          "normalOperatingProfit": 52191320
+        }
+      ],
+      "overdraftLimit": 326195750
+    },
+    {
+      "name": "AI Cement 26",
+      "sector": "Cement",
+      "ownerKind": "ai",
+      "capital": 652391500,
+      "units": [
+        {
+          "name": "AI Cement 26",
+          "baselineEmissions": 1304783,
+          "normalOperatingProfit": 52191320
+        }
+      ],
+      "overdraftLimit": 326195750
+    },
+    {
+      "name": "AI Cement 27",
+      "sector": "Cement",
+      "ownerKind": "ai",
+      "capital": 652391500,
+      "units": [
+        {
+          "name": "AI Cement 27",
+          "baselineEmissions": 1304783,
+          "normalOperatingProfit": 52191320
+        }
+      ],
+      "overdraftLimit": 326195750
+    },
+    {
+      "name": "AI Cement 28",
+      "sector": "Cement",
+      "ownerKind": "ai",
+      "capital": 652391500,
+      "units": [
+        {
+          "name": "AI Cement 28",
+          "baselineEmissions": 1304783,
+          "normalOperatingProfit": 52191320
+        }
+      ],
+      "overdraftLimit": 326195750
+    },
+    {
+      "name": "AI Cement 29",
+      "sector": "Cement",
+      "ownerKind": "ai",
+      "capital": 652391500,
+      "units": [
+        {
+          "name": "AI Cement 29",
+          "baselineEmissions": 1304783,
+          "normalOperatingProfit": 52191320
+        }
+      ],
+      "overdraftLimit": 326195750
+    },
+    {
+      "name": "AI Cement 30",
+      "sector": "Cement",
+      "ownerKind": "ai",
+      "capital": 652391500,
+      "units": [
+        {
+          "name": "AI Cement 30",
+          "baselineEmissions": 1304783,
+          "normalOperatingProfit": 52191320
+        }
+      ],
+      "overdraftLimit": 326195750
+    },
+    {
+      "name": "AI Cement 31",
+      "sector": "Cement",
+      "ownerKind": "ai",
+      "capital": 652391500,
+      "units": [
+        {
+          "name": "AI Cement 31",
+          "baselineEmissions": 1304783,
+          "normalOperatingProfit": 52191320
+        }
+      ],
+      "overdraftLimit": 326195750
+    },
+    {
+      "name": "AI Cement 32",
+      "sector": "Cement",
+      "ownerKind": "ai",
+      "capital": 652391500,
+      "units": [
+        {
+          "name": "AI Cement 32",
+          "baselineEmissions": 1304783,
+          "normalOperatingProfit": 52191320
+        }
+      ],
+      "overdraftLimit": 326195750
+    },
+    {
+      "name": "AI Cement 33",
+      "sector": "Cement",
+      "ownerKind": "ai",
+      "capital": 652391500,
+      "units": [
+        {
+          "name": "AI Cement 33",
+          "baselineEmissions": 1304783,
+          "normalOperatingProfit": 52191320
+        }
+      ],
+      "overdraftLimit": 326195750
+    },
+    {
+      "name": "AI Cement 34",
+      "sector": "Cement",
+      "ownerKind": "ai",
+      "capital": 652391500,
+      "units": [
+        {
+          "name": "AI Cement 34",
+          "baselineEmissions": 1304783,
+          "normalOperatingProfit": 52191320
+        }
+      ],
+      "overdraftLimit": 326195750
+    },
+    {
+      "name": "AI Cement 35",
+      "sector": "Cement",
+      "ownerKind": "ai",
+      "capital": 652391500,
+      "units": [
+        {
+          "name": "AI Cement 35",
+          "baselineEmissions": 1304783,
+          "normalOperatingProfit": 52191320
+        }
+      ],
+      "overdraftLimit": 326195750
+    },
+    {
+      "name": "AI Cement 36",
+      "sector": "Cement",
+      "ownerKind": "ai",
+      "capital": 652391500,
+      "units": [
+        {
+          "name": "AI Cement 36",
+          "baselineEmissions": 1304783,
+          "normalOperatingProfit": 52191320
+        }
+      ],
+      "overdraftLimit": 326195750
+    },
+    {
+      "name": "AI Cement 37",
+      "sector": "Cement",
+      "ownerKind": "ai",
+      "capital": 652391500,
+      "units": [
+        {
+          "name": "AI Cement 37",
+          "baselineEmissions": 1304783,
+          "normalOperatingProfit": 52191320
+        }
+      ],
+      "overdraftLimit": 326195750
+    },
+    {
+      "name": "AI Cement 38",
+      "sector": "Cement",
+      "ownerKind": "ai",
+      "capital": 652391500,
+      "units": [
+        {
+          "name": "AI Cement 38",
+          "baselineEmissions": 1304783,
+          "normalOperatingProfit": 52191320
+        }
+      ],
+      "overdraftLimit": 326195750
+    },
+    {
+      "name": "AI Cement 39",
+      "sector": "Cement",
+      "ownerKind": "ai",
+      "capital": 652391500,
+      "units": [
+        {
+          "name": "AI Cement 39",
+          "baselineEmissions": 1304783,
+          "normalOperatingProfit": 52191320
+        }
+      ],
+      "overdraftLimit": 326195750
+    },
+    {
+      "name": "AI Cement 40",
+      "sector": "Cement",
+      "ownerKind": "ai",
+      "capital": 652391500,
+      "units": [
+        {
+          "name": "AI Cement 40",
+          "baselineEmissions": 1304783,
+          "normalOperatingProfit": 52191320
+        }
+      ],
+      "overdraftLimit": 326195750
+    },
+    {
+      "name": "AI Cement 41",
+      "sector": "Cement",
+      "ownerKind": "ai",
+      "capital": 652391500,
+      "units": [
+        {
+          "name": "AI Cement 41",
+          "baselineEmissions": 1304783,
+          "normalOperatingProfit": 52191320
+        }
+      ],
+      "overdraftLimit": 326195750
+    },
+    {
+      "name": "AI Cement 42",
+      "sector": "Cement",
+      "ownerKind": "ai",
+      "capital": 652391500,
+      "units": [
+        {
+          "name": "AI Cement 42",
+          "baselineEmissions": 1304783,
+          "normalOperatingProfit": 52191320
+        }
+      ],
+      "overdraftLimit": 326195750
+    },
+    {
+      "name": "AI Cement 43",
+      "sector": "Cement",
+      "ownerKind": "ai",
+      "capital": 652391500,
+      "units": [
+        {
+          "name": "AI Cement 43",
+          "baselineEmissions": 1304783,
+          "normalOperatingProfit": 52191320
+        }
+      ],
+      "overdraftLimit": 326195750
+    },
+    {
+      "name": "AI Cement 44",
+      "sector": "Cement",
+      "ownerKind": "ai",
+      "capital": 652391500,
+      "units": [
+        {
+          "name": "AI Cement 44",
+          "baselineEmissions": 1304783,
+          "normalOperatingProfit": 52191320
+        }
+      ],
+      "overdraftLimit": 326195750
+    },
+    {
+      "name": "AI Cement 45",
+      "sector": "Cement",
+      "ownerKind": "ai",
+      "capital": 652391500,
+      "units": [
+        {
+          "name": "AI Cement 45",
+          "baselineEmissions": 1304783,
+          "normalOperatingProfit": 52191320
+        }
+      ],
+      "overdraftLimit": 326195750
+    },
+    {
+      "name": "AI Cement 46",
+      "sector": "Cement",
+      "ownerKind": "ai",
+      "capital": 652391500,
+      "units": [
+        {
+          "name": "AI Cement 46",
+          "baselineEmissions": 1304783,
+          "normalOperatingProfit": 52191320
+        }
+      ],
+      "overdraftLimit": 326195750
+    },
+    {
+      "name": "AI Cement 47",
+      "sector": "Cement",
+      "ownerKind": "ai",
+      "capital": 652391500,
+      "units": [
+        {
+          "name": "AI Cement 47",
+          "baselineEmissions": 1304783,
+          "normalOperatingProfit": 52191320
+        }
+      ],
+      "overdraftLimit": 326195750
+    },
+    {
+      "name": "AI Cement 48",
+      "sector": "Cement",
+      "ownerKind": "ai",
+      "capital": 652391500,
+      "units": [
+        {
+          "name": "AI Cement 48",
+          "baselineEmissions": 1304783,
+          "normalOperatingProfit": 52191320
+        }
+      ],
+      "overdraftLimit": 326195750
+    },
+    {
+      "name": "AI Cement 49",
+      "sector": "Cement",
+      "ownerKind": "ai",
+      "capital": 652391500,
+      "units": [
+        {
+          "name": "AI Cement 49",
+          "baselineEmissions": 1304783,
+          "normalOperatingProfit": 52191320
+        }
+      ],
+      "overdraftLimit": 326195750
+    },
+    {
+      "name": "AI Cement 50",
+      "sector": "Cement",
+      "ownerKind": "ai",
+      "capital": 652391500,
+      "units": [
+        {
+          "name": "AI Cement 50",
+          "baselineEmissions": 1304783,
+          "normalOperatingProfit": 52191320
+        }
+      ],
+      "overdraftLimit": 326195750
+    },
+    {
+      "name": "AI Cement 51",
+      "sector": "Cement",
+      "ownerKind": "ai",
+      "capital": 652391500,
+      "units": [
+        {
+          "name": "AI Cement 51",
+          "baselineEmissions": 1304783,
+          "normalOperatingProfit": 52191320
+        }
+      ],
+      "overdraftLimit": 326195750
+    },
+    {
+      "name": "AI Cement 52",
+      "sector": "Cement",
+      "ownerKind": "ai",
+      "capital": 652391500,
+      "units": [
+        {
+          "name": "AI Cement 52",
+          "baselineEmissions": 1304783,
+          "normalOperatingProfit": 52191320
+        }
+      ],
+      "overdraftLimit": 326195750
+    },
+    {
+      "name": "AI Cement 53",
+      "sector": "Cement",
+      "ownerKind": "ai",
+      "capital": 652391500,
+      "units": [
+        {
+          "name": "AI Cement 53",
+          "baselineEmissions": 1304783,
+          "normalOperatingProfit": 52191320
+        }
+      ],
+      "overdraftLimit": 326195750
+    },
+    {
+      "name": "AI Cement 54",
+      "sector": "Cement",
+      "ownerKind": "ai",
+      "capital": 652391500,
+      "units": [
+        {
+          "name": "AI Cement 54",
+          "baselineEmissions": 1304783,
+          "normalOperatingProfit": 52191320
+        }
+      ],
+      "overdraftLimit": 326195750
+    },
+    {
+      "name": "AI Cement 55",
+      "sector": "Cement",
+      "ownerKind": "ai",
+      "capital": 652391500,
+      "units": [
+        {
+          "name": "AI Cement 55",
+          "baselineEmissions": 1304783,
+          "normalOperatingProfit": 52191320
+        }
+      ],
+      "overdraftLimit": 326195750
+    },
+    {
+      "name": "AI Cement 56",
+      "sector": "Cement",
+      "ownerKind": "ai",
+      "capital": 652391500,
+      "units": [
+        {
+          "name": "AI Cement 56",
+          "baselineEmissions": 1304783,
+          "normalOperatingProfit": 52191320
+        }
+      ],
+      "overdraftLimit": 326195750
+    },
+    {
+      "name": "AI Cement 57",
+      "sector": "Cement",
+      "ownerKind": "ai",
+      "capital": 652391500,
+      "units": [
+        {
+          "name": "AI Cement 57",
+          "baselineEmissions": 1304783,
+          "normalOperatingProfit": 52191320
+        }
+      ],
+      "overdraftLimit": 326195750
+    },
+    {
+      "name": "AI Cement 58",
+      "sector": "Cement",
+      "ownerKind": "ai",
+      "capital": 652391500,
+      "units": [
+        {
+          "name": "AI Cement 58",
+          "baselineEmissions": 1304783,
+          "normalOperatingProfit": 52191320
+        }
+      ],
+      "overdraftLimit": 326195750
+    },
+    {
+      "name": "AI Cement 59",
+      "sector": "Cement",
+      "ownerKind": "ai",
+      "capital": 652391500,
+      "units": [
+        {
+          "name": "AI Cement 59",
+          "baselineEmissions": 1304783,
+          "normalOperatingProfit": 52191320
+        }
+      ],
+      "overdraftLimit": 326195750
+    },
+    {
+      "name": "AI Cement 60",
+      "sector": "Cement",
+      "ownerKind": "ai",
+      "capital": 652391500,
+      "units": [
+        {
+          "name": "AI Cement 60",
+          "baselineEmissions": 1304783,
+          "normalOperatingProfit": 52191320
+        }
+      ],
+      "overdraftLimit": 326195750
+    },
+    {
+      "name": "AI Cement 61",
+      "sector": "Cement",
+      "ownerKind": "ai",
+      "capital": 652391500,
+      "units": [
+        {
+          "name": "AI Cement 61",
+          "baselineEmissions": 1304783,
+          "normalOperatingProfit": 52191320
+        }
+      ],
+      "overdraftLimit": 326195750
+    },
+    {
+      "name": "AI Cement 62",
+      "sector": "Cement",
+      "ownerKind": "ai",
+      "capital": 652391500,
+      "units": [
+        {
+          "name": "AI Cement 62",
+          "baselineEmissions": 1304783,
+          "normalOperatingProfit": 52191320
+        }
+      ],
+      "overdraftLimit": 326195750
+    },
+    {
+      "name": "AI Cement 63",
+      "sector": "Cement",
+      "ownerKind": "ai",
+      "capital": 652391500,
+      "units": [
+        {
+          "name": "AI Cement 63",
+          "baselineEmissions": 1304783,
+          "normalOperatingProfit": 52191320
+        }
+      ],
+      "overdraftLimit": 326195750
+    },
+    {
+      "name": "AI Cement 64",
+      "sector": "Cement",
+      "ownerKind": "ai",
+      "capital": 652391500,
+      "units": [
+        {
+          "name": "AI Cement 64",
+          "baselineEmissions": 1304783,
+          "normalOperatingProfit": 52191320
+        }
+      ],
+      "overdraftLimit": 326195750
+    },
+    {
+      "name": "AI Cement 65",
+      "sector": "Cement",
+      "ownerKind": "ai",
+      "capital": 652391500,
+      "units": [
+        {
+          "name": "AI Cement 65",
+          "baselineEmissions": 1304783,
+          "normalOperatingProfit": 52191320
+        }
+      ],
+      "overdraftLimit": 326195750
+    },
+    {
+      "name": "AI Cement 66",
+      "sector": "Cement",
+      "ownerKind": "ai",
+      "capital": 652391500,
+      "units": [
+        {
+          "name": "AI Cement 66",
+          "baselineEmissions": 1304783,
+          "normalOperatingProfit": 52191320
+        }
+      ],
+      "overdraftLimit": 326195750
+    },
+    {
+      "name": "AI Cement 67",
+      "sector": "Cement",
+      "ownerKind": "ai",
+      "capital": 652391500,
+      "units": [
+        {
+          "name": "AI Cement 67",
+          "baselineEmissions": 1304783,
+          "normalOperatingProfit": 52191320
+        }
+      ],
+      "overdraftLimit": 326195750
+    },
+    {
+      "name": "AI Cement 68",
+      "sector": "Cement",
+      "ownerKind": "ai",
+      "capital": 652391500,
+      "units": [
+        {
+          "name": "AI Cement 68",
+          "baselineEmissions": 1304783,
+          "normalOperatingProfit": 52191320
+        }
+      ],
+      "overdraftLimit": 326195750
+    },
+    {
+      "name": "AI Cement 69",
+      "sector": "Cement",
+      "ownerKind": "ai",
+      "capital": 652391500,
+      "units": [
+        {
+          "name": "AI Cement 69",
+          "baselineEmissions": 1304783,
+          "normalOperatingProfit": 52191320
+        }
+      ],
+      "overdraftLimit": 326195750
+    },
+    {
+      "name": "AI Cement 70",
+      "sector": "Cement",
+      "ownerKind": "ai",
+      "capital": 652391500,
+      "units": [
+        {
+          "name": "AI Cement 70",
+          "baselineEmissions": 1304783,
+          "normalOperatingProfit": 52191320
+        }
+      ],
+      "overdraftLimit": 326195750
+    },
+    {
+      "name": "AI Cement 71",
+      "sector": "Cement",
+      "ownerKind": "ai",
+      "capital": 652391500,
+      "units": [
+        {
+          "name": "AI Cement 71",
+          "baselineEmissions": 1304783,
+          "normalOperatingProfit": 52191320
+        }
+      ],
+      "overdraftLimit": 326195750
+    },
+    {
+      "name": "AI Cement 72",
+      "sector": "Cement",
+      "ownerKind": "ai",
+      "capital": 652391500,
+      "units": [
+        {
+          "name": "AI Cement 72",
+          "baselineEmissions": 1304783,
+          "normalOperatingProfit": 52191320
+        }
+      ],
+      "overdraftLimit": 326195750
+    },
+    {
+      "name": "AI Cement 73",
+      "sector": "Cement",
+      "ownerKind": "ai",
+      "capital": 652391500,
+      "units": [
+        {
+          "name": "AI Cement 73",
+          "baselineEmissions": 1304783,
+          "normalOperatingProfit": 52191320
+        }
+      ],
+      "overdraftLimit": 326195750
+    },
+    {
+      "name": "AI Cement 74",
+      "sector": "Cement",
+      "ownerKind": "ai",
+      "capital": 652391500,
+      "units": [
+        {
+          "name": "AI Cement 74",
+          "baselineEmissions": 1304783,
+          "normalOperatingProfit": 52191320
+        }
+      ],
+      "overdraftLimit": 326195750
+    },
+    {
+      "name": "AI Cement 75",
+      "sector": "Cement",
+      "ownerKind": "ai",
+      "capital": 652391500,
+      "units": [
+        {
+          "name": "AI Cement 75",
+          "baselineEmissions": 1304783,
+          "normalOperatingProfit": 52191320
+        }
+      ],
+      "overdraftLimit": 326195750
+    },
+    {
+      "name": "AI Cement 76",
+      "sector": "Cement",
+      "ownerKind": "ai",
+      "capital": 652391500,
+      "units": [
+        {
+          "name": "AI Cement 76",
+          "baselineEmissions": 1304783,
+          "normalOperatingProfit": 52191320
+        }
+      ],
+      "overdraftLimit": 326195750
+    },
+    {
+      "name": "AI Cement 77",
+      "sector": "Cement",
+      "ownerKind": "ai",
+      "capital": 652391500,
+      "units": [
+        {
+          "name": "AI Cement 77",
+          "baselineEmissions": 1304783,
+          "normalOperatingProfit": 52191320
+        }
+      ],
+      "overdraftLimit": 326195750
+    },
+    {
+      "name": "AI Cement 78",
+      "sector": "Cement",
+      "ownerKind": "ai",
+      "capital": 652391500,
+      "units": [
+        {
+          "name": "AI Cement 78",
+          "baselineEmissions": 1304783,
+          "normalOperatingProfit": 52191320
+        }
+      ],
+      "overdraftLimit": 326195750
+    },
+    {
+      "name": "AI Cement 79",
+      "sector": "Cement",
+      "ownerKind": "ai",
+      "capital": 652391500,
+      "units": [
+        {
+          "name": "AI Cement 79",
+          "baselineEmissions": 1304783,
+          "normalOperatingProfit": 52191320
+        }
+      ],
+      "overdraftLimit": 326195750
+    },
+    {
+      "name": "AI Cement 80",
+      "sector": "Cement",
+      "ownerKind": "ai",
+      "capital": 652391500,
+      "units": [
+        {
+          "name": "AI Cement 80",
+          "baselineEmissions": 1304783,
+          "normalOperatingProfit": 52191320
+        }
+      ],
+      "overdraftLimit": 326195750
+    },
+    {
+      "name": "AI Cement 81",
+      "sector": "Cement",
+      "ownerKind": "ai",
+      "capital": 652391500,
+      "units": [
+        {
+          "name": "AI Cement 81",
+          "baselineEmissions": 1304783,
+          "normalOperatingProfit": 52191320
+        }
+      ],
+      "overdraftLimit": 326195750
+    },
+    {
+      "name": "AI Cement 82",
+      "sector": "Cement",
+      "ownerKind": "ai",
+      "capital": 652391500,
+      "units": [
+        {
+          "name": "AI Cement 82",
+          "baselineEmissions": 1304783,
+          "normalOperatingProfit": 52191320
+        }
+      ],
+      "overdraftLimit": 326195750
+    },
+    {
+      "name": "AI Cement 83",
+      "sector": "Cement",
+      "ownerKind": "ai",
+      "capital": 652391500,
+      "units": [
+        {
+          "name": "AI Cement 83",
+          "baselineEmissions": 1304783,
+          "normalOperatingProfit": 52191320
+        }
+      ],
+      "overdraftLimit": 326195750
+    },
+    {
+      "name": "AI Cement 84",
+      "sector": "Cement",
+      "ownerKind": "ai",
+      "capital": 652391500,
+      "units": [
+        {
+          "name": "AI Cement 84",
+          "baselineEmissions": 1304783,
+          "normalOperatingProfit": 52191320
+        }
+      ],
+      "overdraftLimit": 326195750
+    },
+    {
+      "name": "AI Cement 85",
+      "sector": "Cement",
+      "ownerKind": "ai",
+      "capital": 652391500,
+      "units": [
+        {
+          "name": "AI Cement 85",
+          "baselineEmissions": 1304783,
+          "normalOperatingProfit": 52191320
+        }
+      ],
+      "overdraftLimit": 326195750
+    },
+    {
+      "name": "AI Cement 86",
+      "sector": "Cement",
+      "ownerKind": "ai",
+      "capital": 652391500,
+      "units": [
+        {
+          "name": "AI Cement 86",
+          "baselineEmissions": 1304783,
+          "normalOperatingProfit": 52191320
+        }
+      ],
+      "overdraftLimit": 326195750
+    },
+    {
+      "name": "AI Cement 87",
+      "sector": "Cement",
+      "ownerKind": "ai",
+      "capital": 652391500,
+      "units": [
+        {
+          "name": "AI Cement 87",
+          "baselineEmissions": 1304783,
+          "normalOperatingProfit": 52191320
+        }
+      ],
+      "overdraftLimit": 326195750
+    },
+    {
+      "name": "AI Cement 88",
+      "sector": "Cement",
+      "ownerKind": "ai",
+      "capital": 652391500,
+      "units": [
+        {
+          "name": "AI Cement 88",
+          "baselineEmissions": 1304783,
+          "normalOperatingProfit": 52191320
+        }
+      ],
+      "overdraftLimit": 326195750
+    },
+    {
+      "name": "AI Cement 89",
+      "sector": "Cement",
+      "ownerKind": "ai",
+      "capital": 652406500,
+      "units": [
+        {
+          "name": "AI Cement 89",
+          "baselineEmissions": 1304813,
+          "normalOperatingProfit": 52192520
+        }
+      ],
+      "overdraftLimit": 326203250
+    },
+    {
+      "name": "Công ty Thép Trường An",
+      "sector": "Steel",
+      "ownerKind": "human",
+      "capital": 464152000,
+      "units": [
+        {
+          "name": "Công ty Thép Trường An",
+          "baselineEmissions": 928304,
+          "normalOperatingProfit": 37132160
+        }
+      ],
+      "overdraftLimit": 232076000
+    },
+    {
+      "name": "AI Steel 01",
+      "sector": "Steel",
+      "ownerKind": "ai",
+      "capital": 464152000,
+      "units": [
+        {
+          "name": "AI Steel 01",
+          "baselineEmissions": 928304,
+          "normalOperatingProfit": 37132160
+        }
+      ],
+      "overdraftLimit": 232076000
+    },
+    {
+      "name": "AI Steel 02",
+      "sector": "Steel",
+      "ownerKind": "ai",
+      "capital": 464152000,
+      "units": [
+        {
+          "name": "AI Steel 02",
+          "baselineEmissions": 928304,
+          "normalOperatingProfit": 37132160
+        }
+      ],
+      "overdraftLimit": 232076000
+    },
+    {
+      "name": "AI Steel 03",
+      "sector": "Steel",
+      "ownerKind": "ai",
+      "capital": 464152000,
+      "units": [
+        {
+          "name": "AI Steel 03",
+          "baselineEmissions": 928304,
+          "normalOperatingProfit": 37132160
+        }
+      ],
+      "overdraftLimit": 232076000
+    },
+    {
+      "name": "AI Steel 04",
+      "sector": "Steel",
+      "ownerKind": "ai",
+      "capital": 464152000,
+      "units": [
+        {
+          "name": "AI Steel 04",
+          "baselineEmissions": 928304,
+          "normalOperatingProfit": 37132160
+        }
+      ],
+      "overdraftLimit": 232076000
+    },
+    {
+      "name": "AI Steel 05",
+      "sector": "Steel",
+      "ownerKind": "ai",
+      "capital": 464152000,
+      "units": [
+        {
+          "name": "AI Steel 05",
+          "baselineEmissions": 928304,
+          "normalOperatingProfit": 37132160
+        }
+      ],
+      "overdraftLimit": 232076000
+    },
+    {
+      "name": "AI Steel 06",
+      "sector": "Steel",
+      "ownerKind": "ai",
+      "capital": 464152000,
+      "units": [
+        {
+          "name": "AI Steel 06",
+          "baselineEmissions": 928304,
+          "normalOperatingProfit": 37132160
+        }
+      ],
+      "overdraftLimit": 232076000
+    },
+    {
+      "name": "AI Steel 07",
+      "sector": "Steel",
+      "ownerKind": "ai",
+      "capital": 464152000,
+      "units": [
+        {
+          "name": "AI Steel 07",
+          "baselineEmissions": 928304,
+          "normalOperatingProfit": 37132160
+        }
+      ],
+      "overdraftLimit": 232076000
+    },
+    {
+      "name": "AI Steel 08",
+      "sector": "Steel",
+      "ownerKind": "ai",
+      "capital": 464152000,
+      "units": [
+        {
+          "name": "AI Steel 08",
+          "baselineEmissions": 928304,
+          "normalOperatingProfit": 37132160
+        }
+      ],
+      "overdraftLimit": 232076000
+    },
+    {
+      "name": "AI Steel 09",
+      "sector": "Steel",
+      "ownerKind": "ai",
+      "capital": 464152000,
+      "units": [
+        {
+          "name": "AI Steel 09",
+          "baselineEmissions": 928304,
+          "normalOperatingProfit": 37132160
+        }
+      ],
+      "overdraftLimit": 232076000
+    },
+    {
+      "name": "AI Steel 10",
+      "sector": "Steel",
+      "ownerKind": "ai",
+      "capital": 464152000,
+      "units": [
+        {
+          "name": "AI Steel 10",
+          "baselineEmissions": 928304,
+          "normalOperatingProfit": 37132160
+        }
+      ],
+      "overdraftLimit": 232076000
+    },
+    {
+      "name": "AI Steel 11",
+      "sector": "Steel",
+      "ownerKind": "ai",
+      "capital": 464152000,
+      "units": [
+        {
+          "name": "AI Steel 11",
+          "baselineEmissions": 928304,
+          "normalOperatingProfit": 37132160
+        }
+      ],
+      "overdraftLimit": 232076000
+    },
+    {
+      "name": "AI Steel 12",
+      "sector": "Steel",
+      "ownerKind": "ai",
+      "capital": 464152000,
+      "units": [
+        {
+          "name": "AI Steel 12",
+          "baselineEmissions": 928304,
+          "normalOperatingProfit": 37132160
+        }
+      ],
+      "overdraftLimit": 232076000
+    },
+    {
+      "name": "AI Steel 13",
+      "sector": "Steel",
+      "ownerKind": "ai",
+      "capital": 464152000,
+      "units": [
+        {
+          "name": "AI Steel 13",
+          "baselineEmissions": 928304,
+          "normalOperatingProfit": 37132160
+        }
+      ],
+      "overdraftLimit": 232076000
+    },
+    {
+      "name": "AI Steel 14",
+      "sector": "Steel",
+      "ownerKind": "ai",
+      "capital": 464152000,
+      "units": [
+        {
+          "name": "AI Steel 14",
+          "baselineEmissions": 928304,
+          "normalOperatingProfit": 37132160
+        }
+      ],
+      "overdraftLimit": 232076000
+    },
+    {
+      "name": "AI Steel 15",
+      "sector": "Steel",
+      "ownerKind": "ai",
+      "capital": 464152000,
+      "units": [
+        {
+          "name": "AI Steel 15",
+          "baselineEmissions": 928304,
+          "normalOperatingProfit": 37132160
+        }
+      ],
+      "overdraftLimit": 232076000
+    },
+    {
+      "name": "AI Steel 16",
+      "sector": "Steel",
+      "ownerKind": "ai",
+      "capital": 464152000,
+      "units": [
+        {
+          "name": "AI Steel 16",
+          "baselineEmissions": 928304,
+          "normalOperatingProfit": 37132160
+        }
+      ],
+      "overdraftLimit": 232076000
+    },
+    {
+      "name": "AI Steel 17",
+      "sector": "Steel",
+      "ownerKind": "ai",
+      "capital": 464152000,
+      "units": [
+        {
+          "name": "AI Steel 17",
+          "baselineEmissions": 928304,
+          "normalOperatingProfit": 37132160
+        }
+      ],
+      "overdraftLimit": 232076000
+    },
+    {
+      "name": "AI Steel 18",
+      "sector": "Steel",
+      "ownerKind": "ai",
+      "capital": 464152000,
+      "units": [
+        {
+          "name": "AI Steel 18",
+          "baselineEmissions": 928304,
+          "normalOperatingProfit": 37132160
+        }
+      ],
+      "overdraftLimit": 232076000
+    },
+    {
+      "name": "AI Steel 19",
+      "sector": "Steel",
+      "ownerKind": "ai",
+      "capital": 464152000,
+      "units": [
+        {
+          "name": "AI Steel 19",
+          "baselineEmissions": 928304,
+          "normalOperatingProfit": 37132160
+        }
+      ],
+      "overdraftLimit": 232076000
+    },
+    {
+      "name": "AI Steel 20",
+      "sector": "Steel",
+      "ownerKind": "ai",
+      "capital": 464152000,
+      "units": [
+        {
+          "name": "AI Steel 20",
+          "baselineEmissions": 928304,
+          "normalOperatingProfit": 37132160
+        }
+      ],
+      "overdraftLimit": 232076000
+    },
+    {
+      "name": "AI Steel 21",
+      "sector": "Steel",
+      "ownerKind": "ai",
+      "capital": 464152000,
+      "units": [
+        {
+          "name": "AI Steel 21",
+          "baselineEmissions": 928304,
+          "normalOperatingProfit": 37132160
+        }
+      ],
+      "overdraftLimit": 232076000
+    },
+    {
+      "name": "AI Steel 22",
+      "sector": "Steel",
+      "ownerKind": "ai",
+      "capital": 464152000,
+      "units": [
+        {
+          "name": "AI Steel 22",
+          "baselineEmissions": 928304,
+          "normalOperatingProfit": 37132160
+        }
+      ],
+      "overdraftLimit": 232076000
+    },
+    {
+      "name": "AI Steel 23",
+      "sector": "Steel",
+      "ownerKind": "ai",
+      "capital": 464152000,
+      "units": [
+        {
+          "name": "AI Steel 23",
+          "baselineEmissions": 928304,
+          "normalOperatingProfit": 37132160
+        }
+      ],
+      "overdraftLimit": 232076000
+    },
+    {
+      "name": "AI Steel 24",
+      "sector": "Steel",
+      "ownerKind": "ai",
+      "capital": 464152000,
+      "units": [
+        {
+          "name": "AI Steel 24",
+          "baselineEmissions": 928304,
+          "normalOperatingProfit": 37132160
+        }
+      ],
+      "overdraftLimit": 232076000
+    },
+    {
+      "name": "AI Steel 25",
+      "sector": "Steel",
+      "ownerKind": "ai",
+      "capital": 464152000,
+      "units": [
+        {
+          "name": "AI Steel 25",
+          "baselineEmissions": 928304,
+          "normalOperatingProfit": 37132160
+        }
+      ],
+      "overdraftLimit": 232076000
+    },
+    {
+      "name": "AI Steel 26",
+      "sector": "Steel",
+      "ownerKind": "ai",
+      "capital": 464152000,
+      "units": [
+        {
+          "name": "AI Steel 26",
+          "baselineEmissions": 928304,
+          "normalOperatingProfit": 37132160
+        }
+      ],
+      "overdraftLimit": 232076000
+    },
+    {
+      "name": "AI Steel 27",
+      "sector": "Steel",
+      "ownerKind": "ai",
+      "capital": 464152000,
+      "units": [
+        {
+          "name": "AI Steel 27",
+          "baselineEmissions": 928304,
+          "normalOperatingProfit": 37132160
+        }
+      ],
+      "overdraftLimit": 232076000
+    },
+    {
+      "name": "AI Steel 28",
+      "sector": "Steel",
+      "ownerKind": "ai",
+      "capital": 464152000,
+      "units": [
+        {
+          "name": "AI Steel 28",
+          "baselineEmissions": 928304,
+          "normalOperatingProfit": 37132160
+        }
+      ],
+      "overdraftLimit": 232076000
+    },
+    {
+      "name": "AI Steel 29",
+      "sector": "Steel",
+      "ownerKind": "ai",
+      "capital": 464152000,
+      "units": [
+        {
+          "name": "AI Steel 29",
+          "baselineEmissions": 928304,
+          "normalOperatingProfit": 37132160
+        }
+      ],
+      "overdraftLimit": 232076000
+    },
+    {
+      "name": "AI Steel 30",
+      "sector": "Steel",
+      "ownerKind": "ai",
+      "capital": 464152000,
+      "units": [
+        {
+          "name": "AI Steel 30",
+          "baselineEmissions": 928304,
+          "normalOperatingProfit": 37132160
+        }
+      ],
+      "overdraftLimit": 232076000
+    },
+    {
+      "name": "AI Steel 31",
+      "sector": "Steel",
+      "ownerKind": "ai",
+      "capital": 464152000,
+      "units": [
+        {
+          "name": "AI Steel 31",
+          "baselineEmissions": 928304,
+          "normalOperatingProfit": 37132160
+        }
+      ],
+      "overdraftLimit": 232076000
+    },
+    {
+      "name": "AI Steel 32",
+      "sector": "Steel",
+      "ownerKind": "ai",
+      "capital": 464152000,
+      "units": [
+        {
+          "name": "AI Steel 32",
+          "baselineEmissions": 928304,
+          "normalOperatingProfit": 37132160
+        }
+      ],
+      "overdraftLimit": 232076000
+    },
+    {
+      "name": "AI Steel 33",
+      "sector": "Steel",
+      "ownerKind": "ai",
+      "capital": 464152000,
+      "units": [
+        {
+          "name": "AI Steel 33",
+          "baselineEmissions": 928304,
+          "normalOperatingProfit": 37132160
+        }
+      ],
+      "overdraftLimit": 232076000
+    },
+    {
+      "name": "AI Steel 34",
+      "sector": "Steel",
+      "ownerKind": "ai",
+      "capital": 464152000,
+      "units": [
+        {
+          "name": "AI Steel 34",
+          "baselineEmissions": 928304,
+          "normalOperatingProfit": 37132160
+        }
+      ],
+      "overdraftLimit": 232076000
+    },
+    {
+      "name": "AI Steel 35",
+      "sector": "Steel",
+      "ownerKind": "ai",
+      "capital": 464152000,
+      "units": [
+        {
+          "name": "AI Steel 35",
+          "baselineEmissions": 928304,
+          "normalOperatingProfit": 37132160
+        }
+      ],
+      "overdraftLimit": 232076000
+    },
+    {
+      "name": "AI Steel 36",
+      "sector": "Steel",
+      "ownerKind": "ai",
+      "capital": 464152000,
+      "units": [
+        {
+          "name": "AI Steel 36",
+          "baselineEmissions": 928304,
+          "normalOperatingProfit": 37132160
+        }
+      ],
+      "overdraftLimit": 232076000
+    },
+    {
+      "name": "AI Steel 37",
+      "sector": "Steel",
+      "ownerKind": "ai",
+      "capital": 464152000,
+      "units": [
+        {
+          "name": "AI Steel 37",
+          "baselineEmissions": 928304,
+          "normalOperatingProfit": 37132160
+        }
+      ],
+      "overdraftLimit": 232076000
+    },
+    {
+      "name": "AI Steel 38",
+      "sector": "Steel",
+      "ownerKind": "ai",
+      "capital": 464152000,
+      "units": [
+        {
+          "name": "AI Steel 38",
+          "baselineEmissions": 928304,
+          "normalOperatingProfit": 37132160
+        }
+      ],
+      "overdraftLimit": 232076000
+    },
+    {
+      "name": "AI Steel 39",
+      "sector": "Steel",
+      "ownerKind": "ai",
+      "capital": 464152000,
+      "units": [
+        {
+          "name": "AI Steel 39",
+          "baselineEmissions": 928304,
+          "normalOperatingProfit": 37132160
+        }
+      ],
+      "overdraftLimit": 232076000
+    },
+    {
+      "name": "AI Steel 40",
+      "sector": "Steel",
+      "ownerKind": "ai",
+      "capital": 464152000,
+      "units": [
+        {
+          "name": "AI Steel 40",
+          "baselineEmissions": 928304,
+          "normalOperatingProfit": 37132160
+        }
+      ],
+      "overdraftLimit": 232076000
+    },
+    {
+      "name": "AI Steel 41",
+      "sector": "Steel",
+      "ownerKind": "ai",
+      "capital": 464152000,
+      "units": [
+        {
+          "name": "AI Steel 41",
+          "baselineEmissions": 928304,
+          "normalOperatingProfit": 37132160
+        }
+      ],
+      "overdraftLimit": 232076000
+    },
+    {
+      "name": "AI Steel 42",
+      "sector": "Steel",
+      "ownerKind": "ai",
+      "capital": 464152000,
+      "units": [
+        {
+          "name": "AI Steel 42",
+          "baselineEmissions": 928304,
+          "normalOperatingProfit": 37132160
+        }
+      ],
+      "overdraftLimit": 232076000
+    },
+    {
+      "name": "AI Steel 43",
+      "sector": "Steel",
+      "ownerKind": "ai",
+      "capital": 464152000,
+      "units": [
+        {
+          "name": "AI Steel 43",
+          "baselineEmissions": 928304,
+          "normalOperatingProfit": 37132160
+        }
+      ],
+      "overdraftLimit": 232076000
+    },
+    {
+      "name": "AI Steel 44",
+      "sector": "Steel",
+      "ownerKind": "ai",
+      "capital": 464152000,
+      "units": [
+        {
+          "name": "AI Steel 44",
+          "baselineEmissions": 928304,
+          "normalOperatingProfit": 37132160
+        }
+      ],
+      "overdraftLimit": 232076000
+    },
+    {
+      "name": "AI Steel 45",
+      "sector": "Steel",
+      "ownerKind": "ai",
+      "capital": 464152000,
+      "units": [
+        {
+          "name": "AI Steel 45",
+          "baselineEmissions": 928304,
+          "normalOperatingProfit": 37132160
+        }
+      ],
+      "overdraftLimit": 232076000
+    },
+    {
+      "name": "AI Steel 46",
+      "sector": "Steel",
+      "ownerKind": "ai",
+      "capital": 464152000,
+      "units": [
+        {
+          "name": "AI Steel 46",
+          "baselineEmissions": 928304,
+          "normalOperatingProfit": 37132160
+        }
+      ],
+      "overdraftLimit": 232076000
+    },
+    {
+      "name": "AI Steel 47",
+      "sector": "Steel",
+      "ownerKind": "ai",
+      "capital": 464152000,
+      "units": [
+        {
+          "name": "AI Steel 47",
+          "baselineEmissions": 928304,
+          "normalOperatingProfit": 37132160
+        }
+      ],
+      "overdraftLimit": 232076000
+    },
+    {
+      "name": "AI Steel 48",
+      "sector": "Steel",
+      "ownerKind": "ai",
+      "capital": 464152000,
+      "units": [
+        {
+          "name": "AI Steel 48",
+          "baselineEmissions": 928304,
+          "normalOperatingProfit": 37132160
+        }
+      ],
+      "overdraftLimit": 232076000
+    },
+    {
+      "name": "AI Steel 49",
+      "sector": "Steel",
+      "ownerKind": "ai",
+      "capital": 464152000,
+      "units": [
+        {
+          "name": "AI Steel 49",
+          "baselineEmissions": 928304,
+          "normalOperatingProfit": 37132160
+        }
+      ],
+      "overdraftLimit": 232076000
+    },
+    {
+      "name": "AI Steel 50",
+      "sector": "Steel",
+      "ownerKind": "ai",
+      "capital": 464152000,
+      "units": [
+        {
+          "name": "AI Steel 50",
+          "baselineEmissions": 928304,
+          "normalOperatingProfit": 37132160
+        }
+      ],
+      "overdraftLimit": 232076000
+    },
+    {
+      "name": "AI Steel 51",
+      "sector": "Steel",
+      "ownerKind": "ai",
+      "capital": 464152000,
+      "units": [
+        {
+          "name": "AI Steel 51",
+          "baselineEmissions": 928304,
+          "normalOperatingProfit": 37132160
+        }
+      ],
+      "overdraftLimit": 232076000
+    },
+    {
+      "name": "AI Steel 52",
+      "sector": "Steel",
+      "ownerKind": "ai",
+      "capital": 464152000,
+      "units": [
+        {
+          "name": "AI Steel 52",
+          "baselineEmissions": 928304,
+          "normalOperatingProfit": 37132160
+        }
+      ],
+      "overdraftLimit": 232076000
+    },
+    {
+      "name": "AI Steel 53",
+      "sector": "Steel",
+      "ownerKind": "ai",
+      "capital": 464152000,
+      "units": [
+        {
+          "name": "AI Steel 53",
+          "baselineEmissions": 928304,
+          "normalOperatingProfit": 37132160
+        }
+      ],
+      "overdraftLimit": 232076000
+    },
+    {
+      "name": "AI Steel 54",
+      "sector": "Steel",
+      "ownerKind": "ai",
+      "capital": 464152000,
+      "units": [
+        {
+          "name": "AI Steel 54",
+          "baselineEmissions": 928304,
+          "normalOperatingProfit": 37132160
+        }
+      ],
+      "overdraftLimit": 232076000
+    },
+    {
+      "name": "AI Steel 55",
+      "sector": "Steel",
+      "ownerKind": "ai",
+      "capital": 464152000,
+      "units": [
+        {
+          "name": "AI Steel 55",
+          "baselineEmissions": 928304,
+          "normalOperatingProfit": 37132160
+        }
+      ],
+      "overdraftLimit": 232076000
+    },
+    {
+      "name": "AI Steel 56",
+      "sector": "Steel",
+      "ownerKind": "ai",
+      "capital": 464152000,
+      "units": [
+        {
+          "name": "AI Steel 56",
+          "baselineEmissions": 928304,
+          "normalOperatingProfit": 37132160
+        }
+      ],
+      "overdraftLimit": 232076000
+    },
+    {
+      "name": "AI Steel 57",
+      "sector": "Steel",
+      "ownerKind": "ai",
+      "capital": 464152000,
+      "units": [
+        {
+          "name": "AI Steel 57",
+          "baselineEmissions": 928304,
+          "normalOperatingProfit": 37132160
+        }
+      ],
+      "overdraftLimit": 232076000
+    },
+    {
+      "name": "AI Steel 58",
+      "sector": "Steel",
+      "ownerKind": "ai",
+      "capital": 464152000,
+      "units": [
+        {
+          "name": "AI Steel 58",
+          "baselineEmissions": 928304,
+          "normalOperatingProfit": 37132160
+        }
+      ],
+      "overdraftLimit": 232076000
+    },
+    {
+      "name": "AI Steel 59",
+      "sector": "Steel",
+      "ownerKind": "ai",
+      "capital": 464152000,
+      "units": [
+        {
+          "name": "AI Steel 59",
+          "baselineEmissions": 928304,
+          "normalOperatingProfit": 37132160
+        }
+      ],
+      "overdraftLimit": 232076000
+    },
+    {
+      "name": "AI Steel 60",
+      "sector": "Steel",
+      "ownerKind": "ai",
+      "capital": 464152000,
+      "units": [
+        {
+          "name": "AI Steel 60",
+          "baselineEmissions": 928304,
+          "normalOperatingProfit": 37132160
+        }
+      ],
+      "overdraftLimit": 232076000
+    },
+    {
+      "name": "AI Steel 61",
+      "sector": "Steel",
+      "ownerKind": "ai",
+      "capital": 464152000,
+      "units": [
+        {
+          "name": "AI Steel 61",
+          "baselineEmissions": 928304,
+          "normalOperatingProfit": 37132160
+        }
+      ],
+      "overdraftLimit": 232076000
+    },
+    {
+      "name": "AI Steel 62",
+      "sector": "Steel",
+      "ownerKind": "ai",
+      "capital": 464152000,
+      "units": [
+        {
+          "name": "AI Steel 62",
+          "baselineEmissions": 928304,
+          "normalOperatingProfit": 37132160
+        }
+      ],
+      "overdraftLimit": 232076000
+    },
+    {
+      "name": "AI Steel 63",
+      "sector": "Steel",
+      "ownerKind": "ai",
+      "capital": 464152000,
+      "units": [
+        {
+          "name": "AI Steel 63",
+          "baselineEmissions": 928304,
+          "normalOperatingProfit": 37132160
+        }
+      ],
+      "overdraftLimit": 232076000
+    },
+    {
+      "name": "AI Steel 64",
+      "sector": "Steel",
+      "ownerKind": "ai",
+      "capital": 464152000,
+      "units": [
+        {
+          "name": "AI Steel 64",
+          "baselineEmissions": 928304,
+          "normalOperatingProfit": 37132160
+        }
+      ],
+      "overdraftLimit": 232076000
+    },
+    {
+      "name": "AI Steel 65",
+      "sector": "Steel",
+      "ownerKind": "ai",
+      "capital": 464152000,
+      "units": [
+        {
+          "name": "AI Steel 65",
+          "baselineEmissions": 928304,
+          "normalOperatingProfit": 37132160
+        }
+      ],
+      "overdraftLimit": 232076000
+    },
+    {
+      "name": "AI Steel 66",
+      "sector": "Steel",
+      "ownerKind": "ai",
+      "capital": 464152000,
+      "units": [
+        {
+          "name": "AI Steel 66",
+          "baselineEmissions": 928304,
+          "normalOperatingProfit": 37132160
+        }
+      ],
+      "overdraftLimit": 232076000
+    },
+    {
+      "name": "AI Steel 67",
+      "sector": "Steel",
+      "ownerKind": "ai",
+      "capital": 464152000,
+      "units": [
+        {
+          "name": "AI Steel 67",
+          "baselineEmissions": 928304,
+          "normalOperatingProfit": 37132160
+        }
+      ],
+      "overdraftLimit": 232076000
+    },
+    {
+      "name": "AI Steel 68",
+      "sector": "Steel",
+      "ownerKind": "ai",
+      "capital": 464152000,
+      "units": [
+        {
+          "name": "AI Steel 68",
+          "baselineEmissions": 928304,
+          "normalOperatingProfit": 37132160
+        }
+      ],
+      "overdraftLimit": 232076000
+    },
+    {
+      "name": "AI Steel 69",
+      "sector": "Steel",
+      "ownerKind": "ai",
+      "capital": 464152000,
+      "units": [
+        {
+          "name": "AI Steel 69",
+          "baselineEmissions": 928304,
+          "normalOperatingProfit": 37132160
+        }
+      ],
+      "overdraftLimit": 232076000
+    },
+    {
+      "name": "AI Steel 70",
+      "sector": "Steel",
+      "ownerKind": "ai",
+      "capital": 464152000,
+      "units": [
+        {
+          "name": "AI Steel 70",
+          "baselineEmissions": 928304,
+          "normalOperatingProfit": 37132160
+        }
+      ],
+      "overdraftLimit": 232076000
+    },
+    {
+      "name": "AI Steel 71",
+      "sector": "Steel",
+      "ownerKind": "ai",
+      "capital": 464152000,
+      "units": [
+        {
+          "name": "AI Steel 71",
+          "baselineEmissions": 928304,
+          "normalOperatingProfit": 37132160
+        }
+      ],
+      "overdraftLimit": 232076000
+    },
+    {
+      "name": "AI Steel 72",
+      "sector": "Steel",
+      "ownerKind": "ai",
+      "capital": 464152000,
+      "units": [
+        {
+          "name": "AI Steel 72",
+          "baselineEmissions": 928304,
+          "normalOperatingProfit": 37132160
+        }
+      ],
+      "overdraftLimit": 232076000
+    },
+    {
+      "name": "AI Steel 73",
+      "sector": "Steel",
+      "ownerKind": "ai",
+      "capital": 464152000,
+      "units": [
+        {
+          "name": "AI Steel 73",
+          "baselineEmissions": 928304,
+          "normalOperatingProfit": 37132160
+        }
+      ],
+      "overdraftLimit": 232076000
+    },
+    {
+      "name": "AI Steel 74",
+      "sector": "Steel",
+      "ownerKind": "ai",
+      "capital": 464152000,
+      "units": [
+        {
+          "name": "AI Steel 74",
+          "baselineEmissions": 928304,
+          "normalOperatingProfit": 37132160
+        }
+      ],
+      "overdraftLimit": 232076000
+    },
+    {
+      "name": "AI Steel 75",
+      "sector": "Steel",
+      "ownerKind": "ai",
+      "capital": 464152000,
+      "units": [
+        {
+          "name": "AI Steel 75",
+          "baselineEmissions": 928304,
+          "normalOperatingProfit": 37132160
+        }
+      ],
+      "overdraftLimit": 232076000
+    },
+    {
+      "name": "AI Steel 76",
+      "sector": "Steel",
+      "ownerKind": "ai",
+      "capital": 464152000,
+      "units": [
+        {
+          "name": "AI Steel 76",
+          "baselineEmissions": 928304,
+          "normalOperatingProfit": 37132160
+        }
+      ],
+      "overdraftLimit": 232076000
+    },
+    {
+      "name": "AI Steel 77",
+      "sector": "Steel",
+      "ownerKind": "ai",
+      "capital": 464152000,
+      "units": [
+        {
+          "name": "AI Steel 77",
+          "baselineEmissions": 928304,
+          "normalOperatingProfit": 37132160
+        }
+      ],
+      "overdraftLimit": 232076000
+    },
+    {
+      "name": "AI Steel 78",
+      "sector": "Steel",
+      "ownerKind": "ai",
+      "capital": 464152000,
+      "units": [
+        {
+          "name": "AI Steel 78",
+          "baselineEmissions": 928304,
+          "normalOperatingProfit": 37132160
+        }
+      ],
+      "overdraftLimit": 232076000
+    },
+    {
+      "name": "AI Steel 79",
+      "sector": "Steel",
+      "ownerKind": "ai",
+      "capital": 464152000,
+      "units": [
+        {
+          "name": "AI Steel 79",
+          "baselineEmissions": 928304,
+          "normalOperatingProfit": 37132160
+        }
+      ],
+      "overdraftLimit": 232076000
+    },
+    {
+      "name": "AI Steel 80",
+      "sector": "Steel",
+      "ownerKind": "ai",
+      "capital": 464152000,
+      "units": [
+        {
+          "name": "AI Steel 80",
+          "baselineEmissions": 928304,
+          "normalOperatingProfit": 37132160
+        }
+      ],
+      "overdraftLimit": 232076000
+    },
+    {
+      "name": "AI Steel 81",
+      "sector": "Steel",
+      "ownerKind": "ai",
+      "capital": 464152000,
+      "units": [
+        {
+          "name": "AI Steel 81",
+          "baselineEmissions": 928304,
+          "normalOperatingProfit": 37132160
+        }
+      ],
+      "overdraftLimit": 232076000
+    },
+    {
+      "name": "AI Steel 82",
+      "sector": "Steel",
+      "ownerKind": "ai",
+      "capital": 464152000,
+      "units": [
+        {
+          "name": "AI Steel 82",
+          "baselineEmissions": 928304,
+          "normalOperatingProfit": 37132160
+        }
+      ],
+      "overdraftLimit": 232076000
+    },
+    {
+      "name": "AI Steel 83",
+      "sector": "Steel",
+      "ownerKind": "ai",
+      "capital": 464152000,
+      "units": [
+        {
+          "name": "AI Steel 83",
+          "baselineEmissions": 928304,
+          "normalOperatingProfit": 37132160
+        }
+      ],
+      "overdraftLimit": 232076000
+    },
+    {
+      "name": "AI Steel 84",
+      "sector": "Steel",
+      "ownerKind": "ai",
+      "capital": 464152000,
+      "units": [
+        {
+          "name": "AI Steel 84",
+          "baselineEmissions": 928304,
+          "normalOperatingProfit": 37132160
+        }
+      ],
+      "overdraftLimit": 232076000
+    },
+    {
+      "name": "AI Steel 85",
+      "sector": "Steel",
+      "ownerKind": "ai",
+      "capital": 464152000,
+      "units": [
+        {
+          "name": "AI Steel 85",
+          "baselineEmissions": 928304,
+          "normalOperatingProfit": 37132160
+        }
+      ],
+      "overdraftLimit": 232076000
+    },
+    {
+      "name": "AI Steel 86",
+      "sector": "Steel",
+      "ownerKind": "ai",
+      "capital": 464152000,
+      "units": [
+        {
+          "name": "AI Steel 86",
+          "baselineEmissions": 928304,
+          "normalOperatingProfit": 37132160
+        }
+      ],
+      "overdraftLimit": 232076000
+    },
+    {
+      "name": "AI Steel 87",
+      "sector": "Steel",
+      "ownerKind": "ai",
+      "capital": 464152000,
+      "units": [
+        {
+          "name": "AI Steel 87",
+          "baselineEmissions": 928304,
+          "normalOperatingProfit": 37132160
+        }
+      ],
+      "overdraftLimit": 232076000
+    },
+    {
+      "name": "AI Steel 88",
+      "sector": "Steel",
+      "ownerKind": "ai",
+      "capital": 464152000,
+      "units": [
+        {
+          "name": "AI Steel 88",
+          "baselineEmissions": 928304,
+          "normalOperatingProfit": 37132160
+        }
+      ],
+      "overdraftLimit": 232076000
+    },
+    {
+      "name": "AI Steel 89",
+      "sector": "Steel",
+      "ownerKind": "ai",
+      "capital": 464152000,
+      "units": [
+        {
+          "name": "AI Steel 89",
+          "baselineEmissions": 928304,
+          "normalOperatingProfit": 37132160
+        }
+      ],
+      "overdraftLimit": 232076000
+    },
+    {
+      "name": "AI Steel 90",
+      "sector": "Steel",
+      "ownerKind": "ai",
+      "capital": 464152000,
+      "units": [
+        {
+          "name": "AI Steel 90",
+          "baselineEmissions": 928304,
+          "normalOperatingProfit": 37132160
+        }
+      ],
+      "overdraftLimit": 232076000
+    },
+    {
+      "name": "AI Steel 91",
+      "sector": "Steel",
+      "ownerKind": "ai",
+      "capital": 464168000,
+      "units": [
+        {
+          "name": "AI Steel 91",
+          "baselineEmissions": 928336,
+          "normalOperatingProfit": 37133440
+        }
+      ],
+      "overdraftLimit": 232084000
+    }
+  ]
+}

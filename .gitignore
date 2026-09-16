@@ -1,0 +1,46 @@
+## Build output
+bin/
+obj/
+[Dd]ebug/
+[Rr]elease/
+artifacts/
+*.binlog
+
+## IDE and user state
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+## Test and coverage output
+[Tt]est[Rr]esult*/
+coverage*.json
+coverage*.xml
+coverage*.info
+*.coverage
+*.coveragexml
+TestResults/
+
+## Fidelity suite writes this on every run
+fidelity-run.md
+
+## Local database files
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+
+## Secrets and local overrides
+appsettings.Development.local.json
+*.pfx
+*.snk
+
+## OS noise
+Thumbs.db
+Desktop.ini
+.DS_Store

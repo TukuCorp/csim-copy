@@ -1,0 +1,22 @@
+<Project>
+
+  <!-- Central package versions. FluentAssertions is pinned to the last Apache-2.0
+       release (7.2.0): 8.x moved to a proprietary licence that requires a paid
+       licence for commercial use, and a commercial Vietnam offering is on the table. -->
+  <PropertyGroup>
+    <FluentAssertionsVersion>7.2.0</FluentAssertionsVersion>
+    <MicrosoftNetTestSdkVersion>17.12.0</MicrosoftNetTestSdkVersion>
+    <XunitVersion>2.9.2</XunitVersion>
+    <XunitRunnerVisualStudioVersion>2.8.2</XunitRunnerVisualStudioVersion>
+    <CoverletCollectorVersion>6.0.2</CoverletCollectorVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageVersion Include="FluentAssertions" Version="$(FluentAssertionsVersion)" />
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="$(MicrosoftNetTestSdkVersion)" />
+    <PackageVersion Include="xunit" Version="$(XunitVersion)" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="$(XunitRunnerVisualStudioVersion)" />
+    <PackageVersion Include="coverlet.collector" Version="$(CoverletCollectorVersion)" />
+  </ItemGroup>
+
+</Project>

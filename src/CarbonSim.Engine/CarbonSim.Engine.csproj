@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <!-- Scenario construction is internal to the engine: only the loader and the tests wire
+         entities together, and the test project exercises that wiring directly. -->
+    <InternalsVisibleTo Include="CarbonSim.Engine.Tests" />
+  </ItemGroup>
+
+</Project>
