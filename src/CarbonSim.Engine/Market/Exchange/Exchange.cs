@@ -1,4 +1,5 @@
 using CarbonSim.Engine.Domain;
+using CarbonSim.Engine.Snapshot;
 
 namespace CarbonSim.Engine.Market.Exchange;
 
@@ -21,6 +22,39 @@ public sealed class Exchange
     }
 
     public IReadOnlyCollection<Product> Products => _books.Keys;
+
+    /// <summary>
+    /// The last order number this exchange handed out. Restoring it matters even though
+    /// cancelled orders are long gone from the books: numbering that started again would reuse
+    /// ids, and cancelling by id would then be ambiguous.
+    /// </summary>
+    internal long LastOrderId => _ids.Last;
+
+    /// <summary>
+    /// Rebuilds the books a snapshot was taken with, in the order they are listed. Books that
+    /// never traded are rebuilt too: an empty book still carries the price its band is anchored
+    /// to, so dropping it would change what the next order may be priced at.
+    /// </summary>
+    internal void Restore(ExchangeSnapshot snapshot)
+    {
+        ArgumentNullException.ThrowIfNull(snapshot);
+
+        _books.Clear();
+
+        foreach (OrderBookSnapshot bookSnapshot in snapshot.Books)
+        {
+            OrderBook book = new(
+                _simulation,
+                bookSnapshot.Product.ToProduct(),
+                _simulation.TradingSystems.Single().Parameters.AuctionFloorPrice,
+                _ids);
+
+            book.Restore(bookSnapshot);
+            _books[book.Product] = book;
+        }
+
+        _ids.Restore(snapshot.LastOrderId);
+    }
 
     /// <summary>The book for a product, created the first time it is needed.</summary>
     public OrderBook Book(Product product)

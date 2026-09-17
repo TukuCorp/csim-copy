@@ -2,6 +2,7 @@ using CarbonSim.Engine.Allocation;
 using CarbonSim.Engine.Domain;
 using CarbonSim.Engine.Finance;
 using CarbonSim.Engine.Market;
+using CarbonSim.Engine.Snapshot;
 
 namespace CarbonSim.Engine.Compliance;
 
@@ -34,6 +35,83 @@ public sealed class ComplianceRegister
 
     /// <summary>The compliance year the simulation is in, or the last one that ended.</summary>
     public int CurrentYear => _simulation.CurrentYear;
+
+    /// <summary>
+    /// Every reconciliation and fine, plus the set of company-years already reconciled. The set
+    /// is captured as well as the results because it is what makes a second reconciliation
+    /// throw rather than pay a company's obligation twice.
+    /// </summary>
+    internal ComplianceRegisterSnapshot ToSnapshot()
+    {
+        return new ComplianceRegisterSnapshot(
+            [.. _results.Select(result => new CompanyComplianceSnapshot(
+                result.Year,
+                result.Company.Id,
+                result.Obligation,
+                result.OffsetsSurrendered,
+                result.AllowancesSurrendered,
+                result.Banked,
+                result.Forfeited,
+                result.Shortfall,
+                result.PenaltyCash,
+                result.PenaltyAllowanceDebit))],
+            [.. _fines.Select(fine => new FineSnapshot(
+                fine.Id,
+                fine.Unit.Id,
+                fine.Company.Id,
+                fine.Amount,
+                fine.Description,
+                fine.Year))],
+            [.. _reconciled
+                .OrderBy(pair => pair.CompanyId)
+                .ThenBy(pair => pair.Year)
+                .Select(pair => new CompanyYearSnapshot(pair.CompanyId, pair.Year))]);
+    }
+
+    /// <summary>
+    /// Puts back the results, fines and reconciled company-years a snapshot was taken with.
+    /// Nothing is reconciled again here: reconciling surrenders instruments and charges cash,
+    /// so a restore that replayed it would move the very balances the snapshot already holds.
+    /// </summary>
+    internal void Restore(ComplianceRegisterSnapshot snapshot)
+    {
+        ArgumentNullException.ThrowIfNull(snapshot);
+
+        _results.Clear();
+        _fines.Clear();
+        _reconciled.Clear();
+
+        foreach (CompanyComplianceSnapshot result in snapshot.Results)
+        {
+            _results.Add(new CompanyCompliance(
+                result.Year,
+                _simulation.FindCompany(result.CompanyId),
+                result.Obligation,
+                result.OffsetsSurrendered,
+                result.AllowancesSurrendered,
+                result.Banked,
+                result.Forfeited,
+                result.Shortfall,
+                result.PenaltyCash,
+                result.PenaltyAllowanceDebit));
+        }
+
+        foreach (FineSnapshot fine in snapshot.Fines)
+        {
+            _fines.Add(new Fine(
+                fine.Id,
+                _simulation.FindUnit(fine.UnitId),
+                _simulation.FindCompany(fine.CompanyId),
+                fine.Amount,
+                fine.Description,
+                fine.Year));
+        }
+
+        foreach (CompanyYearSnapshot pair in snapshot.Reconciled)
+        {
+            _reconciled.Add((pair.CompanyId, pair.Year));
+        }
+    }
 
     /// <summary>Reconciles one company for one year.</summary>
     public CompanyCompliance Reconcile(Company company, int year)

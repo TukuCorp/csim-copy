@@ -79,3 +79,16 @@ dotnet_naming_style.underscore_camel_case.capitalization = camel_case
 dotnet_diagnostic.CA1707.severity = none
 dotnet_diagnostic.CA1861.severity = none
 dotnet_diagnostic.CA1863.severity = none
+
+# Migrations are written by `dotnet ef`, never by hand, and it emits block-scoped namespaces
+# on Windows line endings. Reformatting them would only have to be undone when the next
+# migration is scaffolded; Git still stores them with LF whatever the generator wrote.
+[src/CarbonSim.Data/Migrations/*.cs]
+dotnet_diagnostic.IDE0161.severity = none
+dotnet_diagnostic.IDE0300.severity = none
+dotnet_diagnostic.IDE0301.severity = none
+dotnet_diagnostic.CA1861.severity = none
+# `end_of_line = unset` here would fall back to the machine setting, which on Windows asks for
+# CRLF and contradicts .gitattributes; LF is restated so a regenerated migration only needs a
+# line-ending pass to satisfy `dotnet format`, which the compiler does not care about either way.
+end_of_line = lf

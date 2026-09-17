@@ -1,4 +1,5 @@
 using CarbonSim.Engine.Domain;
+using CarbonSim.Engine.Snapshot;
 
 namespace CarbonSim.Engine.Market;
 
@@ -17,6 +18,44 @@ public sealed class AllowanceLedger
     internal AllowanceLedger(Simulation simulation)
     {
         _simulation = simulation;
+    }
+
+    /// <summary>
+    /// Every balance the ledger is holding, free and escrowed, plus the years whose free
+    /// allocation has already been handed out. Escrow is part of the picture: it is what a
+    /// restored order book and offer list are still counting on.
+    /// </summary>
+    internal AllowanceLedgerSnapshot ToSnapshot()
+    {
+        return new AllowanceLedgerSnapshot(
+            Balances(_available),
+            Balances(_escrowed),
+            [.. _grantedYears.Order()]);
+    }
+
+    /// <summary>Puts back the balances and the granted years a snapshot was taken with.</summary>
+    internal void Restore(AllowanceLedgerSnapshot snapshot)
+    {
+        ArgumentNullException.ThrowIfNull(snapshot);
+
+        _available.Clear();
+        _escrowed.Clear();
+        _grantedYears.Clear();
+
+        foreach (LedgerBalanceSnapshot balance in snapshot.Available)
+        {
+            _available[(balance.CompanyId, balance.Product.ToProduct())] = balance.Volume;
+        }
+
+        foreach (LedgerBalanceSnapshot balance in snapshot.Escrowed)
+        {
+            _escrowed[(balance.CompanyId, balance.Product.ToProduct())] = balance.Volume;
+        }
+
+        foreach (int year in snapshot.GrantedYears)
+        {
+            _grantedYears.Add(year);
+        }
     }
 
     public decimal Available(Company company, Product product) => Balance(_available, company, product);
@@ -125,6 +164,26 @@ public sealed class AllowanceLedger
         ArgumentNullException.ThrowIfNull(company);
 
         return balances.TryGetValue((company.Id, product), out decimal volume) ? volume : 0m;
+    }
+
+    /// <summary>
+    /// Reads a bucket out in company, kind and vintage order, so a snapshot of the same state
+    /// always comes out the same way round and rows can be compared or diffed.
+    /// </summary>
+    private static IReadOnlyList<LedgerBalanceSnapshot> Balances(
+        Dictionary<(int CompanyId, Product Product), decimal> balances)
+    {
+        return
+        [
+            .. balances
+                .Select(entry => new LedgerBalanceSnapshot(
+                    entry.Key.CompanyId,
+                    new ProductSnapshot(entry.Key.Product.Kind, entry.Key.Product.Vintage),
+                    entry.Value))
+                .OrderBy(row => row.CompanyId)
+                .ThenBy(row => row.Product.Kind)
+                .ThenBy(row => row.Product.Vintage),
+        ];
     }
 
     private static void Add(

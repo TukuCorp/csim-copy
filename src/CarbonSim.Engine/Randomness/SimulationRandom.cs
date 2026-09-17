@@ -26,6 +26,16 @@ public sealed class SimulationRandom
 
     public ulong Seed { get; }
 
+    /// <summary>
+    /// Where the stream has got to. Capturing this is what lets a run be saved mid-flight: the
+    /// position is restored as it was rather than replayed, so the next draw is the one the
+    /// original would have made.
+    /// </summary>
+    internal ulong State => _state;
+
+    /// <summary>Puts the stream back where a snapshot found it.</summary>
+    internal void RestoreState(ulong state) => _state = state;
+
     public ulong NextUInt64()
     {
         _state += Increment;

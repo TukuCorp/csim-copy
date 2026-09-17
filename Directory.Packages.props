@@ -9,6 +9,9 @@
     <XunitVersion>2.9.2</XunitVersion>
     <XunitRunnerVisualStudioVersion>2.8.2</XunitRunnerVisualStudioVersion>
     <CoverletCollectorVersion>6.0.2</CoverletCollectorVersion>
+    <EntityFrameworkCoreVersion>9.0.20</EntityFrameworkCoreVersion>
+    <AspNetCoreTestVersion>9.0.20</AspNetCoreTestVersion>
+    <IdentityCoreVersion>9.0.20</IdentityCoreVersion>
   </PropertyGroup>
 
   <ItemGroup>
@@ -17,6 +20,10 @@
     <PackageVersion Include="xunit" Version="$(XunitVersion)" />
     <PackageVersion Include="xunit.runner.visualstudio" Version="$(XunitRunnerVisualStudioVersion)" />
     <PackageVersion Include="coverlet.collector" Version="$(CoverletCollectorVersion)" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Sqlite" Version="$(EntityFrameworkCoreVersion)" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="$(EntityFrameworkCoreVersion)" />
+    <PackageVersion Include="Microsoft.Extensions.Identity.Core" Version="$(IdentityCoreVersion)" />
+    <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="$(AspNetCoreTestVersion)" />
   </ItemGroup>
 
 </Project>

@@ -1,6 +1,7 @@
 using CarbonSim.Engine.Domain;
 using CarbonSim.Engine.Finance;
 using CarbonSim.Engine.Reporting;
+using CarbonSim.Engine.Snapshot;
 
 namespace CarbonSim.Engine.Market.Otc;
 
@@ -20,6 +21,33 @@ public sealed class OtcMarket
         ArgumentNullException.ThrowIfNull(simulation);
 
         _simulation = simulation;
+    }
+
+    /// <summary>
+    /// Puts back every offer in the order it was made, with the state it was left in. An offer
+    /// that is still pending is still holding its seller's escrow, and one that was accepted is
+    /// part of the run's history, so both are put back rather than dropped.
+    /// </summary>
+    internal void Restore(OtcMarketSnapshot snapshot)
+    {
+        ArgumentNullException.ThrowIfNull(snapshot);
+
+        _offers.Clear();
+
+        foreach (OtcOfferSnapshot offer in snapshot.Offers)
+        {
+            _offers.Add(new OtcOffer(
+                offer.Id,
+                _simulation.FindUnit(offer.SellerUnitId),
+                _simulation.FindUnit(offer.BuyerUnitId),
+                offer.Product.ToProduct(),
+                offer.Price,
+                offer.Volume,
+                offer.Year)
+            {
+                State = offer.State,
+            });
+        }
     }
 
     /// <summary>Every offer ever made, in the order it was made.</summary>
@@ -63,7 +91,7 @@ public sealed class OtcMarket
 
         _simulation.Ledger.Escrow(sellerCompany, product, volume);
 
-        OtcOffer offer = new(_offers.Count + 1, seller, buyer, product, price, volume);
+        OtcOffer offer = new(_offers.Count + 1, seller, buyer, product, price, volume, _simulation.CurrentYear);
         _offers.Add(offer);
 
         return offer;

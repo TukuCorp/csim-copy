@@ -1,6 +1,12 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
   <ItemGroup>
+    <!-- PasswordHasher<PlayerAccount> only. The full Identity stack is not used: the host has its
+         own account table and its own notion of a player, and the engine's Player owns companies. -->
+    <PackageReference Include="Microsoft.Extensions.Identity.Core" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\CarbonSim.Engine\CarbonSim.Engine.csproj" />
     <ProjectReference Include="..\CarbonSim.Data\CarbonSim.Data.csproj" />
   </ItemGroup>

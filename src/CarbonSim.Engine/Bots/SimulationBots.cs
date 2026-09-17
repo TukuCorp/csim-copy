@@ -22,6 +22,14 @@ public sealed class SimulationBots
 
     public IReadOnlyList<ComplianceBot> Bots => _bots;
 
+    /// <summary>Rebuilds the fleet from bots a snapshot already holds, in the same order.</summary>
+    internal static SimulationBots Restore(IReadOnlyList<ComplianceBot> bots)
+    {
+        ArgumentNullException.ThrowIfNull(bots);
+
+        return new SimulationBots([.. bots]);
+    }
+
     /// <summary>Builds one bot per company that has anything to automate.</summary>
     public static SimulationBots Create(Simulation simulation, BotSettings? settings = null)
     {

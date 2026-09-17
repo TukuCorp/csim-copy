@@ -1,5 +1,6 @@
 using CarbonSim.Engine.Domain;
 using CarbonSim.Engine.Finance;
+using CarbonSim.Engine.Snapshot;
 
 namespace CarbonSim.Engine.Abatement;
 
@@ -23,6 +24,49 @@ public sealed class AbatementPortfolio
 
     public IReadOnlyList<ImplementedAbatement> All =>
         [.. _byUnit.Values.SelectMany(projects => projects).OrderBy(project => project.ImplementedIn).ThenBy(project => project.Unit.Id)];
+
+    /// <summary>
+    /// Puts back what every unit had committed to. Each project is tied to the option instance
+    /// on its own unit's menu, so the portfolio keeps recognising it as implemented and the
+    /// unit cannot buy the same project twice.
+    /// </summary>
+    internal void Restore(AbatementPortfolioSnapshot snapshot)
+    {
+        ArgumentNullException.ThrowIfNull(snapshot);
+
+        _byUnit.Clear();
+        _shutdowns.Clear();
+
+        foreach (ImplementedAbatementSnapshot project in snapshot.Projects)
+        {
+            Unit unit = _simulation.FindUnit(project.UnitId);
+
+            if (project.OptionIndex < 0 || project.OptionIndex >= unit.AbatementOptions.Count)
+            {
+                throw new ArgumentException(
+                    $"Abatement {project.OptionIndex} of unit {project.UnitId} is not on that unit's menu.",
+                    nameof(snapshot));
+            }
+
+            if (!_byUnit.TryGetValue(unit.Id, out List<ImplementedAbatement>? projects))
+            {
+                projects = [];
+                _byUnit[unit.Id] = projects;
+            }
+
+            projects.Add(new ImplementedAbatement(
+                unit,
+                unit.AbatementOptions[project.OptionIndex],
+                project.ImplementedIn,
+                project.OperatingFromYear,
+                project.ExpiresAfterYear));
+        }
+
+        foreach (UnitYearSnapshot shutdown in snapshot.Shutdowns)
+        {
+            _shutdowns.Add((shutdown.UnitId, shutdown.Year));
+        }
+    }
 
     public IReadOnlyList<ImplementedAbatement> For(Unit unit)
     {

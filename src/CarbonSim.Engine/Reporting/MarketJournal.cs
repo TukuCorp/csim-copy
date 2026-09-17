@@ -1,5 +1,6 @@
 using CarbonSim.Engine.Domain;
 using CarbonSim.Engine.Market;
+using CarbonSim.Engine.Snapshot;
 
 namespace CarbonSim.Engine.Reporting;
 
@@ -45,6 +46,32 @@ public sealed class MarketJournal
     }
 
     public IReadOnlyList<MarketTrade> Trades => _trades;
+
+    /// <summary>
+    /// Puts back every trade in the order and with the sequence numbers it was recorded under,
+    /// so the reports, the price averages and later trades all read as one history. A trade's
+    /// channel and price are stored rather than re-derived: a cleared auction is gone from the
+    /// market long before the report is read.
+    /// </summary>
+    internal void Restore(MarketJournalSnapshot snapshot)
+    {
+        ArgumentNullException.ThrowIfNull(snapshot);
+
+        _trades.Clear();
+
+        foreach (MarketTradeSnapshot trade in snapshot.Trades)
+        {
+            _trades.Add(new MarketTrade(
+                trade.Sequence,
+                trade.Year,
+                trade.Channel,
+                trade.Product.ToProduct(),
+                trade.Price,
+                trade.Volume,
+                _simulation.FindCompany(trade.BuyerCompanyId),
+                trade.SellerCompanyId is { } sellerId ? _simulation.FindCompany(sellerId) : null));
+        }
+    }
 
     /// <summary>Trades between two years inclusive, optionally one channel and one instrument kind.</summary>
     public IEnumerable<MarketTrade> Between(int fromYear, int toYear, TradeChannel? channel = null, ProductKind? kind = null)

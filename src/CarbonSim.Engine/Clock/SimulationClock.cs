@@ -1,4 +1,5 @@
 using CarbonSim.Engine.Domain;
+using CarbonSim.Engine.Snapshot;
 
 namespace CarbonSim.Engine.Clock;
 
@@ -132,6 +133,48 @@ public sealed class SimulationClock
 
             return elapsed < opens ? opens - elapsed : TimeSpan.Zero;
         }
+    }
+
+    /// <summary>
+    /// The clock's own position and bookkeeping. The through-markers are captured as well as
+    /// the offset: they are what stops the same auction-opening or year-ending notice being
+    /// raised again after a restore, and re-running the year from zero would send every notice
+    /// a second time.
+    /// </summary>
+    internal ClockSnapshot ToSnapshot()
+    {
+        return new ClockSnapshot(
+            State,
+            CurrentYear,
+            _elapsed,
+            _runningSince,
+            _haltAt,
+            _openNoticedThrough,
+            _openedThrough,
+            _closeNoticedThrough,
+            _closedThrough,
+            _haltedForYearEnd,
+            _options.PauseAfterAuction,
+            _options.AuctionNotice);
+    }
+
+    /// <summary>
+    /// Puts back the position and notice markers a snapshot was taken with. The options are
+    /// part of the clock's construction, so they arrive through the constructor rather than
+    /// here; everything that moves while a run is played is put back below.
+    /// </summary>
+    internal void Restore(ClockSnapshot snapshot)
+    {
+        ArgumentNullException.ThrowIfNull(snapshot);
+
+        _elapsed = snapshot.Elapsed;
+        _runningSince = snapshot.RunningSince;
+        _haltAt = snapshot.HaltAt;
+        _openNoticedThrough = snapshot.OpenNoticedThrough;
+        _openedThrough = snapshot.OpenedThrough;
+        _closeNoticedThrough = snapshot.CloseNoticedThrough;
+        _closedThrough = snapshot.ClosedThrough;
+        _haltedForYearEnd = snapshot.HaltedForYearEnd;
     }
 
     /// <summary>Begins year 1. Only a pending simulation can start.</summary>

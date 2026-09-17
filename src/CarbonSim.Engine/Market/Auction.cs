@@ -1,6 +1,7 @@
 using CarbonSim.Engine.Domain;
 using CarbonSim.Engine.Finance;
 using CarbonSim.Engine.Reporting;
+using CarbonSim.Engine.Snapshot;
 
 namespace CarbonSim.Engine.Market;
 
@@ -17,8 +18,19 @@ public sealed class Auction
     private readonly Simulation _simulation;
     private readonly Parameters _parameters;
     private readonly List<AuctionBid> _bids = [];
+    private readonly List<AuctionResult> _results = [];
 
     internal Auction(Simulation simulation, int year, int sequence, IReadOnlyList<AuctionLot> lots)
+        : this(simulation, year, sequence, lots, offersLots: true)
+    {
+    }
+
+    /// <summary>
+    /// Builds an auction. <paramref name="offersLots"/> is false only when a snapshot is being
+    /// restored: a restored auction must not take its lots out of the government's reserve a
+    /// second time, because the reserve is put back as it was.
+    /// </summary>
+    private Auction(Simulation simulation, int year, int sequence, IReadOnlyList<AuctionLot> lots, bool offersLots)
     {
         ArgumentNullException.ThrowIfNull(simulation);
         ArgumentNullException.ThrowIfNull(lots);
@@ -34,9 +46,12 @@ public sealed class Auction
         Sequence = sequence;
         Lots = lots;
 
-        foreach (AuctionLot lot in lots)
+        if (offersLots)
         {
-            simulation.Government.Offer(lot.Vintage, lot.Volume);
+            foreach (AuctionLot lot in lots)
+            {
+                simulation.Government.Offer(lot.Vintage, lot.Volume);
+            }
         }
 
         UnsoldVolume = OfferedVolume;
@@ -51,6 +66,14 @@ public sealed class Auction
 
     /// <summary>The bids placed so far, in the order they arrived.</summary>
     public IReadOnlyList<AuctionBid> Bids => _bids;
+
+    /// <summary>
+    /// What each vintage did when the auction cleared, empty while it is open. The uniform
+    /// price is worked out once, at clearing, and nothing else in the run keeps it — the journal
+    /// records the trades it produced but not the offer they came out of — so it is kept here
+    /// for the administrator's screens and for a snapshot.
+    /// </summary>
+    internal IReadOnlyList<AuctionResult> Results => _results;
 
     public bool IsCleared { get; private set; }
 
@@ -123,7 +146,9 @@ public sealed class Auction
 
         foreach (AuctionLot lot in Lots)
         {
-            results.Add(ClearLot(lot));
+            AuctionResult result = ClearLot(lot);
+            results.Add(result);
+            _results.Add(result);
         }
 
         return results;
@@ -217,4 +242,55 @@ public sealed class Auction
     }
 
     public override string ToString() => $"Year {Year} auction {Sequence}";
+
+    /// <summary>
+    /// Rebuilds an auction from a snapshot: its lots without offering them again, its bids, how
+    /// far clearing got, and what clearing produced. The bids are rebuilt first and the results
+    /// are resolved against them, so a restored award still points at the bid that won.
+    /// </summary>
+    internal static Auction Restore(Simulation simulation, AuctionSnapshot snapshot)
+    {
+        ArgumentNullException.ThrowIfNull(simulation);
+        ArgumentNullException.ThrowIfNull(snapshot);
+
+        Auction auction = new(
+            simulation,
+            snapshot.Year,
+            snapshot.Sequence,
+            [.. snapshot.Lots.Select(lot => new AuctionLot(lot.Vintage, lot.Volume, lot.IsForward))],
+            offersLots: false);
+
+        foreach (AuctionBidSnapshot bid in snapshot.Bids)
+        {
+            auction._bids.Add(new AuctionBid(
+                bid.Id,
+                simulation.FindUnit(bid.UnitId),
+                bid.Vintage,
+                bid.Price,
+                bid.Volume));
+        }
+
+        auction.IsCleared = snapshot.IsCleared;
+        auction.UnsoldVolume = snapshot.UnsoldVolume;
+
+        foreach (AuctionResultSnapshot result in snapshot.Results)
+        {
+            auction._results.Add(new AuctionResult(
+                auction.Year,
+                auction.Sequence,
+                result.Vintage,
+                result.OfferedVolume,
+                result.ClearingPrice,
+                [.. result.Awards.Select(award => new AuctionAward(auction.Bid(award.BidId), award.Volume, award.Cost))],
+                [.. result.RejectedBidIds.Select(auction.Bid)]));
+        }
+
+        return auction;
+    }
+
+    private AuctionBid Bid(int id)
+    {
+        return _bids.FirstOrDefault(bid => bid.Id == id)
+            ?? throw new KeyNotFoundException($"Auction {Sequence} of year {Year} has no bid {id}.");
+    }
 }

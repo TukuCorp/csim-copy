@@ -1,4 +1,5 @@
 using CarbonSim.Engine.Allocation;
+using CarbonSim.Engine.Snapshot;
 
 namespace CarbonSim.Engine.Market;
 
@@ -29,6 +30,36 @@ public sealed class GovernmentAccount
     /// <summary>Total allowances of a vintage the government was given by the cap.</summary>
     public decimal Issued(int vintage) =>
         vintage >= 1 && vintage <= _plan.Years.Count ? _plan.AuctionableVolumeForYear(vintage) : 0m;
+
+    /// <summary>
+    /// What the government holds and has raised, vintage by vintage. The reserve is what the
+    /// auctions draw from and pay back into; the issued volumes record what the cap handed over
+    /// in the first place, so a host can show the two side by side.
+    /// </summary>
+    internal GovernmentSnapshot ToSnapshot()
+    {
+        return new GovernmentSnapshot(
+            Revenue,
+            _issued,
+            [.. _plan.Years.Select(vintage => new VintageVolumeSnapshot(vintage, Held(vintage)))],
+            [.. _plan.Years.Select(vintage => new VintageVolumeSnapshot(vintage, Issued(vintage)))]);
+    }
+
+    /// <summary>Puts back the reserve, the revenue and the issue flag a snapshot was taken with.</summary>
+    internal void Restore(GovernmentSnapshot snapshot)
+    {
+        ArgumentNullException.ThrowIfNull(snapshot);
+
+        _reserve.Clear();
+
+        foreach (VintageVolumeSnapshot held in snapshot.Reserve)
+        {
+            _reserve[held.Vintage] = held.Volume;
+        }
+
+        _issued = snapshot.HasIssued;
+        Revenue = snapshot.Revenue;
+    }
 
     /// <summary>Hands the government every year's auctionable volume at once; done once per run.</summary>
     internal void IssueAll()

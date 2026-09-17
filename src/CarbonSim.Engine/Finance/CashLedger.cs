@@ -1,4 +1,5 @@
 using CarbonSim.Engine.Domain;
+using CarbonSim.Engine.Snapshot;
 
 namespace CarbonSim.Engine.Finance;
 
@@ -19,6 +20,30 @@ public sealed class CashLedger
     }
 
     public IReadOnlyList<CashMovement> Movements => _movements;
+
+    /// <summary>
+    /// Puts back every movement in the order and with the sequence numbers it was recorded
+    /// under. Later movements carry on from there, so a restored run's ledger reads as one
+    /// uninterrupted history. Company balances are put back with the companies themselves, by
+    /// <see cref="Domain.Company.Restore"/>.
+    /// </summary>
+    internal void Restore(CashLedgerSnapshot snapshot)
+    {
+        ArgumentNullException.ThrowIfNull(snapshot);
+
+        _movements.Clear();
+
+        foreach (CashMovementSnapshot movement in snapshot.Movements)
+        {
+            _movements.Add(new CashMovement(
+                movement.Sequence,
+                movement.Year,
+                _simulation.FindCompany(movement.CompanyId),
+                movement.Category,
+                movement.Amount,
+                movement.Description));
+        }
+    }
 
     /// <summary>Money the company could spend right now.</summary>
     public decimal Available(Company company)

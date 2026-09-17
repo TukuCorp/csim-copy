@@ -5,6 +5,7 @@ using CarbonSim.Engine.Market;
 using CarbonSim.Engine.Market.Exchange;
 using CarbonSim.Engine.Randomness;
 using CarbonSim.Engine.Reporting;
+using CarbonSim.Engine.Snapshot;
 
 namespace CarbonSim.Engine.Bots;
 
@@ -38,19 +39,40 @@ public sealed class ComplianceBot
         BotSettings settings,
         SimulationRandom random,
         decimal referencePrice)
+        : this(
+            company,
+            units,
+            settings,
+            random,
+            referencePrice,
+            new Dictionary<BotTrigger, decimal>
+            {
+                // Fixed fractions of the year with a little jitter, drawn in one deterministic order.
+                [BotTrigger.Abatement] = random.NextDecimal(0.01m, 0.04m),
+                [BotTrigger.Trade] = random.NextDecimal(0.40m, 0.60m),
+            })
+    {
+    }
+
+    /// <summary>
+    /// Builds a bot with trigger times already in hand. Only a restore uses this: the times came
+    /// out of the simulation's random stream, so re-drawing them on load would both move the
+    /// stream on and change when every bot in the run acts.
+    /// </summary>
+    private ComplianceBot(
+        Company company,
+        IReadOnlyList<Unit> units,
+        BotSettings settings,
+        SimulationRandom random,
+        decimal expectedPrice,
+        Dictionary<BotTrigger, decimal> triggerAt)
     {
         _company = company;
         _units = [.. units];
         _settings = settings;
         _random = random;
-        _expectedPrice = referencePrice;
-
-        // Fixed fractions of the year with a little jitter, drawn in one deterministic order.
-        _triggerAt = new Dictionary<BotTrigger, decimal>
-        {
-            [BotTrigger.Abatement] = random.NextDecimal(0.01m, 0.04m),
-            [BotTrigger.Trade] = random.NextDecimal(0.40m, 0.60m),
-        };
+        _expectedPrice = expectedPrice;
+        _triggerAt = triggerAt;
     }
 
     public Company Company => _company;
@@ -64,6 +86,82 @@ public sealed class ComplianceBot
 
     /// <summary>When in the year this bot acts, as a fraction of the year.</summary>
     public decimal TriggerTime(BotTrigger trigger) => _triggerAt[trigger];
+
+    /// <summary>
+    /// Everything the bot has decided and is waiting to do: the units it trades for, its
+    /// trigger times, what it thinks an allowance is worth, which triggers it has already acted
+    /// on this year and which auction sections it has already bid into. Without the last two, a
+    /// restored bot would repeat this year's abatement and bid into the same auction twice.
+    /// </summary>
+    internal BotSnapshot ToSnapshot()
+    {
+        return new BotSnapshot(
+            _company.Id,
+            [.. _units.Select(unit => unit.Id)],
+            new BotSettingsSnapshot(
+                _settings.Difficulty,
+                _settings.AbatementMargin,
+                _settings.BidPriceNoise,
+                _settings.BidVolumeFraction,
+                _settings.OffsetDiscount,
+                _settings.ReservationPriceFactor),
+            _expectedPrice,
+            [.. _triggerAt
+                .OrderBy(pair => pair.Key)
+                .Select(pair => new BotTriggerTimeSnapshot(pair.Key, pair.Value))],
+            [.. _done
+                .OrderBy(entry => entry.Year)
+                .ThenBy(entry => entry.Trigger)
+                .Select(entry => new BotTriggerDoneSnapshot(entry.Year, entry.Trigger))],
+            [.. _bidIn
+                .OrderBy(entry => entry.Year)
+                .ThenBy(entry => entry.Section)
+                .Select(entry => new BotSectionSnapshot(entry.Year, entry.Section))]);
+    }
+
+    /// <summary>Rebuilds a bot with the trigger times and progress a snapshot found it with.</summary>
+    internal static ComplianceBot Restore(
+        Company company,
+        IReadOnlyList<Unit> units,
+        SimulationRandom random,
+        BotSnapshot snapshot)
+    {
+        ArgumentNullException.ThrowIfNull(company);
+        ArgumentNullException.ThrowIfNull(units);
+        ArgumentNullException.ThrowIfNull(random);
+        ArgumentNullException.ThrowIfNull(snapshot);
+
+        ComplianceBot bot = new(
+            company,
+            units,
+            Rebuild(snapshot.Settings),
+            random,
+            snapshot.ExpectedPrice,
+            snapshot.TriggerTimes.ToDictionary(time => time.Trigger, time => time.AtFractionOfYear));
+
+        foreach (BotTriggerDoneSnapshot done in snapshot.Done)
+        {
+            bot._done.Add((done.Year, done.Trigger));
+        }
+
+        foreach (BotSectionSnapshot section in snapshot.BidIn)
+        {
+            bot._bidIn.Add((section.Year, section.Section));
+        }
+
+        return bot;
+    }
+
+    private static BotSettings Rebuild(BotSettingsSnapshot snapshot)
+    {
+        return new BotSettings(
+            snapshot.Difficulty,
+            snapshot.AbatementMargin,
+            snapshot.BidPriceNoise,
+            snapshot.BidVolumeFraction,
+            snapshot.OffsetDiscount,
+            snapshot.ReservationPriceFactor);
+    }
 
     /// <summary>
     /// Gives the bot its turn. Whatever is due for the time the clock is showing gets done,

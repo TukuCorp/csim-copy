@@ -21,6 +21,18 @@ public sealed class AuctionSchedule
     public IReadOnlyList<Auction> Auctions { get; }
 
     /// <summary>
+    /// Rebuilds a schedule from auctions a snapshot already holds. The auctions are taken as
+    /// they are rather than rebuilt through <see cref="Build"/>: building offers lots out of the
+    /// government's reserve, and a restore puts the reserve back exactly as it was.
+    /// </summary>
+    internal static AuctionSchedule Restore(IReadOnlyList<Auction> auctions)
+    {
+        ArgumentNullException.ThrowIfNull(auctions);
+
+        return new AuctionSchedule(auctions);
+    }
+
+    /// <summary>
     /// Builds the whole run's auctions and offers their lots out of the government's issue.
     /// <paramref name="forwardVintageShare"/> is the share of a later year's volume sold early
     /// in the previous year's last auction (0 = no forward sales).

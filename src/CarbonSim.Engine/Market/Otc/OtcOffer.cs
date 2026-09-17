@@ -9,7 +9,7 @@ namespace CarbonSim.Engine.Market.Otc;
 /// </summary>
 public sealed class OtcOffer
 {
-    internal OtcOffer(long id, Unit seller, Unit buyer, Product product, decimal price, decimal volume)
+    internal OtcOffer(long id, Unit seller, Unit buyer, Product product, decimal price, decimal volume, int year)
     {
         Id = id;
         Seller = seller;
@@ -17,10 +17,14 @@ public sealed class OtcOffer
         Product = product;
         Price = price;
         Volume = volume;
+        Year = year;
         State = OtcOfferState.Pending;
     }
 
     public long Id { get; }
+
+    /// <summary>The virtual year the offer was made in, stamped the way a trade's year is.</summary>
+    public int Year { get; }
 
     public Unit Seller { get; }
 

@@ -1,3 +1,5 @@
+using CarbonSim.Engine.Snapshot;
+
 namespace CarbonSim.Engine.Domain;
 
 /// <summary>A participating company: one owner and one or more emitting units.</summary>
@@ -6,6 +8,7 @@ public sealed class Company
     private readonly List<Unit> _units = [];
 
     public Company(int id, string name, Sector sector, Player owner, decimal capital, decimal overdraftLimit = 0m)
+        : this(id, name, sector, owner, overdraftLimit)
     {
         if (string.IsNullOrWhiteSpace(name))
         {
@@ -25,11 +28,21 @@ public sealed class Company
         ArgumentNullException.ThrowIfNull(sector);
         ArgumentNullException.ThrowIfNull(owner);
 
-        Id = id;
         Name = name.Trim();
+        Capital = capital;
+    }
+
+    /// <summary>
+    /// Builds a company from stored state. A run can end a year with a negative balance, so the
+    /// opening-capital rule does not apply to a company being reloaded; the balances are left
+    /// for <see cref="Restore"/> to put back exactly as they were.
+    /// </summary>
+    private Company(int id, string name, Sector sector, Player owner, decimal overdraftLimit)
+    {
+        Id = id;
+        Name = name;
         Sector = sector;
         Owner = owner;
-        Capital = capital;
         OverdraftLimit = overdraftLimit;
     }
 
@@ -70,6 +83,18 @@ public sealed class Company
         }
 
         _units.Add(unit);
+    }
+
+    /// <summary>Rebuilds a company with the balances a snapshot found it holding.</summary>
+    internal static Company Restore(CompanySnapshot snapshot, Sector sector, Player owner)
+    {
+        ArgumentNullException.ThrowIfNull(snapshot);
+
+        return new Company(snapshot.Id, snapshot.Name, sector, owner, snapshot.OverdraftLimit)
+        {
+            Capital = snapshot.Capital,
+            EscrowedCash = snapshot.EscrowedCash,
+        };
     }
 
     public override string ToString() => Name;

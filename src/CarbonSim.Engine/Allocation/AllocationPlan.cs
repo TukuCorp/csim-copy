@@ -1,4 +1,5 @@
 using CarbonSim.Engine.Domain;
+using CarbonSim.Engine.Snapshot;
 
 namespace CarbonSim.Engine.Allocation;
 
@@ -138,6 +139,48 @@ public sealed class AllocationPlan
         return _growthByUnit.TryGetValue(unit.Id, out decimal growth)
             ? growth
             : throw new KeyNotFoundException($"Unit {unit.Id} is not part of this allocation plan.");
+    }
+
+    /// <summary>
+    /// Puts back the plan a snapshot was taken with, instead of recomputing it. The growth draw
+    /// is restored rather than repeated: it came out of the simulation's random stream, so
+    /// re-drawing it would both change this plan's business-as-usual path and shift every later
+    /// draw in the run.
+    /// </summary>
+    internal void Restore(AllocationPlanSnapshot snapshot)
+    {
+        ArgumentNullException.ThrowIfNull(snapshot);
+
+        if (snapshot.Caps.Count != _caps.Length || snapshot.FreeAllocation.Count != _freeAllocation.Length)
+        {
+            throw new ArgumentException(
+                $"The plan covers {_caps.Length} years but the snapshot covers {snapshot.Caps.Count}.",
+                nameof(snapshot));
+        }
+
+        for (int index = 0; index < snapshot.Caps.Count; index++)
+        {
+            _caps[index] = snapshot.Caps[index];
+            _freeAllocation[index] = snapshot.FreeAllocation[index];
+        }
+
+        _allocationByUnit.Clear();
+        _bauByUnit.Clear();
+        _growthByUnit.Clear();
+
+        foreach (UnitAllocationSnapshot unit in snapshot.Units)
+        {
+            if (unit.FreeAllocation.Count != _caps.Length || unit.BausEmissions.Count != _caps.Length)
+            {
+                throw new ArgumentException(
+                    $"Unit {unit.UnitId} has {unit.FreeAllocation.Count} years in the snapshot but the plan covers {_caps.Length}.",
+                    nameof(snapshot));
+            }
+
+            _growthByUnit[unit.UnitId] = unit.BausGrowth;
+            _allocationByUnit[unit.UnitId] = [.. unit.FreeAllocation];
+            _bauByUnit[unit.UnitId] = [.. unit.BausEmissions];
+        }
     }
 
     private decimal[] AllocationFor(Unit unit, int year)

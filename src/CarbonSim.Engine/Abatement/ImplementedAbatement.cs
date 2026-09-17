@@ -10,12 +10,32 @@ namespace CarbonSim.Engine.Abatement;
 public sealed class ImplementedAbatement
 {
     internal ImplementedAbatement(Unit unit, AbatementOption option, int implementedIn)
+        : this(
+            unit,
+            option,
+            implementedIn,
+            implementedIn + option.ImplementationYears,
+            implementedIn + option.ImplementationYears + option.LifetimeYears - 1)
+    {
+    }
+
+    /// <summary>
+    /// Rebuilds a project with the years it was stored with, rather than working them out from
+    /// its option again: the running years are part of what the run committed to, so they are
+    /// put back exactly as they were.
+    /// </summary>
+    internal ImplementedAbatement(
+        Unit unit,
+        AbatementOption option,
+        int implementedIn,
+        int operatingFromYear,
+        int expiresAfterYear)
     {
         Unit = unit;
         Option = option;
         ImplementedIn = implementedIn;
-        OperatingFromYear = implementedIn + option.ImplementationYears;
-        ExpiresAfterYear = OperatingFromYear + option.LifetimeYears - 1;
+        OperatingFromYear = operatingFromYear;
+        ExpiresAfterYear = expiresAfterYear;
     }
 
     public Unit Unit { get; }

@@ -5,6 +5,7 @@ using CarbonSim.Engine.Finance;
 using CarbonSim.Engine.Market;
 using CarbonSim.Engine.Randomness;
 using CarbonSim.Engine.Reporting;
+using CarbonSim.Engine.Snapshot;
 
 namespace CarbonSim.Engine.Domain;
 
@@ -88,10 +89,10 @@ public sealed class Simulation
             players);
     }
 
-    public Guid Id { get; }
+    public Guid Id { get; private set; }
 
     /// <summary>The seed this run was created from; reporting it makes a run reproducible.</summary>
-    public ulong Seed { get; }
+    public ulong Seed { get; private set; }
 
     /// <summary>The single random stream of the simulation; every draw in the engine comes from here.</summary>
     public SimulationRandom Random { get; }
@@ -139,6 +140,22 @@ public sealed class Simulation
     public int CurrentYear { get; internal set; }
 
     public Unit FindUnit(int id) => Find(_unitsById, id, "unit");
+
+    /// <summary>
+    /// Puts back the identity and clock state a snapshot was taken with. A restored simulation
+    /// is built from the same seed, so everything the seed derives is already right; the
+    /// identifier and the year are set explicitly rather than assumed, so a snapshot stays the
+    /// source of truth even if the way they are derived ever changes.
+    /// </summary>
+    internal void Restore(SimulationSnapshot snapshot)
+    {
+        ArgumentNullException.ThrowIfNull(snapshot);
+
+        Id = snapshot.Id;
+        Seed = snapshot.Seed;
+        State = snapshot.State;
+        CurrentYear = snapshot.CurrentYear;
+    }
 
     public Company FindCompany(int id) => Find(_companiesById, id, "company");
 

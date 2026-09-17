@@ -38,6 +38,7 @@ src/CarbonSim.Engine/        rules, entities, auction clearing, order book, reco
 src/CarbonSim.Data/          EF Core model, migrations, repositories
 src/CarbonSim.Web/           ASP.NET Core host, SignalR hubs, Blazor UI, admin
 tests/CarbonSim.Engine.Tests/
+tests/CarbonSim.Data.Tests/
 tests/CarbonSim.Web.Tests/
 scenarios/                   JSON scenario files (sectors, firms, abatements, parameters)
 research/                    source material (read-only)

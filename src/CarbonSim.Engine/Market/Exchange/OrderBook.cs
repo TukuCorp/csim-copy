@@ -1,6 +1,7 @@
 using CarbonSim.Engine.Domain;
 using CarbonSim.Engine.Finance;
 using CarbonSim.Engine.Reporting;
+using CarbonSim.Engine.Snapshot;
 
 namespace CarbonSim.Engine.Market.Exchange;
 
@@ -11,6 +12,12 @@ namespace CarbonSim.Engine.Market.Exchange;
 internal sealed class OrderIds
 {
     private long _last;
+
+    /// <summary>The last number handed out, so a restored exchange carries on from it.</summary>
+    internal long Last => _last;
+
+    /// <summary>Puts the counter back where a snapshot found it.</summary>
+    internal void Restore(long last) => _last = last;
 
     public long Next() => ++_last;
 }
@@ -72,6 +79,54 @@ public sealed class OrderBook
             .ThenBy(order => order.Id),
         .. _resting.Where(order => order.Kind == OrderKind.StopLoss).OrderBy(order => order.Id),
     ];
+
+    /// <summary>
+    /// Puts back the price the book last traded at, the orders still working on it and its
+    /// trade tape. The resting orders go back with their filled volume, status and escrow
+    /// exactly as they were: an order that is half served is still holding the money it
+    /// promised for the other half, and a restore that forgot that would free cash that
+    /// nobody spent.
+    /// </summary>
+    internal void Restore(OrderBookSnapshot snapshot)
+    {
+        ArgumentNullException.ThrowIfNull(snapshot);
+
+        LastTradePrice = snapshot.LastTradePrice;
+
+        _resting.Clear();
+
+        foreach (OrderSnapshot order in snapshot.RestingOrders)
+        {
+            _resting.Add(new Order(
+                order.Id,
+                _simulation.FindUnit(order.UnitId),
+                Product,
+                order.Side,
+                order.Kind,
+                order.FillPolicy,
+                order.Volume,
+                order.Price,
+                order.StopPrice)
+            {
+                FilledVolume = order.FilledVolume,
+                Status = order.Status,
+                EscrowedCash = order.EscrowedCash,
+            });
+        }
+
+        _trades.Clear();
+
+        foreach (BookTradeSnapshot trade in snapshot.Trades)
+        {
+            _trades.Add(new Trade(
+                trade.Sequence,
+                trade.Product.ToProduct(),
+                trade.BuyOrderId,
+                trade.SellOrderId,
+                trade.Price,
+                trade.Volume));
+        }
+    }
 
     /// <summary>Places an order: escrowing what it offers, matching what it can, resting the rest.</summary>
     public Order Submit(OrderRequest request)
