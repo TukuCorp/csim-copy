@@ -1,0 +1,50 @@
+@page "/"
+@inject IStringLocalizer<SharedStrings> Strings
+@inject IPlayerSession Session
+
+<PageTitle>@Strings["AppTitle"]</PageTitle>
+
+<div class="waiting">
+    <h1>@Strings["WaitingForSimulationToStart"]</h1>
+    <p class="muted"><a href="/sign-in">@Strings["SignIn"]</a></p>
+
+    @if (_runs.Count == 0)
+    {
+        <p class="muted">@Strings["NoSimulations"]</p>
+    }
+    else
+    {
+        @foreach (RunSummary run in _runs)
+        {
+            <section class="card">
+                <h2>@run.Name</h2>
+                <p class="muted small">@Display.State(Strings, run.State) &middot; @Strings["Year_X", run.Year]</p>
+                <h3>@Strings["SimulationSettings"]</h3>
+                <ul class="settings">
+                    <li>@Strings["ThereWillBeXYearsInTheSimulation", run.Years]</li>
+                    <li>@Strings["DurationOfYear_mins", run.YearLength.TotalMinutes.ToString("N0", CultureInfo.CurrentCulture)]</li>
+                    <li>@Strings["ThereAreXAuctionsScheduledForEachYear", run.AuctionsPerYear]</li>
+                    <li>@Strings["AuctionOpenDurationPercentage_X", (run.TradingOpenShareOfYear * 100m).ToString("N0", CultureInfo.CurrentCulture)]</li>
+                </ul>
+                <dl class="metrics">
+                    <div><dt>@Strings["Cap"]</dt><dd>@Display.Money(run.Cap)</dd></div>
+                    <div><dt>@Strings["FreeAllocationShare"]</dt><dd>@Display.Percent(run.FreeAllocationShare)</dd></div>
+                    <div><dt>@Strings["OffsetUsageLimit"]</dt><dd>@Display.Percent(run.OffsetUsageLimit)</dd></div>
+                    <div><dt>@Strings["Companies"]</dt><dd>@run.Companies</dd></div>
+                    <div><dt>@Strings["Units"]</dt><dd>@run.Units</dd></div>
+                    <div><dt>@Strings["People"]</dt><dd>@run.HumanCompanies</dd></div>
+                </dl>
+                <a class="button" href="@RunRoute.Screen(run.Id, "dashboard")">@Strings["OpenSimulation"]</a>
+            </section>
+        }
+    }
+</div>
+
+@code {
+    private IReadOnlyList<RunSummary> _runs = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        _runs = await Session.RunsAsync();
+    }
+}

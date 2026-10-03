@@ -1,0 +1,17 @@
+@inject IStringLocalizer<SharedStrings> Strings
+
+@if (Screen?.SimulationId is null)
+{
+    <p class="muted">@Strings["NoSimulations"]</p>
+}
+else
+{
+    <p class="muted">
+        @Strings["NoCompany"]
+        <a href="/sign-in">@Strings["SignIn"]</a>
+    </p>
+}
+
+@code {
+    [Parameter] public PlayerScreenSnapshot? Screen { get; set; }
+}

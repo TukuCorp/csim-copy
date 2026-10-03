@@ -1,5 +1,6 @@
 using System.Globalization;
 using CarbonSim.Data.Accounts;
+using CarbonSim.Web.Admin;
 using CarbonSim.Web.Contracts;
 using Microsoft.AspNetCore.Identity;
 
@@ -15,6 +16,7 @@ internal sealed class PlayerAccountService(
     ICompanyRoster roster,
     IEmailSender emailSender,
     IPasswordHasher<PlayerAccount> passwordHasher,
+    RegistrationPolicy registration,
     CarbonSimHostOptions options,
     ILogger<PlayerAccountService> logger)
 {
@@ -35,6 +37,8 @@ internal sealed class PlayerAccountService(
     private readonly IEmailSender _emailSender = emailSender ?? throw new ArgumentNullException(nameof(emailSender));
     private readonly IPasswordHasher<PlayerAccount> _passwordHasher = passwordHasher
         ?? throw new ArgumentNullException(nameof(passwordHasher));
+    private readonly RegistrationPolicy _registration = registration
+        ?? throw new ArgumentNullException(nameof(registration));
     private readonly CarbonSimHostOptions _options = options ?? throw new ArgumentNullException(nameof(options));
     private readonly ILogger<PlayerAccountService> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
@@ -71,7 +75,16 @@ internal sealed class PlayerAccountService(
             return AccountOutcome.Refused(AccountProblem.InvalidRequest, "Choose one of the companies on offer.");
         }
 
-        if (string.IsNullOrWhiteSpace(_options.RegistrationPin))
+        (bool open, string pin) = _registration.Current;
+
+        if (!open)
+        {
+            return AccountOutcome.Refused(
+                AccountProblem.RegistrationClosed,
+                "The administrator has closed registration on this host.");
+        }
+
+        if (string.IsNullOrWhiteSpace(pin))
         {
             _logger.LogWarning("A visitor tried to register but this host has no registration PIN configured.");
 
@@ -80,7 +93,7 @@ internal sealed class PlayerAccountService(
                 "Registration is closed on this host: no administrator access PIN is configured.");
         }
 
-        if (!FixedTimeSecret.Equals(request.RegistrationPin, _options.RegistrationPin))
+        if (!FixedTimeSecret.Equals(request.RegistrationPin, pin))
         {
             return AccountOutcome.Refused(AccountProblem.WrongRegistrationPin, "The administrator access PIN is not correct.");
         }

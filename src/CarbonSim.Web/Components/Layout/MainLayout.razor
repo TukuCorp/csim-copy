@@ -1,0 +1,104 @@
+@inherits LayoutComponentBase
+@implements IDisposable
+@inject NavigationManager Navigation
+@inject PlayerContext Context
+@inject PlayerViewOptions ViewOptions
+
+@if (Context.Snapshot.SimulationId is null)
+{
+    <div class="plain">
+        @Body
+    </div>
+}
+else
+{
+    @* The snapshot is a fresh record every refresh, so the pages below re-render with it. *@
+    <CascadingValue Value="Context.Snapshot" IsFixed="false">
+        <div class="app">
+            <TopBar />
+            <ProgressStrip />
+            <div class="shell">
+                <NavMenu />
+                <main class="content">
+                    @Body
+                </main>
+            </div>
+        </div>
+    </CascadingValue>
+}
+
+@code {
+    private CancellationTokenSource? _stopLoop;
+    private Task? _loop;
+
+    protected override void OnInitialized()
+    {
+        Context.Changed += HandleContextChanged;
+        Navigation.LocationChanged += HandleLocationChanged;
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Context.AttachAsync(RunRoute.SimulationId(Navigation.Uri));
+        StartLoop();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await Context.AttachAsync(RunRoute.SimulationId(Navigation.Uri));
+        StartLoop();
+    }
+
+    public void Dispose()
+    {
+        Context.Changed -= HandleContextChanged;
+        Navigation.LocationChanged -= HandleLocationChanged;
+        _stopLoop?.Cancel();
+        _stopLoop?.Dispose();
+    }
+
+    /// <summary>
+    /// Keeps the view current while the simulation is running. The pages read the registry on the
+    /// server rather than opening a browser SignalR connection, so one poll per open screen is what
+    /// turns the driver's tick into a redraw, and the countdowns stay honest between ticks.
+    /// </summary>
+    private void StartLoop()
+    {
+        if (_loop is not null || Context.Snapshot.SimulationId is null || ViewOptions.RefreshInterval is not { } interval)
+        {
+            return;
+        }
+
+        _stopLoop = new CancellationTokenSource();
+        _loop = LoopAsync(interval, _stopLoop.Token);
+    }
+
+    private async Task LoopAsync(TimeSpan interval, CancellationToken cancellationToken)
+    {
+        try
+        {
+            using PeriodicTimer timer = new(interval);
+
+            while (await timer.WaitForNextTickAsync(cancellationToken))
+            {
+                await InvokeAsync(Context.RefreshAsync);
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // The layout is going away with the page.
+        }
+    }
+
+    private void HandleContextChanged() => _ = InvokeAsync(StateHasChanged);
+
+    private void HandleLocationChanged(object? sender, LocationChangedEventArgs args)
+    {
+        _ = InvokeAsync(async () =>
+        {
+            await Context.AttachAsync(RunRoute.SimulationId(args.Location));
+            StartLoop();
+            StateHasChanged();
+        });
+    }
+}

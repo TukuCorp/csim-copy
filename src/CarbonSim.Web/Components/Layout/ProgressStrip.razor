@@ -1,0 +1,51 @@
+@inject IStringLocalizer<SharedStrings> Strings
+
+@if (View is { } view)
+{
+    <section class="progress">
+        <div class="progress-block">
+            <span class="progress-label">@Strings["SimulationProgress"]</span>
+            <div class="segments">
+                @for (int year = 1; year <= view.Years; year++)
+                {
+                    <span class="segment @(year == view.Year ? "segment-current" : year < view.Year ? "segment-done" : null)">@Strings["Year_X", year]</span>
+                }
+            </div>
+        </div>
+
+        <div class="progress-block">
+            <span class="progress-label">@Strings["SectionProgress"]</span>
+            <div class="segments">
+                @for (int auction = 1; auction <= view.AuctionsPerYear; auction++)
+                {
+                    <span class="segment @(auction == view.Auction ? "segment-current" : auction < view.Auction ? "segment-done" : null)">@Strings["Auction_X", auction]</span>
+                }
+            </div>
+            <span class="countdown">@Countdown(view)</span>
+        </div>
+
+        @if (view.AuctionOpen)
+        {
+            <div class="banner banner-auction">@Strings["AuctionOpen"]</div>
+        }
+
+        @if (view.State is "Paused" or "PausedAfterAuction")
+        {
+            <div class="banner banner-paused">@Strings["Paused"]</div>
+        }
+        else if (view.State is "TradingHalted" or "YearEnded" or "GameEnded")
+        {
+            <div class="banner banner-halted">@Display.State(Strings, view.State)</div>
+        }
+    </section>
+}
+
+@code {
+    [CascadingParameter] private PlayerScreenSnapshot? Screen { get; set; }
+
+    private PlayerView? View => Screen?.View;
+
+    private string Countdown(PlayerView view) => view.AuctionOpen
+        ? Strings["AuctionEndsIn", Display.Duration(view.TimeToAuctionClose)]
+        : Strings["AuctionStartsIn", Display.Duration(view.TimeToAuctionOpen)];
+}

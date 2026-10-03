@@ -1,0 +1,26 @@
+@inject ICharts Charts
+@inject ILogger<EChart> Log
+
+<div class="chart" style="height: @(Height)" @ref="_element"></div>
+
+@code {
+    /// <summary>The ECharts option, already serialised, so the component stays free of chart knowledge.</summary>
+    [Parameter, EditorRequired] public string Option { get; set; } = "{}";
+
+    [Parameter] public string Height { get; set; } = "220px";
+
+    private ElementReference _element;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        try
+        {
+            await Charts.RenderAsync(_element, Option);
+        }
+        catch (JSException exception)
+        {
+            // A chart that cannot be drawn must not take the player's screen down with it.
+            Log.LogError(exception, "A chart could not be drawn.");
+        }
+    }
+}

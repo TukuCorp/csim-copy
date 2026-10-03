@@ -1,0 +1,145 @@
+@page "/run/{SimulationId:guid}/otc"
+@inject IStringLocalizer<SharedStrings> Strings
+@inject PlayerContext Context
+
+<PageTitle>@Strings["OtcMarket"]</PageTitle>
+<h1>@Strings["OtcMarket"]</h1>
+
+@if (View is not { } view)
+{
+    <ScreenFallback Screen="Screen" />
+}
+else
+{
+    <div class="cards">
+        <section class="card">
+            <h2>@Strings["SendOfferToSell"]</h2>
+            <label>
+                @Strings["UnitName"]
+                <select @bind="_sellerUnitId">
+                    @foreach (UnitView unit in view.Units)
+                    {
+                        <option value="@unit.Id">@unit.Name</option>
+                    }
+                </select>
+            </label>
+            <label>
+                @Strings["UnitToTradeWith"]
+                <select @bind="_buyerUnitId">
+                    @foreach (CounterpartyView counterparty in view.Counterparties)
+                    {
+                        <option value="@counterparty.UnitId">@counterparty.CompanyName - @counterparty.UnitName</option>
+                    }
+                </select>
+            </label>
+            <label>
+                @Strings["Product"]
+                <select @bind="_productKey">
+                    @foreach (ProductView product in view.TradableProducts)
+                    {
+                        <option value="@product.Key">@Display.Product(product, Strings)</option>
+                    }
+                </select>
+            </label>
+            <label>
+                @Strings["Volume"]
+                <input type="number" step="1" min="1" @bind="_volume" />
+            </label>
+            <label>
+                @Strings["Price"]
+                <input type="number" step="1" @bind="_price" />
+            </label>
+            <p class="small muted">@Strings["CapitalCost"]: @Display.Money(_price * _volume)</p>
+            <button class="button" disabled="@(view.Counterparties.Count == 0)" @onclick="SendAsync">@Strings["SendOffer"]</button>
+        </section>
+
+        <section class="card wide">
+            <h2>@Strings["OffersToAnswer"]</h2>
+            @if (view.OffersToAnswer.Count == 0)
+            {
+                <p class="muted">@Strings["NoRows"]</p>
+            }
+            else
+            {
+                <QuickGrid Items="@view.OffersToAnswer.AsQueryable()" Class="grid">
+                    <TemplateColumn Title="@Strings["Seller"]" Context="row">@row.SellerCompany - @row.SellerUnit</TemplateColumn>
+                    <TemplateColumn Title="@Strings["Product"]" Context="row">@row.Product.Key</TemplateColumn>
+                    <TemplateColumn Title="@Strings["Volume"]" Context="row">@Display.Tonnes(row.Volume)</TemplateColumn>
+                    <TemplateColumn Title="@Strings["Price"]" Context="row">@Display.Number(row.Price)</TemplateColumn>
+                    <TemplateColumn Title="@Strings["CapitalCost"]" Context="row">@Display.Money(row.Consideration)</TemplateColumn>
+                    <TemplateColumn Title="@Strings["Accept"]" Context="row">
+                        <button class="button small-button" @onclick="() => AnswerAsync(row, true)">@Strings["Accept"]</button>
+                        <button class="button small-button ghost" @onclick="() => AnswerAsync(row, false)">@Strings["Reject"]</button>
+                    </TemplateColumn>
+                </QuickGrid>
+            }
+        </section>
+    </div>
+
+    <section class="card wide">
+        <h2>@Strings["MyOffers"]</h2>
+        @if (view.MyOffers.Count == 0)
+        {
+            <p class="muted">@Strings["NoRows"]</p>
+        }
+        else
+        {
+            <QuickGrid Items="@view.MyOffers.AsQueryable()" Class="grid">
+                <TemplateColumn Title="@Strings["Buyer"]" Context="row">@row.BuyerCompany - @row.BuyerUnit</TemplateColumn>
+                <TemplateColumn Title="@Strings["Product"]" Context="row">@row.Product.Key</TemplateColumn>
+                <TemplateColumn Title="@Strings["Volume"]" Context="row">@Display.Tonnes(row.Volume)</TemplateColumn>
+                <TemplateColumn Title="@Strings["Price"]" Context="row">@Display.Number(row.Price)</TemplateColumn>
+                <TemplateColumn Title="@Strings["State"]" Context="row">@row.State</TemplateColumn>
+            </QuickGrid>
+        }
+    </section>
+}
+
+@code {
+    [CascadingParameter] private PlayerScreenSnapshot? Screen { get; set; }
+
+    [Parameter] public Guid SimulationId { get; set; }
+
+    private int _sellerUnitId;
+    private int _buyerUnitId;
+    private string? _productKey;
+    private decimal _volume = 1_000m;
+    private decimal _price = 100m;
+
+    private PlayerView? View => Screen?.View;
+
+    protected override void OnParametersSet()
+    {
+        if (View is not { } view)
+        {
+            return;
+        }
+
+        if (_sellerUnitId == 0 && view.Units.Count > 0)
+        {
+            _sellerUnitId = view.Units[0].Id;
+        }
+
+        if (_buyerUnitId == 0 && view.Counterparties.Count > 0)
+        {
+            _buyerUnitId = view.Counterparties[0].UnitId;
+        }
+
+        _productKey ??= view.TradableProducts.FirstOrDefault()?.Key;
+    }
+
+    private Task SendAsync()
+    {
+        string product = _productKey ?? "Vintage 1";
+        return Context.ActAsync(
+            session => session.SendOtcOfferAsync(SimulationId, _sellerUnitId, _buyerUnitId, product, _price, _volume),
+            Strings["SendOffer"]);
+    }
+
+    private Task AnswerAsync(OtcOfferView offer, bool accept)
+    {
+        int unitId = View?.Units.FirstOrDefault(unit => string.Equals(unit.Name, offer.BuyerUnit, StringComparison.Ordinal))?.Id ?? 0;
+
+        return Context.ActAsync(session => session.AnswerOtcOfferAsync(SimulationId, unitId, offer.Id, accept), Strings["SendOffer"]);
+    }
+}

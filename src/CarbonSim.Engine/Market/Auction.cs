@@ -71,9 +71,9 @@ public sealed class Auction
     /// What each vintage did when the auction cleared, empty while it is open. The uniform
     /// price is worked out once, at clearing, and nothing else in the run keeps it — the journal
     /// records the trades it produced but not the offer they came out of — so it is kept here
-    /// for the administrator's screens and for a snapshot.
+    /// for the administrator's screens and for the host's live event feed.
     /// </summary>
-    internal IReadOnlyList<AuctionResult> Results => _results;
+    public IReadOnlyList<AuctionResult> Results => _results;
 
     public bool IsCleared { get; private set; }
 

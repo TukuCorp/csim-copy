@@ -1,0 +1,212 @@
+@page "/run/{SimulationId:guid}/exchange"
+@inject IStringLocalizer<SharedStrings> Strings
+@inject PlayerContext Context
+
+<PageTitle>@Strings["ExchangeMarket"]</PageTitle>
+<h1>@Strings["ExchangeMarket"]</h1>
+
+@if (View is not { } view)
+{
+    <ScreenFallback Screen="Screen" />
+}
+else
+{
+    <section class="card wide">
+        <h2>@Strings["PriceChart"]</h2>
+        <p class="muted small">@Strings["PriceChartHint"]</p>
+        <EChart Option="@Charts.Prices(view.Books, view.Years, view.System.AuctionFloorPrice, Strings["AuctionFloorPrice"])" Height="260px" />
+        <dl class="metrics">
+            <div><dt>@Strings["AllowanceAuction"] @Strings["AuctionFloorPrice"]</dt><dd>@Display.Number(view.AuctionPrices.Low ?? view.System.AuctionFloorPrice)</dd></div>
+            <div><dt>@Strings["ClearedAt"]</dt><dd>@Display.Price(view.AuctionPrices.Last)</dd></div>
+            <div><dt>@Strings["AuctionCeilingPrice"]</dt><dd>@Display.Number(view.AuctionPrices.High ?? view.System.AuctionCeilingPrice)</dd></div>
+            <div><dt>@Strings["Average"]</dt><dd>@Display.Price(view.AuctionPrices.Average)</dd></div>
+        </dl>
+    </section>
+
+    <div class="cards">
+        <section class="card">
+            <h2>@Strings["TradeActivity"]</h2>
+            <label>
+                @Strings["Product"]
+                <select @bind="_productKey">
+                    @foreach (ProductBookView book in view.Books)
+                    {
+                        <option value="@book.Product.Key">@book.Label</option>
+                    }
+                </select>
+            </label>
+
+            @if (Selected(view) is { } selected)
+            {
+                <dl class="metrics">
+                    <div><dt>@Strings["BestBid"]</dt><dd>@Display.Price(selected.BestBid)</dd></div>
+                    <div><dt>@Strings["LastTrade"]</dt><dd>@Display.Price(selected.LastTrade)</dd></div>
+                    <div><dt>@Strings["BestOffer"]</dt><dd>@Display.Price(selected.BestOffer)</dd></div>
+                    <div><dt>@Strings["TotalVolume"]</dt><dd>@Display.Tonnes(selected.RecentTrades.Sum(trade => trade.Volume))</dd></div>
+                </dl>
+
+                <h3>@Strings["TopOfBook"]</h3>
+                <ul class="settings">
+                    @foreach (OrderView order in selected.OpenOrders.Take(6))
+                    {
+                        <li>@order.Side @Display.Tonnes(order.Volume - order.Filled) @Display.Price(order.Price)</li>
+                    }
+                </ul>
+
+                <h3>@Strings["LastTrades"]</h3>
+                @if (selected.RecentTrades.Count == 0)
+                {
+                    <p class="muted">@Strings["NoRows"]</p>
+                }
+                else
+                {
+                    <ul class="settings">
+                        @foreach (TradeRow trade in selected.RecentTrades)
+                        {
+                            <li>@Strings["Year_X", trade.Year] &middot; @Display.Number(trade.Price) &middot; @Display.Tonnes(trade.Volume) t</li>
+                        }
+                    </ul>
+                }
+            }
+            else
+            {
+                <p class="muted">@Strings["NoRows"]</p>
+            }
+        </section>
+
+        <section class="card">
+            <h2>@Strings["ExchangeMarketOrders"]</h2>
+            <label>
+                @Strings["Side"]
+                <select @bind="_side">
+                    <option value="Buy">@Strings["Buy"]</option>
+                    <option value="Sell">@Strings["Sell"]</option>
+                </select>
+            </label>
+            <label>
+                @Strings["OrderType"]
+                <select @bind="_kind">
+                    <option value="Limit">@Strings["Limit"]</option>
+                    <option value="Market">@Strings["Market"]</option>
+                    <option value="StopLoss">@Strings["StopLoss"]</option>
+                </select>
+            </label>
+            <label>
+                @Strings["Product"]
+                <select @bind="_productKey">
+                    @foreach (ProductView product in view.TradableProducts)
+                    {
+                        <option value="@product.Key">@Display.Product(product, Strings)</option>
+                    }
+                </select>
+            </label>
+            <label>
+                @Strings["TargetVolume"]
+                <input type="number" step="1" min="1" @bind="_volume" />
+            </label>
+            @if (_kind is "Limit")
+            {
+                <label>
+                    @Strings["TargetPrice"]
+                    <input type="number" step="1" @bind="_price" />
+                </label>
+            }
+            @if (_kind is "StopLoss")
+            {
+                <label>
+                    @Strings["StopPrice"]
+                    <input type="number" step="1" @bind="_stopPrice" />
+                </label>
+            }
+            <label class="check">
+                <input type="checkbox" @bind="_fillOrKill" /> @Strings["ImmediateOrCancel"]
+            </label>
+            <p class="small muted">@Strings["CapitalCost"]: @Display.Money((_price ?? 0m) * _volume)</p>
+            <button class="button" @onclick="PlaceOrderAsync">@Strings["PlaceOrder"]</button>
+        </section>
+    </div>
+
+    <section class="card wide">
+        <h2>@Strings["MyCurrentOrders"]</h2>
+        @if (myOrders(view).Count == 0)
+        {
+            <p class="muted">@Strings["NoRows"]</p>
+        }
+        else
+        {
+            <QuickGrid Items="@myOrders(view).AsQueryable()" Class="grid">
+                <TemplateColumn Title="@Strings["Product"]" Context="row">@row.Product</TemplateColumn>
+                <TemplateColumn Title="@Strings["Side"]" Context="row">@row.Side</TemplateColumn>
+                <TemplateColumn Title="@Strings["OrderType"]" Context="row">@row.Kind</TemplateColumn>
+                <TemplateColumn Title="@Strings["Volume"]" Context="row">@Display.Tonnes(row.Volume)</TemplateColumn>
+                <TemplateColumn Title="@Strings["Filled"]" Context="row">@Display.Tonnes(row.Filled)</TemplateColumn>
+                <TemplateColumn Title="@Strings["Price"]" Context="row">@Display.Price(row.Price ?? row.StopPrice)</TemplateColumn>
+                <TemplateColumn Title="@Strings["Cancel"]" Context="row">
+                    <button class="button small-button" @onclick="() => CancelAsync(row)">@Strings["Cancel"]</button>
+                </TemplateColumn>
+            </QuickGrid>
+        }
+    </section>
+}
+
+@code {
+    [CascadingParameter] private PlayerScreenSnapshot? Screen { get; set; }
+
+    [Parameter] public Guid SimulationId { get; set; }
+
+    private string _side = "Buy";
+    private string _kind = "Limit";
+    private string? _productKey;
+    private decimal _volume = 1_000m;
+    private decimal? _price;
+    private decimal? _stopPrice;
+    private bool _fillOrKill;
+
+    private PlayerView? View => Screen?.View;
+
+    private ProductBookView? Selected(PlayerView view) => view.Books.FirstOrDefault(book => book.Product.Key == SelectedKey)
+        ?? view.Books.FirstOrDefault();
+
+    private string? SelectedKey => _productKey ?? View?.Books.FirstOrDefault()?.Product.Key;
+
+    protected override void OnParametersSet()
+    {
+        if (View is not { } view)
+        {
+            return;
+        }
+
+        _productKey ??= view.TradableProducts.FirstOrDefault()?.Key;
+        _price ??= view.System.AuctionFloorPrice;
+        _stopPrice ??= view.System.AuctionFloorPrice;
+    }
+
+    private static List<OrderView> myOrders(PlayerView view) =>
+        [.. view.Books.SelectMany(book => book.MyOrders)];
+
+    private Task PlaceOrderAsync()
+    {
+        if (View is not { } view || _productKey is null)
+        {
+            return Task.CompletedTask;
+        }
+
+        int unitId = view.Units.Count > 0 ? view.Units[0].Id : 0;
+        string product = _productKey;
+        string side = _side;
+        string kind = _kind;
+        decimal volume = _volume;
+        decimal? price = kind == "Limit" ? _price : null;
+        decimal? stopPrice = kind == "StopLoss" ? _stopPrice : null;
+        string fillPolicy = _fillOrKill ? "FillOrKill" : "AllowPartial";
+
+        return Context.ActAsync(
+            session => session.PlaceOrderAsync(SimulationId, unitId, product, side, kind, volume, price, stopPrice, fillPolicy),
+            Strings["PlaceOrder"]);
+    }
+
+    private Task CancelAsync(OrderView order)
+    {
+        return Context.ActAsync(session => session.CancelOrderAsync(SimulationId, order.UnitId, order.Id), Strings["Cancel"]);
+    }
+}

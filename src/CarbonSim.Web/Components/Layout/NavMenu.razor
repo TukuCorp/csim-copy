@@ -1,0 +1,29 @@
+@inject IStringLocalizer<SharedStrings> Strings
+
+<nav class="nav" aria-label="@Strings["Dashboard"]">
+    @foreach ((string Screen, string Key) item in Screens)
+    {
+        <a href="@RunRoute.Screen(Id, item.Screen)">@Strings[item.Key]</a>
+    }
+</nav>
+
+@code {
+    [CascadingParameter] private PlayerScreenSnapshot? Screen { get; set; }
+
+    private static readonly (string Screen, string Key)[] Screens =
+    [
+        ("dashboard", "Dashboard"),
+        ("company", "CompanyManagement"),
+        ("units", "UnitInformation"),
+        ("abatement", "Abatement"),
+        ("auction", "AllowanceAuction"),
+        ("exchange", "ExchangeMarket"),
+        ("otc", "OtcMarket"),
+        ("surrender", "SurrenderAndBanking"),
+        ("system", "SystemInfo"),
+        ("leaderboard", "Leaderboard"),
+        ("messages", "MessageLog"),
+    ];
+
+    private Guid Id => Screen?.SimulationId ?? Guid.Empty;
+}

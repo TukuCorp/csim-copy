@@ -1,0 +1,194 @@
+@page "/admin/run/{SimulationId:guid}/reports"
+@layout AdminLayout
+@inject IStringLocalizer<SharedStrings> Strings
+
+@if (Run is not { } run)
+{
+    <p class="muted">@Strings["AdminSelectRunHint"]</p>
+}
+else
+{
+    <PageTitle>@Strings["AdminReports"]</PageTitle>
+    <h1>@Strings["AdminReports"]</h1>
+
+    <div class="cards">
+        <section class="card wide">
+            <h2>@Strings["SystemReport"]</h2>
+            <p><a class="button ghost small-button" href="@Csv(AdminReport.System)">@Strings["AdminExportCsv"]</a></p>
+            <table class="grid">
+                <thead>
+                    <tr><th>@Strings["Product"]</th><th>@Strings["ThisYear"]</th><th>@Strings["ToDate"]</th></tr>
+                </thead>
+                <tbody>
+                    @foreach (ReportRow row in SystemRows(run))
+                    {
+                        <tr><td>@row.Label</td><td>@row.ThisYear</td><td>@row.ToDate</td></tr>
+                    }
+                </tbody>
+            </table>
+        </section>
+
+        <section class="card wide">
+            <h2>@Strings["AdminPriceReport"]</h2>
+            <p><a class="button ghost small-button" href="@Csv(AdminReport.Prices)">@Strings["AdminExportCsv"]</a></p>
+            <table class="grid">
+                <thead>
+                    <tr>
+                        <th>@Strings["Year"]</th>
+                        <th>@Strings["AllowanceAuction"] @Strings["Volume"]</th>
+                        <th>@Strings["Average"] @Strings["AllowanceAuction"]</th>
+                        <th>@Strings["Offset"] @Strings["Volume"]</th>
+                        <th>@Strings["Average"] @Strings["Offset"]</th>
+                        <th>@Strings["Average"] @Strings["AuctionNumber"]</th>
+                        <th>@Strings["ClearedAt"]</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (AdminPriceView price in run.Prices)
+                    {
+                        <tr>
+                            <td>@price.Year</td>
+                            <td>@Display.Tonnes(price.AllowanceVolume)</td>
+                            <td>@Display.Number(price.AllowanceAverage)</td>
+                            <td>@Display.Tonnes(price.OffsetVolume)</td>
+                            <td>@Display.Number(price.OffsetAverage)</td>
+                            <td>@Display.Price(price.AuctionAverage)</td>
+                            <td>@Display.Price(price.AuctionLow) - @Display.Price(price.AuctionHigh)</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </section>
+
+        <section class="card wide">
+            <h2>@Strings["AdminCompanyReport"]</h2>
+            <p><a class="button ghost small-button" href="@Csv(AdminReport.Companies)">@Strings["AdminExportCsv"]</a></p>
+            <table class="grid">
+                <thead>
+                    <tr>
+                        <th>@Strings["Company"]</th>
+                        <th>@Strings["Sector"]</th>
+                        <th>@Strings["Capital"]</th>
+                        <th>@Strings["ForecastEmissions"]</th>
+                        <th>@Strings["FreeAllowancesThisYear"]</th>
+                        <th>@Strings["Shortfall"]</th>
+                        <th>@Strings["CostOfCompliance"]</th>
+                        <th>@Strings["OverallMarginalCostOfCompliance"]</th>
+                        <th>@Strings["FinalLongShortPosition"]</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (AdminCompanyView company in run.Companies)
+                    {
+                        <tr>
+                            <td>@company.Name</td>
+                            <td>@company.Sector</td>
+                            <td>@Display.Money(company.Capital)</td>
+                            <td>@Display.Tonnes(company.Emissions)</td>
+                            <td>@Display.Tonnes(company.FreeAllocation)</td>
+                            <td>@Display.Tonnes(company.Shortfall)</td>
+                            <td>@Display.Money(company.CostOfCompliance)</td>
+                            <td>@Display.Signed(company.MarginalCost)</td>
+                            <td>@Display.Tonnes(company.FinalPosition)</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </section>
+
+        <section class="card wide">
+            <h2>@Strings["AdminUnitReport"]</h2>
+            <p><a class="button ghost small-button" href="@Csv(AdminReport.Units)">@Strings["AdminExportCsv"]</a></p>
+            <table class="grid">
+                <thead>
+                    <tr>
+                        <th>@Strings["UnitName"]</th>
+                        <th>@Strings["Company"]</th>
+                        <th>@Strings["BaselineEmissions"]</th>
+                        <th>@Strings["FreeAllowancesThisYear"]</th>
+                        <th>@Strings["ForecastEmissions"]</th>
+                        <th>@Strings["EmissionReductions"]</th>
+                        <th>@Strings["Abatement"]</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (AdminUnitView unit in run.Units)
+                    {
+                        <tr>
+                            <td>@unit.Name</td>
+                            <td>@unit.Company</td>
+                            <td>@Display.Tonnes(unit.BaselineEmissions)</td>
+                            <td>@Display.Tonnes(unit.FreeAllocation)</td>
+                            <td>@Display.Tonnes(unit.ForecastEmissions)</td>
+                            <td>@Display.Tonnes(unit.Reduction)</td>
+                            <td>@unit.ImplementedCount</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </section>
+
+        <section class="card wide">
+            <h2>@Strings["Leaderboard"]</h2>
+            <p><a class="button ghost small-button" href="@Csv(AdminReport.Leaderboard)">@Strings["AdminExportCsv"]</a></p>
+            <table class="grid">
+                <thead>
+                    <tr>
+                        <th>@Strings["Rank"]</th>
+                        <th>@Strings["Company"]</th>
+                        <th>@Strings["UnitNamePlayer"]</th>
+                        <th>@Strings["OverallMarginalCostOfCompliance"]</th>
+                        <th>@Strings["FinalLongShortPosition"]</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (AdminLeaderView row in run.Leaderboard)
+                    {
+                        <tr>
+                            <td>@row.Rank</td>
+                            <td>@row.Company @(row.Automated ? "(AI)" : string.Empty)</td>
+                            <td>@row.Unit (@row.Player)</td>
+                            <td>@Display.Signed(row.MarginalCost)</td>
+                            <td>@Display.Tonnes(row.FinalPosition)</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </section>
+    </div>
+}
+
+@code {
+    [CascadingParameter] private AdminSnapshot? Snapshot { get; set; }
+
+    [Parameter] public Guid SimulationId { get; set; }
+
+    private AdminRunDetail? Run => Snapshot?.RunId == SimulationId ? Snapshot?.Run : null;
+
+    private sealed record ReportRow(string Label, string ThisYear, string ToDate);
+
+    private string Csv(string report) => $"/api/admin/runs/{SimulationId:D}/reports/{report}.csv";
+
+    private List<ReportRow> SystemRows(AdminRunDetail run)
+    {
+        SystemTotalsView now = run.ThisYear;
+        SystemTotalsView all = run.ToDate;
+
+        return
+        [
+            new ReportRow(Strings["Cap"], Display.Tonnes(now.Cap), Display.Tonnes(all.Cap)),
+            new ReportRow(Strings["FreeAllowancesThisYear"], Display.Tonnes(now.FreeAllocation), Display.Tonnes(all.FreeAllocation)),
+            new ReportRow(Strings["TotalAllowancesOnOffer"], Display.Tonnes(now.AuctionableVolume), Display.Tonnes(all.AuctionableVolume)),
+            new ReportRow(Strings["ForecastEmissions"], Display.Tonnes(now.ForecastEmissions), Display.Tonnes(all.ForecastEmissions)),
+            new ReportRow(Strings["AllowancesSurrenderedToGovernment"], Display.Tonnes(now.AllowancesSurrendered), Display.Tonnes(all.AllowancesSurrendered)),
+            new ReportRow(Strings["OffsetsSurrenderedToGovernment"], Display.Tonnes(now.OffsetsSurrendered), Display.Tonnes(all.OffsetsSurrendered)),
+            new ReportRow(Strings["AllowancesBankedForTheNextYear"], Display.Tonnes(now.Banked), Display.Tonnes(all.Banked)),
+            new ReportRow(Strings["Forfeited"], Display.Tonnes(now.Forfeited), Display.Tonnes(all.Forfeited)),
+            new ReportRow(Strings["AuctionRevenueCollectedByGovernment"], Display.Money(now.AuctionRevenue), Display.Money(all.AuctionRevenue)),
+            new ReportRow(Strings["Average"] + " " + Strings["AllowanceAuction"], Display.Number(now.AverageAllowancePrice), Display.Number(all.AverageAllowancePrice)),
+            new ReportRow(Strings["Average"] + " " + Strings["Offset"], Display.Number(now.AverageOffsetPrice), Display.Number(all.AverageOffsetPrice)),
+            new ReportRow(Strings["EmissionReductions"], Display.Tonnes(now.EmissionsReduced), Display.Tonnes(all.EmissionsReduced)),
+            new ReportRow(Strings["PenaltyPerTonne"], now.PenaltyCount.ToString(CultureInfo.CurrentCulture) + " / " + Display.Money(now.PenaltyValue), all.PenaltyCount.ToString(CultureInfo.CurrentCulture) + " / " + Display.Money(all.PenaltyValue)),
+        ];
+    }
+}

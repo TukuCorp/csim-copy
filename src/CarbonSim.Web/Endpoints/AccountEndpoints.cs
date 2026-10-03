@@ -137,7 +137,7 @@ internal static class AccountEndpoints
     }
 
     /// <summary>Signs the account in by writing its role into the authentication cookie.</summary>
-    private static Task SignInAsync(HttpContext httpContext, PlayerAccount account)
+    internal static Task SignInAsync(HttpContext httpContext, PlayerAccount account)
     {
         ClaimsIdentity identity = new(
             [

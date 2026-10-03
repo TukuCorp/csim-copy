@@ -1,0 +1,113 @@
+@page "/admin"
+@layout AdminLayout
+@inject IStringLocalizer<SharedStrings> Strings
+@inject AdminContext Context
+@inject NavigationManager Navigation
+
+<PageTitle>@Strings["AdminConsole"]</PageTitle>
+<h1>@Strings["AdminConsole"]</h1>
+<p class="muted">@Strings["AdminConsoleSubtitle"]</p>
+
+@if (Snapshot is { } snapshot)
+{
+    <div class="cards">
+        <section class="card wide">
+            <h2>@Strings["AdminRuns"]</h2>
+
+            @if (snapshot.Runs.Count == 0)
+            {
+                <p class="muted">@Strings["AdminNoRuns"]</p>
+            }
+            else
+            {
+                <table class="grid">
+                    <thead>
+                        <tr>
+                            <th>@Strings["AdminName"]</th>
+                            <th>@Strings["State"]</th>
+                            <th>@Strings["Year"]</th>
+                            <th>@Strings["Companies"]</th>
+                            <th>@Strings["Units"]</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (AdminRunSummary run in snapshot.Runs)
+                        {
+                            <tr>
+                                <td>@run.Name</td>
+                                <td>@Display.State(Strings, run.State)</td>
+                                <td>@run.Year / @run.Years</td>
+                                <td>@run.HumanCompanies / @run.Companies</td>
+                                <td>@run.Units</td>
+                                <td>
+                                    <button class="button small-button" @onclick="() => OpenAsync(run.Id)">@Strings["AdminOpen"]</button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+
+            <p><a class="button" href="/admin/setup">@Strings["AdminSetup"]</a></p>
+        </section>
+
+        <section class="card wide">
+            <h2>@Strings["AdminSavedRuns"]</h2>
+
+            @if (snapshot.Saved.Count == 0)
+            {
+                <p class="muted">@Strings["NoRows"]</p>
+            }
+            else
+            {
+                <table class="grid">
+                    <thead>
+                        <tr>
+                            <th>@Strings["AdminName"]</th>
+                            <th>@Strings["State"]</th>
+                            <th>@Strings["Year"]</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (AdminSavedRun saved in snapshot.Saved)
+                        {
+                            <tr>
+                                <td>@saved.Name</td>
+                                <td>
+                                    @Display.State(Strings, saved.State)
+                                    @if (saved.Live)
+                                    {
+                                        <span class="pill">@Strings["AdminLive"]</span>
+                                    }
+                                </td>
+                                <td>@saved.CurrentYear</td>
+                                <td>
+                                    <button class="button small-button" @onclick="() => LoadAsync(saved)">@Strings["AdminLoad"]</button>
+                                    <button class="button ghost small-button" @onclick="() => DeleteAsync(saved)">@Strings["AdminDelete"]</button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        </section>
+    </div>
+}
+
+@code {
+    [CascadingParameter] private AdminSnapshot? Snapshot { get; set; }
+
+    private async Task OpenAsync(Guid simulationId)
+    {
+        await Context.SelectAsync(simulationId);
+        Navigation.NavigateTo(AdminRoute.Run(simulationId));
+    }
+
+    private Task LoadAsync(AdminSavedRun saved) =>
+        Context.ActAsync(session => session.LoadRunAsync(saved.Id), Strings["AdminLoaded"]);
+
+    private Task DeleteAsync(AdminSavedRun saved) =>
+        Context.ActAsync(session => session.DeleteRunAsync(saved.Id), Strings["AdminDeleted"]);
+}

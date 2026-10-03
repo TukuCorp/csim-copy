@@ -1,0 +1,278 @@
+@page "/admin/run/{SimulationId:guid}"
+@layout AdminLayout
+@inject IStringLocalizer<SharedStrings> Strings
+@inject AdminContext Context
+
+@if (Run is not { } run)
+{
+    <p class="muted">@Strings["AdminSelectRunHint"]</p>
+}
+else
+{
+    <PageTitle>@run.Name</PageTitle>
+    <h1>@run.Name</h1>
+
+    <div class="cards">
+        <section class="card wide">
+            <div class="metrics">
+                <div><dt>@Strings["State"]</dt><dd>@Display.State(Strings, run.State)</dd></div>
+                <div><dt>@Strings["Year"]</dt><dd>@run.Year / @run.Years</dd></div>
+                <div><dt>@Strings["AuctionNumber"]</dt><dd>@run.Auction / @run.AuctionsPerYear</dd></div>
+                <div><dt>@Strings["AdminTimeLeftInYear"]</dt><dd>@Display.Duration(run.TimeLeftInYear)</dd></div>
+                <div><dt>@Strings["AdminAuctionOpensIn"]</dt><dd>@Display.Duration(run.TimeToAuctionOpen)</dd></div>
+                <div><dt>@Strings["AdminAuctionClosesIn"]</dt><dd>@Display.Duration(run.TimeToAuctionClose)</dd></div>
+            </div>
+        </section>
+
+        <section class="card wide">
+            <h2>@Strings["AdminRunControls"]</h2>
+            <div class="segments">
+                @if (run.State == "Pending")
+                {
+                    <button class="button" id="admin-begin-year" @onclick="() => BeginAsync(run)">@Strings["AdminBeginYear"]</button>
+                }
+
+                @if (run.ClockRunning)
+                {
+                    <button class="button ghost" id="admin-pause" @onclick="PauseAsync">@Strings["AdminPause"]</button>
+                }
+                else if (run.State is "Paused" or "PausedAfterAuction" or "TradingHalted")
+                {
+                    <button class="button ghost" id="admin-resume" @onclick="ResumeAsync">@Strings["AdminResume"]</button>
+                }
+
+                @if (run.State is "Running" or "Paused" or "PausedAfterAuction")
+                {
+                    <button class="button ghost" id="admin-halt" @onclick="() => HaltAsync()">@Strings["AdminHalt"]</button>
+                }
+
+                @if (run.State == "TradingHalted")
+                {
+                    <button class="button" id="admin-end-year" @onclick="EndYearAsync">@Strings["AdminEndYear"]</button>
+                }
+
+                @if (run.State == "YearEnded" && run.Year < run.Years)
+                {
+                    <button class="button" id="admin-begin-next-year" @onclick="() => BeginAsync(run)">@Strings["AdminBeginNextYear"]</button>
+                }
+
+                @if (run.CanEndSimulation)
+                {
+                    <button class="button ghost" id="admin-end-simulation" @onclick="EndSimulationAsync">@Strings["AdminEndSimulation"]</button>
+                }
+            </div>
+
+            <label>
+                @Strings["AdminHaltWarn"]
+                <input id="admin-halt-warn" type="number" min="0" @bind="_warnSeconds" />
+            </label>
+
+            <p>
+                @Strings["AdminMessaging"]:
+                @if (run.MessagingEnabled)
+                {
+                    <span class="pill pill-inprofit">@Strings["AdminOn"]</span>
+                }
+                else
+                {
+                    <span class="pill pill-expired">@Strings["AdminOff"]</span>
+                }
+                <button class="button small-button" id="admin-messaging-toggle" @onclick="() => ToggleMessagingAsync(run)">
+                    @(run.MessagingEnabled ? Strings["AdminOff"] : Strings["AdminOn"])
+                </button>
+            </p>
+        </section>
+
+        <section class="card">
+            <h2>@Strings["AdminIssueFine"]</h2>
+            <label>
+                @Strings["UnitName"]
+                <select id="fine-unit" @bind="_fineUnitId">
+                    @foreach (AdminUnitView unit in run.Units)
+                    {
+                        <option value="@unit.Id">@unit.Name (@unit.Company)</option>
+                    }
+                </select>
+            </label>
+            <label>@Strings["AdminFineAmount"]<input id="fine-amount" type="number" @bind="_fineAmount" /></label>
+            <label>@Strings["AdminFineDescription"]<input id="fine-description" type="text" @bind="_fineDescription" /></label>
+            <button class="button" @onclick="IssueFineAsync">@Strings["AdminIssueFine"]</button>
+        </section>
+
+        <section class="card">
+            <h2>@Strings["AdminDisburseOffsets"]</h2>
+            <label>
+                @Strings["Company"]
+                <select id="offset-company" @bind="_offsetCompanyId">
+                    @foreach (AdminCompanyView company in run.Companies)
+                    {
+                        <option value="@company.Id">@company.Name</option>
+                    }
+                </select>
+            </label>
+            <label>@Strings["AdminOffsetVolume"]<input id="offset-volume" type="number" @bind="_offsetVolume" /></label>
+            <button class="button" @onclick="DisburseAsync">@Strings["AdminDisburseOffsets"]</button>
+        </section>
+
+        <section class="card">
+            <h2>@Strings["AdminAddAbatement"]</h2>
+            <label>
+                @Strings["UnitName"]
+                <select id="abatement-unit" @bind="_abatementUnitId">
+                    @foreach (AdminUnitView unit in run.Units)
+                    {
+                        <option value="@unit.Id">@unit.Name (@unit.Company)</option>
+                    }
+                </select>
+            </label>
+            <label>
+                @Strings["AdminAbatementFor"]
+                <select id="abatement-option" @bind="_abatementIndex">
+                    @foreach (AdminAbatementOptionView option in OptionsFor(run))
+                    {
+                        <option value="@option.Index">@option.Code @option.Name (cost @Display.Money(option.UpfrontCost), -@Display.Tonnes(option.AnnualReduction) t/yr)</option>
+                    }
+                </select>
+            </label>
+            <button class="button" @onclick="AddAbatementAsync">@Strings["AdminAddAbatement"]</button>
+        </section>
+
+        <section class="card">
+            <h2>@Strings["AdminShock"]</h2>
+            <label>
+                @Strings["UnitName"]
+                <select id="shock-unit" @bind="_shockUnitId">
+                    @foreach (AdminUnitView unit in run.Units)
+                    {
+                        <option value="@unit.Id">@unit.Name (@unit.Company)</option>
+                    }
+                </select>
+            </label>
+            <label>@Strings["AdminShockYear"]<input id="shock-year" type="number" min="1" max="@run.Years" @bind="_shockYear" /></label>
+            <label>@Strings["AdminShockTonnes"]<input id="shock-tonnes" type="number" @bind="_shockTonnes" /></label>
+            <button class="button" @onclick="ApplyShockAsync">@Strings["AdminApply"]</button>
+        </section>
+
+        <section class="card wide">
+            <h2>@Strings["AdminAutomaticTrading"]</h2>
+            <table class="grid">
+                <thead>
+                    <tr>
+                        <th>@Strings["UnitName"]</th>
+                        <th>@Strings["Company"]</th>
+                        <th>@Strings["AdminAutomaticTrading"]</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (AdminUnitView unit in run.Units)
+                    {
+                        <tr>
+                            <td>@unit.Name</td>
+                            <td>@unit.Company</td>
+                            <td>@(unit.AutoTrade ? Strings["AdminOn"] : Strings["AdminOff"])</td>
+                            <td>
+                                <button class="button small-button" @onclick="() => ToggleAutoTradeAsync(unit)">
+                                    @(unit.AutoTrade ? Strings["AdminOff"] : Strings["AdminOn"])
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </section>
+
+        <section class="card wide">
+            <h2>@Strings["AdminParameters"]</h2>
+            <dl class="metrics">
+                <div><dt>@Strings["Cap"]</dt><dd>@Display.Tonnes(run.Parameters.Cap)</dd></div>
+                <div><dt>@Strings["AnnualCapReductionRate"]</dt><dd>@Display.Percent2(run.Parameters.AnnualCapReductionRate)</dd></div>
+                <div><dt>@Strings["FreeAllocationShare"]</dt><dd>@Display.Percent(run.Parameters.FreeAllocationShare)</dd></div>
+                <div><dt>@Strings["OffsetUsageLimit"]</dt><dd>@Display.Percent(run.Parameters.OffsetUsageLimit)</dd></div>
+                <div><dt>@Strings["BankingLimit"]</dt><dd>@Display.Percent(run.Parameters.BankingLimit)</dd></div>
+                <div><dt>@Strings["PenaltyPerTonne"]</dt><dd>@Display.Money(run.Parameters.PenaltyPerTonne)</dd></div>
+                <div><dt>@Strings["AuctionFloorPrice"]</dt><dd>@Display.Money(run.Parameters.AuctionFloorPrice)</dd></div>
+                <div><dt>@Strings["AuctionCeilingPrice"]</dt><dd>@Display.Money(run.Parameters.AuctionCeilingPrice)</dd></div>
+                <div><dt>@Strings["AuctionsPerYear"]</dt><dd>@run.Parameters.AuctionsPerYear</dd></div>
+                <div><dt>@Strings["YearLength"]</dt><dd>@Display.Duration(run.Parameters.YearLength)</dd></div>
+                <div><dt>@Strings["AuctionDuration"]</dt><dd>@Display.Duration(run.Parameters.AuctionDuration)</dd></div>
+                <div><dt>@Strings["VolatilityBand"]</dt><dd>@Display.Percent(run.Parameters.VolatilityBand)</dd></div>
+            </dl>
+        </section>
+    </div>
+}
+
+@code {
+    [CascadingParameter] private AdminSnapshot? Snapshot { get; set; }
+
+    [Parameter] public Guid SimulationId { get; set; }
+
+    private AdminRunDetail? Run => Snapshot?.RunId == SimulationId ? Snapshot?.Run : null;
+
+    private double? _warnSeconds;
+    private int _fineUnitId;
+    private decimal _fineAmount = 10_000m;
+    private string _fineDescription = string.Empty;
+    private int _offsetCompanyId;
+    private decimal _offsetVolume = 1_000m;
+    private int _abatementUnitId;
+    private int _abatementIndex;
+    private int _shockUnitId;
+    private int _shockYear = 1;
+    private decimal _shockTonnes;
+
+    private IReadOnlyList<AdminAbatementOptionView> OptionsFor(AdminRunDetail run) =>
+        run.Units.FirstOrDefault(unit => unit.Id == _abatementUnitId)?.Opportunities ?? [];
+
+    private Task BeginAsync(AdminRunDetail run) =>
+        Context.ActAsync(session => session.BeginYearAsync(SimulationId), Strings["AdminYearStarted"]);
+
+    private Task PauseAsync() =>
+        Context.ActAsync(session => session.PauseAsync(SimulationId), Strings["AdminPausedStatus"]);
+
+    private Task ResumeAsync() =>
+        Context.ActAsync(session => session.ResumeAsync(SimulationId), Strings["AdminResumedStatus"]);
+
+    private Task EndYearAsync() =>
+        Context.ActAsync(session => session.EndYearAsync(SimulationId), Strings["AdminYearEnded"]);
+
+    private Task EndSimulationAsync() =>
+        Context.ActAsync(session => session.EndSimulationAsync(SimulationId), Strings["AdminSimulationEnded"]);
+
+    private Task ToggleMessagingAsync(AdminRunDetail run) =>
+        Context.ActAsync(
+            session => session.SetMessagingAsync(SimulationId, !run.MessagingEnabled),
+            Strings["AdminMessagingSaved"]);
+
+    private Task ToggleAutoTradeAsync(AdminUnitView unit) =>
+        Context.ActAsync(session => session.SetAutoTradeAsync(SimulationId, unit.Id, !unit.AutoTrade));
+
+    private Task HaltAsync()
+    {
+        TimeSpan? warn = _warnSeconds is { } seconds and > 0 ? TimeSpan.FromSeconds(seconds) : null;
+
+        return Context.ActAsync(
+            session => session.HaltAsync(SimulationId, warn),
+            warn is null ? Strings["AdminHaltedStatus"] : Strings["AdminHaltWarned"]);
+    }
+
+    private Task IssueFineAsync() =>
+        Context.ActAsync(
+            session => session.IssueFineAsync(SimulationId, _fineUnitId, _fineAmount, _fineDescription),
+            Strings["AdminFineIssued"]);
+
+    private Task DisburseAsync() =>
+        Context.ActAsync(
+            session => session.DisburseOffsetsAsync(SimulationId, _offsetCompanyId, _offsetVolume),
+            Strings["AdminOffsetsDisbursed"]);
+
+    private Task AddAbatementAsync() =>
+        Context.ActAsync(
+            session => session.AddAbatementAsync(SimulationId, _abatementUnitId, _abatementIndex),
+            Strings["AdminAbatementAdded"]);
+
+    private Task ApplyShockAsync() =>
+        Context.ActAsync(
+            session => session.ApplyShockAsync(SimulationId, _shockUnitId, _shockYear, _shockTonnes),
+            Strings["AdminShockApplied"]);
+}

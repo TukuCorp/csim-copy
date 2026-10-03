@@ -1,0 +1,177 @@
+@page "/admin/setup"
+@layout AdminLayout
+@using CarbonSim.Engine.Scenarios
+@inject IStringLocalizer<SharedStrings> Strings
+@inject IAdminSession Session
+@inject AdminContext Context
+@inject NavigationManager Navigation
+
+<PageTitle>@Strings["AdminSetup"]</PageTitle>
+<h1>@Strings["AdminSetup"]</h1>
+
+@if (_errors.Count > 0)
+{
+    <div class="notice notice-error">
+        @foreach (string error in _errors)
+        {
+            <p>@error</p>
+        }
+    </div>
+}
+
+@if (Draft is null)
+{
+    <p class="muted">@Strings["AdminAccessDenied"]</p>
+}
+else
+{
+    <div class="cards">
+        <section class="card wide">
+            <h2>@Strings["AdminRegistration"]</h2>
+            <label class="check"><input id="admin-registration-open" type="checkbox" @bind="_registrationOpen" /> @Strings["AdminRegistrationOpen"]</label>
+            <label>@Strings["AdminAccessPin"]<input id="admin-pin" type="text" @bind="_pin" /></label>
+            <p class="muted small">@Strings["AdminCompaniesOnOffer"]: @Draft.Companies.Count</p>
+            <button class="button" id="admin-save-registration" @onclick="SaveRegistrationAsync">@Strings["AdminSave"]</button>
+        </section>
+
+        <section class="card wide">
+            <h2>@Strings["AdminParameters"]</h2>
+            <dl class="metrics">
+                <div><dt>@Strings["AdminName"]</dt><dd><input type="text" @bind="Draft.Name" /></dd></div>
+                <div><dt>@Strings["AdminSeed"]</dt><dd><input type="number" @bind="Draft.Seed" /></dd></div>
+                <div><dt>@Strings["Cap"]</dt><dd><input id="setup-cap" type="number" @bind="Draft.Parameters.Cap" /></dd></div>
+                <div><dt>@Strings["AnnualCapReductionRate"]</dt><dd><input type="number" step="0.001" @bind="Draft.Parameters.AnnualCapReductionRate" /></dd></div>
+                <div><dt>@Strings["FreeAllocationShare"]</dt><dd><input type="number" step="0.01" @bind="Draft.Parameters.FreeAllocationShare" /></dd></div>
+                <div><dt>@Strings["Year"]</dt><dd><input type="number" @bind="Draft.Parameters.Years" /></dd></div>
+                <div><dt>@Strings["OffsetUsageLimit"]</dt><dd><input type="number" step="0.01" @bind="Draft.Parameters.OffsetUsageLimit" /></dd></div>
+                <div><dt>@Strings["BankingLimit"]</dt><dd><input type="number" step="0.01" @bind="Draft.Parameters.BankingLimit" /></dd></div>
+                <div><dt>@Strings["PenaltyPerTonne"]</dt><dd><input type="number" @bind="Draft.Parameters.PenaltyPerTonne" /></dd></div>
+                <div><dt>@Strings["PenaltyAllowanceDebit"]</dt><dd><input type="number" @bind="Draft.Parameters.PenaltyAllowanceDebit" /></dd></div>
+                <div><dt>@Strings["AuctionFloorPrice"]</dt><dd><input type="number" @bind="Draft.Parameters.AuctionFloorPrice" /></dd></div>
+                <div><dt>@Strings["AuctionCeilingPrice"]</dt><dd><input type="number" @bind="Draft.Parameters.AuctionCeilingPrice" /></dd></div>
+                <div><dt>@Strings["AuctionsPerYear"]</dt><dd><input type="number" @bind="Draft.Parameters.AuctionsPerYear" /></dd></div>
+                <div><dt>@Strings["YearLength"] (min)</dt><dd><input type="number" @bind="Draft.Parameters.YearLengthMinutes" /></dd></div>
+                <div><dt>@Strings["AuctionDuration"] (min)</dt><dd><input type="number" @bind="Draft.Parameters.AuctionDurationMinutes" /></dd></div>
+                <div><dt>@Strings["VolatilityBand"]</dt><dd><input type="number" step="0.01" @bind="Draft.Parameters.VolatilityBand" /></dd></div>
+                <div><dt>@Strings["InterestRate"]</dt><dd><input type="number" step="0.01" @bind="Draft.Parameters.OverdraftInterestRate" /></dd></div>
+            </dl>
+        </section>
+
+        <section class="card wide">
+            <h2>@Strings["AdminSectorsAndAbatement"]</h2>
+            @foreach (DraftSector sector in Draft.Sectors)
+            {
+                <fieldset class="card">
+                    <label>@Strings["AdminSectorName"]<input type="text" @bind="sector.Name" /></label>
+                    <label>@Strings["AdminEmissionShare"]<input type="number" step="0.01" @bind="sector.EmissionShare" /></label>
+
+                    <table class="grid">
+                        <thead>
+                            <tr>
+                                <th>@Strings["AdminAbatementCode"]</th>
+                                <th>@Strings["AdminAbatementName"]</th>
+                                <th>@Strings["AdminReductionShare"]</th>
+                                <th>@Strings["AdminUpfrontPerTonne"]</th>
+                                <th>@Strings["AdminNetRevenuePerTonne"]</th>
+                                <th>@Strings["AdminImplementationYears"]</th>
+                                <th>@Strings["AdminLifetimeYears"]</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (DraftAbatementOption option in sector.AbatementOptions)
+                            {
+                                <tr>
+                                    <td><input type="text" @bind="option.Code" /></td>
+                                    <td><input type="text" @bind="option.Name" /></td>
+                                    <td><input type="number" step="0.01" @bind="option.AnnualReductionShare" /></td>
+                                    <td><input type="number" @bind="option.UpfrontCostPerTonne" /></td>
+                                    <td><input type="number" @bind="option.AnnualNetRevenuePerTonne" /></td>
+                                    <td><input type="number" @bind="option.ImplementationYears" /></td>
+                                    <td><input type="number" @bind="option.LifetimeYears" /></td>
+                                    <td><button class="button ghost small-button" @onclick="() => sector.AbatementOptions.Remove(option)">@Strings["AdminRemove"]</button></td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+
+                    <button class="button ghost small-button" @onclick="() => sector.AbatementOptions.Add(new DraftAbatementOption())">@Strings["AdminAddOption"]</button>
+                </fieldset>
+            }
+        </section>
+
+        <section class="card wide">
+            <h2>@Strings["AdminGrowth"]</h2>
+            <table class="grid">
+                <thead>
+                    <tr>
+                        <th>@Strings["Sector"]</th>
+                        <th>@Strings["AdminMinimumRate"]</th>
+                        <th>@Strings["AdminMaximumRate"]</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (DraftGrowth growth in Draft.Parameters.BausGrowthBySector)
+                    {
+                        <tr>
+                            <td>@growth.Sector</td>
+                            <td><input type="number" step="0.01" @bind="growth.MinAnnualRate" /></td>
+                            <td><input type="number" step="0.01" @bind="growth.MaxAnnualRate" /></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </section>
+
+        <section class="card wide">
+            <button class="button" id="admin-create-run" @onclick="CreateAsync">@Strings["AdminCreateRun"]</button>
+        </section>
+    </div>
+}
+
+@code {
+    private ScenarioDraft? _draft;
+    private List<string> _errors = [];
+    private bool _registrationOpen;
+    private string _pin = string.Empty;
+
+    private ScenarioDraft? Draft => _draft;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Context.AttachAsync(null);
+        _registrationOpen = Context.Snapshot.Registration.Open;
+        _pin = Context.Snapshot.Registration.Pin;
+        _draft = await Session.SetupDraftAsync();
+    }
+
+    private Task SaveRegistrationAsync() =>
+        Context.ActAsync(
+            session => session.SetRegistrationAsync(_registrationOpen, _pin),
+            Strings["AdminRegistrationSaved"]);
+
+    private async Task CreateAsync()
+    {
+        if (_draft is null)
+        {
+            return;
+        }
+
+        _errors = [];
+
+        try
+        {
+            Guid id = await Session.CreateRunAsync(_draft);
+            await Context.RefreshAsync();
+            Navigation.NavigateTo(AdminRoute.Run(id));
+        }
+        catch (ScenarioLoadException exception)
+        {
+            _errors = [.. exception.Errors];
+        }
+        catch (Exception exception)
+        {
+            _errors = [exception.Message];
+        }
+    }
+}

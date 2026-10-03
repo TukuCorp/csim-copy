@@ -1,0 +1,98 @@
+@page "/run/{SimulationId:guid}/system"
+@inject IStringLocalizer<SharedStrings> Strings
+
+<PageTitle>@Strings["SystemInfo"]</PageTitle>
+<h1>@Strings["SystemInfo"]</h1>
+
+@if (View is not { } view)
+{
+    <ScreenFallback Screen="Screen" />
+}
+else
+{
+    <div class="cards">
+        <section class="card">
+            <h2>@view.System.Name</h2>
+            <dl class="metrics">
+                <div><dt>@Strings["Cap"]</dt><dd>@Display.Money(view.System.Cap)</dd></div>
+                <div><dt>@Strings["AnnualCapReductionRate"]</dt><dd>@Display.Percent2(view.System.AnnualCapReductionRate)</dd></div>
+                <div><dt>@Strings["FreeAllocationShare"]</dt><dd>@Display.Percent(view.System.FreeAllocationShare)</dd></div>
+                <div><dt>@Strings["OffsetUsageLimit"]</dt><dd>@Display.Percent(view.System.OffsetUsageLimit)</dd></div>
+                <div><dt>@Strings["BankingLimit"]</dt><dd>@Display.Percent(view.System.BankingLimit)</dd></div>
+                <div><dt>@Strings["PenaltyPerTonne"]</dt><dd>@Display.Money(view.System.PenaltyPerTonne)</dd></div>
+                <div><dt>@Strings["PenaltyAllowanceDebit"]</dt><dd>@Display.Number(view.System.PenaltyAllowanceDebit)</dd></div>
+                <div><dt>@Strings["AuctionFloorPrice"]</dt><dd>@Display.Money(view.System.AuctionFloorPrice)</dd></div>
+                <div><dt>@Strings["AuctionCeilingPrice"]</dt><dd>@Display.Money(view.System.AuctionCeilingPrice)</dd></div>
+                <div><dt>@Strings["AuctionsPerYear"]</dt><dd>@view.System.AuctionsPerYear</dd></div>
+                <div><dt>@Strings["YearLength"]</dt><dd>@Display.Duration(view.System.YearLength)</dd></div>
+                <div><dt>@Strings["AuctionDuration"]</dt><dd>@Display.Duration(view.System.AuctionDuration)</dd></div>
+                <div><dt>@Strings["VolatilityBand"]</dt><dd>@Display.Percent(view.System.VolatilityBand)</dd></div>
+                <div><dt>@Strings["InterestRate"]</dt><dd>@Display.Percent(view.System.OverdraftInterestRate)</dd></div>
+            </dl>
+        </section>
+
+        <section class="card">
+            <h2>@Strings["SectorEmissions"]</h2>
+            <QuickGrid Items="@view.System.Sectors.AsQueryable()" Class="grid">
+                <TemplateColumn Title="@Strings["Sector"]" Context="row">@row.Name</TemplateColumn>
+                <TemplateColumn Title="@Strings["Share"]" Context="row">@Display.Percent(row.EmissionShare)</TemplateColumn>
+                <TemplateColumn Title="@Strings["Units"]" Context="row">@row.Units</TemplateColumn>
+                <TemplateColumn Title="@Strings["FreeAllowancesThisYear"]" Context="row">@Display.Tonnes(row.FreeAllocationThisYear)</TemplateColumn>
+            </QuickGrid>
+        </section>
+
+        <section class="card wide">
+            <h2>@Strings["SystemReport"]</h2>
+            <QuickGrid Items="@ReportRows(view).AsQueryable()" Class="grid">
+                <TemplateColumn Title="@Strings["Product"]" Context="row">@row.Label</TemplateColumn>
+                <TemplateColumn Title="@Strings["ThisYear"]" Context="row">@row.ThisYear</TemplateColumn>
+                <TemplateColumn Title="@Strings["ToDate"]" Context="row">@row.ToDate</TemplateColumn>
+            </QuickGrid>
+        </section>
+
+        <section class="card wide">
+            <h2>@Strings["GovernmentReserve"]</h2>
+            <p class="small">@Strings["AuctionRevenueCollectedByGovernment"]: @Display.Money(view.System.GovernmentRevenue)</p>
+            <QuickGrid Items="@view.System.GovernmentReserve.AsQueryable()" Class="grid">
+                <TemplateColumn Title="@Strings["Product"]" Context="row">@Display.Product(row.Product, Strings)</TemplateColumn>
+                <TemplateColumn Title="@Strings["Held"]" Context="row">@Display.Tonnes(row.Available)</TemplateColumn>
+                <TemplateColumn Title="@Strings["Issued"]" Context="row">@Display.Tonnes(row.Escrowed)</TemplateColumn>
+            </QuickGrid>
+        </section>
+    </div>
+}
+
+@code {
+    [CascadingParameter] private PlayerScreenSnapshot? Screen { get; set; }
+
+    [Parameter] public Guid SimulationId { get; set; }
+
+    private PlayerView? View => Screen?.View;
+
+    private sealed record ReportRow(string Label, string ThisYear, string ToDate);
+
+    private List<ReportRow> ReportRows(PlayerView view)
+    {
+        SystemTotalsView now = view.System.ThisYear;
+        SystemTotalsView all = view.System.ToDate;
+
+        return
+        [
+            new ReportRow(Strings["Cap"], Display.Tonnes(now.Cap), Display.Tonnes(all.Cap)),
+            new ReportRow(Strings["FreeAllowancesThisYear"], Display.Tonnes(now.FreeAllocation), Display.Tonnes(all.FreeAllocation)),
+            new ReportRow(Strings["TotalAllowancesOnOffer"], Display.Tonnes(now.AuctionableVolume), Display.Tonnes(all.AuctionableVolume)),
+            new ReportRow(Strings["ForecastEmissions"], Display.Tonnes(now.ForecastEmissions), Display.Tonnes(all.ForecastEmissions)),
+            new ReportRow(Strings["AllowancesSurrenderedToGovernment"], Display.Tonnes(now.AllowancesSurrendered), Display.Tonnes(all.AllowancesSurrendered)),
+            new ReportRow(Strings["OffsetsSurrenderedToGovernment"], Display.Tonnes(now.OffsetsSurrendered), Display.Tonnes(all.OffsetsSurrendered)),
+            new ReportRow(Strings["AllowancesBankedForTheNextYear"], Display.Tonnes(now.Banked), Display.Tonnes(all.Banked)),
+            new ReportRow(Strings["Forfeited"], Display.Tonnes(now.Forfeited), Display.Tonnes(all.Forfeited)),
+            new ReportRow(Strings["TotalVolume"], Display.Tonnes(now.AllowancesSold), Display.Tonnes(all.AllowancesSold)),
+            new ReportRow(Strings["AuctionRevenueCollectedByGovernment"], Display.Money(now.AuctionRevenue), Display.Money(all.AuctionRevenue)),
+            new ReportRow(Strings["Average"] + " " + Strings["AllowanceAuction"], Display.Number(now.AverageAllowancePrice), Display.Number(all.AverageAllowancePrice)),
+            new ReportRow(Strings["Average"] + " " + Strings["Offset"], Display.Number(now.AverageOffsetPrice), Display.Number(all.AverageOffsetPrice)),
+            new ReportRow(Strings["Abatement"], now.AbatementsImplemented.ToString(CultureInfo.CurrentCulture), all.AbatementsImplemented.ToString(CultureInfo.CurrentCulture)),
+            new ReportRow(Strings["EmissionReductions"], Display.Tonnes(now.EmissionsReduced), Display.Tonnes(all.EmissionsReduced)),
+            new ReportRow(Strings["PenaltyPerTonne"], now.PenaltyCount.ToString(CultureInfo.CurrentCulture) + " / " + Display.Money(now.PenaltyValue), all.PenaltyCount.ToString(CultureInfo.CurrentCulture) + " / " + Display.Money(all.PenaltyValue)),
+        ];
+    }
+}

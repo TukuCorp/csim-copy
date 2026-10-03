@@ -1,0 +1,71 @@
+@page "/run/{SimulationId:guid}/surrender"
+@inject IStringLocalizer<SharedStrings> Strings
+
+<PageTitle>@Strings["SurrenderAndBanking"]</PageTitle>
+<h1>@Strings["SurrenderAndBanking"]</h1>
+
+@if (View is not { } view)
+{
+    <ScreenFallback Screen="Screen" />
+}
+else
+{
+    <p class="muted small">@Strings["AutomaticSurrender"]</p>
+
+    <div class="cards">
+        <section class="card">
+            <h2>@Strings["PositionSummary"]</h2>
+            <dl class="metrics">
+                <div><dt>@Strings["ForecastEmissions"]</dt><dd>@Display.Tonnes(view.Position.ForecastEmissions)</dd></div>
+                <div><dt>@Strings["FreeAllowancesThisYear"]</dt><dd>@Display.Tonnes(view.Position.FreeAllocation)</dd></div>
+                <div><dt>@Strings["CurrentPosition"]</dt><dd>@Display.Position(view.Position.Shortfall, Strings)</dd></div>
+                <div><dt>@Strings["BankingLimit"]</dt><dd>@Display.Percent(view.System.BankingLimit)</dd></div>
+                <div><dt>@Strings["OffsetUsageLimit"]</dt><dd>@Display.Percent(view.System.OffsetUsageLimit)</dd></div>
+            </dl>
+        </section>
+
+        <section class="card">
+            <h2>@Strings["SurrenderStatus"]</h2>
+            @if (!view.Compliance.HasResult)
+            {
+                <p class="muted">@Strings["NoRows"]</p>
+            }
+            else
+            {
+                <dl class="metrics">
+                    <div><dt>@Strings["ComplianceObligation"]</dt><dd>@Display.Tonnes(view.Compliance.Obligation)</dd></div>
+                    <div><dt>@Strings["Covered"]</dt><dd>@Display.Tonnes(view.Compliance.Covered)</dd></div>
+                    <div><dt>@Strings["AllowancesSurrenderedToGovernment"]</dt><dd>@Display.Tonnes(view.Compliance.Allowed)</dd></div>
+                    <div><dt>@Strings["OffsetsSurrenderedToGovernment"]</dt><dd>@Display.Tonnes(view.Compliance.Covered - view.Compliance.Allowed)</dd></div>
+                    <div><dt>@Strings["AllowancesBankedForTheNextYear"]</dt><dd>@Display.Tonnes(view.Compliance.Banked)</dd></div>
+                    <div><dt>@Strings["Forfeited"]</dt><dd>@Display.Tonnes(view.Compliance.Forfeited)</dd></div>
+                    <div><dt>@Strings["Shortfall"]</dt><dd>@Display.Tonnes(view.Compliance.Shortfall)</dd></div>
+                </dl>
+            }
+        </section>
+
+        <section class="card wide">
+            <h2>@Strings["Holdings"]</h2>
+            @if (view.Holdings.Count == 0)
+            {
+                <p class="muted">@Strings["NoRows"]</p>
+            }
+            else
+            {
+                <QuickGrid Items="@view.Holdings.AsQueryable()" Class="grid">
+                    <TemplateColumn Title="@Strings["Product"]" Context="row">@Display.Product(row.Product, Strings)</TemplateColumn>
+                    <TemplateColumn Title="@Strings["Available"]" Context="row">@Display.Tonnes(row.Available)</TemplateColumn>
+                    <TemplateColumn Title="@Strings["Held"]" Context="row">@Display.Tonnes(row.Held)</TemplateColumn>
+                </QuickGrid>
+            }
+        </section>
+    </div>
+}
+
+@code {
+    [CascadingParameter] private PlayerScreenSnapshot? Screen { get; set; }
+
+    [Parameter] public Guid SimulationId { get; set; }
+
+    private PlayerView? View => Screen?.View;
+}

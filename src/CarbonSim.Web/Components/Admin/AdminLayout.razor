@@ -1,0 +1,108 @@
+@inherits LayoutComponentBase
+@implements IDisposable
+@inject NavigationManager Navigation
+@inject AdminContext Context
+@inject AdminContextOptions Options
+@inject IStringLocalizer<SharedStrings> Strings
+
+@if (!Context.Snapshot.IsAdministrator)
+{
+    <div class="plain">
+        <h1>@Strings["AdminConsole"]</h1>
+        <p class="notice notice-error">@Strings["AdminAccessDenied"]</p>
+    </div>
+}
+else
+{
+    @* A fresh record on every refresh, so the pages below redraw with it. *@
+    <CascadingValue Value="Context.Snapshot" IsFixed="false">
+        <div class="app">
+            <header class="topbar">
+                <div class="topbar-identity">
+                    <span class="company">@Strings["AdminConsole"]</span>
+                    <span class="muted small">@Strings["AdminConsoleSubtitle"]</span>
+                </div>
+                <div class="topbar-tools">
+                    <span class="muted small">@Context.Snapshot.AccountName</span>
+                    <a class="button ghost" href="/">@Strings["Dashboard"]</a>
+                    <a class="button" href="/sign-out">@Strings["SignOut"]</a>
+                </div>
+            </header>
+            <div class="shell">
+                <AdminNav />
+                <main class="content">
+                    @if (Context.Snapshot.Error is { } error)
+                    {
+                        <p class="notice notice-error">@error</p>
+                    }
+                    else if (Context.Snapshot.Status is { } status)
+                    {
+                        <p class="notice notice-status">@status</p>
+                    }
+
+                    @Body
+                </main>
+            </div>
+        </div>
+    </CascadingValue>
+}
+
+@code {
+    private CancellationTokenSource? _stopLoop;
+    private Task? _loop;
+
+    protected override void OnInitialized()
+    {
+        Context.Changed += HandleChanged;
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Context.AttachAsync(AdminRoute.SimulationId(Navigation.Uri));
+        StartLoop();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await Context.AttachAsync(AdminRoute.SimulationId(Navigation.Uri));
+        StartLoop();
+    }
+
+    public void Dispose()
+    {
+        Context.Changed -= HandleChanged;
+        _stopLoop?.Cancel();
+        _stopLoop?.Dispose();
+    }
+
+    /// <summary>Keeps the console current while it is open, so a year's countdowns stay honest.</summary>
+    private void StartLoop()
+    {
+        if (_loop is not null || Options.RefreshInterval is not { } interval)
+        {
+            return;
+        }
+
+        _stopLoop = new CancellationTokenSource();
+        _loop = LoopAsync(interval, _stopLoop.Token);
+    }
+
+    private async Task LoopAsync(TimeSpan interval, CancellationToken cancellationToken)
+    {
+        try
+        {
+            using PeriodicTimer timer = new(interval);
+
+            while (await timer.WaitForNextTickAsync(cancellationToken))
+            {
+                await InvokeAsync(Context.RefreshAsync);
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // The console is going away with the page.
+        }
+    }
+
+    private void HandleChanged() => _ = InvokeAsync(StateHasChanged);
+}

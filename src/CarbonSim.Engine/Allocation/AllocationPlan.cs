@@ -142,6 +142,40 @@ public sealed class AllocationPlan
     }
 
     /// <summary>
+    /// Applies an administrator's end-of-year modification to one unit-year: a physical shock
+    /// that adds tonnes to the unit's business-as-usual emissions, or removes them when the
+    /// change is negative. The figure is written into the unit's business-as-usual path rather
+    /// than kept beside it, so it survives a save and reload with the rest of the plan and every
+    /// later reading - the forecast position, the abatement cap and the year-end obligation - sees
+    /// the modified number. A unit can never be pushed below zero emissions.
+    /// </summary>
+    /// <returns>The unit's business-as-usual emissions for that year after the change.</returns>
+    public decimal ApplyEmissionShock(Unit unit, int year, decimal deltaTonnes)
+    {
+        ArgumentNullException.ThrowIfNull(unit);
+
+        if (!_growthByUnit.ContainsKey(unit.Id))
+        {
+            throw new KeyNotFoundException($"Unit {unit.Id} is not part of this allocation plan.");
+        }
+
+        if (deltaTonnes == 0m)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(deltaTonnes),
+                deltaTonnes,
+                "An end-of-year modification must change the unit's emissions.");
+        }
+
+        decimal[] bau = BausFor(unit, year);
+        int index = YearIndex(year);
+        decimal updated = bau[index] + deltaTonnes;
+        bau[index] = updated < 0m ? 0m : updated;
+
+        return bau[index];
+    }
+
+    /// <summary>
     /// Puts back the plan a snapshot was taken with, instead of recomputing it. The growth draw
     /// is restored rather than repeated: it came out of the simulation's random stream, so
     /// re-drawing it would both change this plan's business-as-usual path and shift every later

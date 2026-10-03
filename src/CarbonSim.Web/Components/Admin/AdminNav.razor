@@ -1,0 +1,18 @@
+@inject IStringLocalizer<SharedStrings> Strings
+
+<nav class="nav" aria-label="@Strings["AdminConsole"]">
+    <a href="/admin">@Strings["AdminRuns"]</a>
+    <a href="/admin/setup">@Strings["AdminSetup"]</a>
+
+    @if (Snapshot?.RunId is { } runId)
+    {
+        <a href="@AdminRoute.Run(runId)">@Strings["AdminRunControls"]</a>
+        <a href="@AdminRoute.Reports(runId)">@Strings["AdminReports"]</a>
+        <a href="@AdminRoute.Surrender(runId)">@Strings["AdminSurrenderStatus"]</a>
+        <a href="@($"/run/{runId:D}/dashboard") ">@Strings["Dashboard"]</a>
+    }
+</nav>
+
+@code {
+    [CascadingParameter] private AdminSnapshot? Snapshot { get; set; }
+}

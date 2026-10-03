@@ -12,6 +12,10 @@
     <EntityFrameworkCoreVersion>9.0.20</EntityFrameworkCoreVersion>
     <AspNetCoreTestVersion>9.0.20</AspNetCoreTestVersion>
     <IdentityCoreVersion>9.0.20</IdentityCoreVersion>
+    <!-- bUnit 1.x is the line that still runs on xUnit 2, which this solution uses; bUnit 2.x
+         targets xUnit v3 only. -->
+    <BunitVersion>1.40.0</BunitVersion>
+    <PlaywrightVersion>1.63.0</PlaywrightVersion>
   </PropertyGroup>
 
   <ItemGroup>
@@ -24,6 +28,10 @@
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="$(EntityFrameworkCoreVersion)" />
     <PackageVersion Include="Microsoft.Extensions.Identity.Core" Version="$(IdentityCoreVersion)" />
     <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="$(AspNetCoreTestVersion)" />
+    <PackageVersion Include="Microsoft.AspNetCore.SignalR.Client" Version="$(AspNetCoreTestVersion)" />
+    <PackageVersion Include="Microsoft.AspNetCore.Components.QuickGrid" Version="$(AspNetCoreTestVersion)" />
+    <PackageVersion Include="bunit" Version="$(BunitVersion)" />
+    <PackageVersion Include="Microsoft.Playwright" Version="$(PlaywrightVersion)" />
   </ItemGroup>
 
 </Project>

@@ -1,0 +1,64 @@
+@page "/run/{SimulationId:guid}/messages"
+@inject IStringLocalizer<SharedStrings> Strings
+@inject PlayerContext Context
+
+<PageTitle>@Strings["MessageLog"]</PageTitle>
+<h1>@Strings["MessageLog"]</h1>
+
+@if (View is not { } view)
+{
+    <ScreenFallback Screen="Screen" />
+}
+else
+{
+    <section class="card wide">
+        @if (!view.MessagingEnabled)
+        {
+            <p class="notice notice-error">@Strings["MessagingSwitchedOff"]</p>
+        }
+
+        <div class="messages">
+            @if (view.Messages.Count == 0)
+            {
+                <p class="muted">@Strings["NoRows"]</p>
+            }
+            else
+            {
+                @foreach (ChatLine line in view.Messages)
+                {
+                    <p class="message"><span class="muted small">@Strings["Year_X", line.Year] @line.From</span> @line.Text</p>
+                }
+            }
+        </div>
+
+        <label>
+            @Strings["Message"]
+            <textarea rows="3" @bind="_text" disabled="@(!view.MessagingEnabled)"></textarea>
+        </label>
+        <button class="button" disabled="@(string.IsNullOrWhiteSpace(_text) || !view.MessagingEnabled)" @onclick="SendAsync">@Strings["Send"]</button>
+    </section>
+}
+
+@code {
+    [CascadingParameter] private PlayerScreenSnapshot? Screen { get; set; }
+
+    [Parameter] public Guid SimulationId { get; set; }
+
+    private string _text = string.Empty;
+
+    private PlayerView? View => Screen?.View;
+
+    private async Task SendAsync()
+    {
+        string text = _text.Trim();
+
+        if (text.Length == 0)
+        {
+            return;
+        }
+
+        _text = string.Empty;
+
+        await Context.ActAsync(session => session.PostMessageAsync(SimulationId, text));
+    }
+}

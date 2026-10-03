@@ -1,0 +1,96 @@
+@page "/run/{SimulationId:guid}/abatement"
+@inject IStringLocalizer<SharedStrings> Strings
+@inject PlayerContext Context
+
+<PageTitle>@Strings["Abatement"]</PageTitle>
+<h1>@Strings["Abatement"]</h1>
+
+@if (View is not { } view)
+{
+    <ScreenFallback Screen="Screen" />
+}
+else
+{
+    <section class="card wide">
+        <h2>@Strings["MarginalAbatementCostCurve_MACC"]</h2>
+        <EChart Option="@Charts.Macc(Opportunities(view))" Height="260px" />
+    </section>
+
+    <section class="card">
+        <h2>@Strings["MyAbatementImplementationStatus"]</h2>
+        <ul class="settings">
+            <li>@Strings["Building"]: @Count(view, "Building")</li>
+            <li>@Strings["Operating"]: @Count(view, "Operating")</li>
+            <li>@Strings["InProfit"]: @Count(view, "InProfit")</li>
+            <li>@Strings["Expired"]: @Count(view, "Expired")</li>
+        </ul>
+    </section>
+
+    <section class="card wide">
+        <h2>@Strings["AbatementUndertaken"]</h2>
+        @if (view.Abatements.Count == 0)
+        {
+            <p class="muted">@Strings["NoRows"]</p>
+        }
+        else
+        {
+            <QuickGrid Items="@view.Abatements.AsQueryable()" Class="grid">
+                <TemplateColumn Title="@Strings["Project"]" Context="row">@row.Code @row.Name</TemplateColumn>
+                <TemplateColumn Title="@Strings["UnitName"]" Context="row">@row.UnitName</TemplateColumn>
+                <TemplateColumn Title="@Strings["Year"]" Context="row">@row.ImplementedIn</TemplateColumn>
+                <TemplateColumn Title="@Strings["State"]" Context="row"><span class="pill pill-@row.Status.ToLowerInvariant()">@Strings[row.Status]</span></TemplateColumn>
+                <TemplateColumn Title="@Strings["AnnualEmissionReductions"]" Context="row">@Display.Tonnes(row.AnnualReduction)</TemplateColumn>
+                <TemplateColumn Title="@Strings["UpfrontCapitalCost"]" Context="row">@Display.Money(row.UpfrontCost)</TemplateColumn>
+            </QuickGrid>
+        }
+    </section>
+
+    <section class="card wide">
+        <h2>@Strings["AvailableEmissionReductionOpportunities"]</h2>
+        <QuickGrid Items="@Items(view).AsQueryable()" Class="grid">
+            <TemplateColumn Title="@Strings["Project"]" Context="row">@row.Code @row.Name</TemplateColumn>
+            <TemplateColumn Title="@Strings["UnitName"]" Context="row">@row.UnitName</TemplateColumn>
+            <TemplateColumn Title="@Strings["UpfrontCapitalCost"]" Context="row">@Display.Money(row.UpfrontCost)</TemplateColumn>
+            <TemplateColumn Title="@Strings["AnnualEmissionReductions"]" Context="row">@Display.Tonnes(row.AnnualReduction)</TemplateColumn>
+            <TemplateColumn Title="@Strings["ImplementationTime"]" Context="row">@row.ImplementationYears</TemplateColumn>
+            <TemplateColumn Title="@Strings["ProjectLifetime"]" Context="row">@row.LifetimeYears</TemplateColumn>
+            <TemplateColumn Title="@Strings["AnnualNetRevenueCost"]" Context="row">@Display.Signed(row.AnnualNetRevenue)</TemplateColumn>
+            <TemplateColumn Title="@Strings["ForecastROI"]" Context="row">@Display.Percent(row.ForecastRoi)</TemplateColumn>
+            <TemplateColumn Title="@Strings["CostPerTonne"]" Context="row">@Display.Number(row.CostPerTonne)</TemplateColumn>
+            <TemplateColumn Title="@Strings["Implement"]" Context="row">
+                @if (row.Implemented)
+                {
+                    <span class="pill pill-done">@Strings["Implemented"]</span>
+                }
+                else
+                {
+                    <button class="button small-button" disabled="@(view.Year < 1 || view.State is "YearEnded" or "GameEnded")"
+                            @onclick="() => ImplementAsync(row)">
+                        @Strings["Implement"]
+                    </button>
+                }
+            </TemplateColumn>
+        </QuickGrid>
+    </section>
+}
+
+@code {
+    [CascadingParameter] private PlayerScreenSnapshot? Screen { get; set; }
+
+    [Parameter] public Guid SimulationId { get; set; }
+
+    private PlayerView? View => Screen?.View;
+
+    private static List<AbatementOpportunityView> Opportunities(PlayerView view) =>
+        [.. view.Units.SelectMany(unit => unit.Opportunities)];
+
+    private static List<AbatementOpportunityView> Items(PlayerView view) => Opportunities(view);
+
+    private static int Count(PlayerView view, string status) =>
+        view.Abatements.Count(project => string.Equals(project.Status, status, StringComparison.Ordinal));
+
+    private Task ImplementAsync(AbatementOpportunityView opportunity) =>
+        Context.ActAsync(
+            session => session.ImplementAbatementAsync(SimulationId, opportunity.UnitId, opportunity.Index),
+            Strings["Implemented"]);
+}

@@ -1,0 +1,121 @@
+@page "/run/{SimulationId:guid}/dashboard"
+@inject IStringLocalizer<SharedStrings> Strings
+
+<PageTitle>@Strings["Dashboard"]</PageTitle>
+<h1>@Strings["Dashboard"]</h1>
+
+@if (View is not { } view)
+{
+    <ScreenFallback Screen="Screen" />
+}
+else
+{
+    <div class="cards">
+        <section class="card">
+            <h2>@Strings["MyFinance"]</h2>
+            <dl class="metrics">
+                <div><dt>@Strings["Capital"]</dt><dd>@Display.Money(view.Finance.Capital)</dd></div>
+                <div><dt>@Strings["ForecastNetProfit"]</dt><dd>@Display.Signed(view.Finance.ForecastNetProfit)</dd></div>
+                <div><dt>@Strings["InterestRate"]</dt><dd>@Display.Percent(view.System.OverdraftInterestRate)</dd></div>
+                <div><dt>@Strings["Abatement"]</dt><dd>@view.Abatements.Count</dd></div>
+                <div><dt>@Strings["NOPWithAbatement"]</dt><dd>@Display.Money(view.Finance.NopWithAbatement)</dd></div>
+            </dl>
+            <EChart Option="@Charts.NetProfit(view.Finance.NormalOperatingProfit, view.Finance.NopWithAbatement, Strings["NormalOperatingProfit"], Strings["NOPWithAbatement"])" Height="140px" />
+        </section>
+
+        <section class="card">
+            <h2>@Strings["MyCompliance"]</h2>
+            <dl class="metrics">
+                <div><dt>@Strings["ThisYear"]</dt><dd>@Display.Signed(view.Compliance.ThisYearCostOfCompliance)</dd></div>
+                <div><dt>@Strings["ToDate"]</dt><dd>@Display.Signed(view.Compliance.OverallCostOfCompliance)</dd></div>
+                <div><dt>@Strings["CurrentMarginalCostOfCompliance"]</dt><dd>@Display.Signed(view.Compliance.ThisYearMarginalCost)</dd></div>
+                <div><dt>@Strings["OverallMarginalCostOfCompliance"]</dt><dd>@Display.Signed(view.Compliance.OverallMarginalCost)</dd></div>
+            </dl>
+            @if (view.Compliance.HasResult)
+            {
+                <p class="small">
+                    @Strings["Covered"]: @Display.Tonnes(view.Compliance.Covered) /
+                    @Display.Tonnes(view.Compliance.Obligation)
+                    &middot; @Strings["Shortfall"]: @Display.Tonnes(view.Compliance.Shortfall)
+                </p>
+            }
+        </section>
+
+        <section class="card">
+            <h2>@Strings["MyLongShortPosition"]</h2>
+            <EChart Option="@Charts.LongShort(view.Position, view.CompanyName, Strings["FreeAllowancesThisYear"], Strings["Short"])" Height="140px" />
+            <dl class="metrics">
+                <div><dt>@Strings["FreeAllowancesThisYear"]</dt><dd>@Display.Tonnes(view.Position.FreeAllocation)</dd></div>
+                <div><dt>@Strings["ForecastEmissions"]</dt><dd>@Display.Tonnes(view.Position.ForecastEmissions)</dd></div>
+                <div><dt>@Strings["CurrentPosition"]</dt><dd>@Display.Position(view.Position.Shortfall, Strings)</dd></div>
+            </dl>
+        </section>
+
+        <section class="card">
+            <h2>@Strings["MyAbatementImplementationStatus"]</h2>
+            @if (view.Abatements.Count == 0)
+            {
+                <p class="muted">@Strings["NoRows"]</p>
+            }
+            else
+            {
+                <ul class="timeline">
+                    @foreach (AbatementView project in view.Abatements)
+                    {
+                        <li>
+                            <span class="pill pill-@project.Status.ToLowerInvariant()">@Strings[project.Status]</span>
+                            @project.Code @project.Name &middot; @project.UnitName
+                            <span class="muted small">@Strings["Year_X", project.OperatingFromYear] - @project.ExpiresAfterYear &middot; @Display.Tonnes(project.AnnualReduction) t</span>
+                        </li>
+                    }
+                </ul>
+            }
+        </section>
+
+        <section class="card wide">
+            <h2>@Strings["MyAuctionHistory"]</h2>
+            @if (view.Auctions.Count == 0)
+            {
+                <p class="muted">@Strings["NoRows"]</p>
+            }
+            else
+            {
+                <QuickGrid Items="@view.Auctions.AsQueryable()" Class="grid">
+                    <TemplateColumn Title="@Strings["Year"]" Context="row">@row.Year</TemplateColumn>
+                    <TemplateColumn Title="@Strings["AuctionNumber"]" Context="row">@row.Sequence</TemplateColumn>
+                    <TemplateColumn Title="@Strings["TotalVolume"]" Context="row">@Display.Tonnes(row.OfferedVolume)</TemplateColumn>
+                    <TemplateColumn Title="@Strings["ClearedAt"]" Context="row">@Display.Price(row.ClearingPrice)</TemplateColumn>
+                    <TemplateColumn Title="@Strings["TotalAwarded"]" Context="row">@Display.Tonnes(row.VolumeSold)</TemplateColumn>
+                </QuickGrid>
+            }
+        </section>
+
+        <section class="card wide">
+            <h2>@Strings["MyTradeHistory"]</h2>
+            @if (view.MyTrades.Count == 0)
+            {
+                <p class="muted">@Strings["NoRows"]</p>
+            }
+            else
+            {
+                <QuickGrid Items="@view.MyTrades.AsQueryable()" Class="grid">
+                    <TemplateColumn Title="@Strings["Year"]" Context="row">@row.Year</TemplateColumn>
+                    <TemplateColumn Title="@Strings["Channel"]" Context="row">@row.Channel</TemplateColumn>
+                    <TemplateColumn Title="@Strings["Product"]" Context="row">@row.Product</TemplateColumn>
+                    <TemplateColumn Title="@Strings["Price"]" Context="row">@Display.Number(row.Price)</TemplateColumn>
+                    <TemplateColumn Title="@Strings["Volume"]" Context="row">@Display.Tonnes(row.Volume)</TemplateColumn>
+                    <TemplateColumn Title="@Strings["Buyer"]" Context="row">@row.Buyer</TemplateColumn>
+                    <TemplateColumn Title="@Strings["Seller"]" Context="row">@row.Seller</TemplateColumn>
+                </QuickGrid>
+            }
+        </section>
+    </div>
+}
+
+@code {
+    [CascadingParameter] private PlayerScreenSnapshot? Screen { get; set; }
+
+    [Parameter] public Guid SimulationId { get; set; }
+
+    private PlayerView? View => Screen?.View;
+}

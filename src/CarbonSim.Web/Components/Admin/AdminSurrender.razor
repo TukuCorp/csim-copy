@@ -1,0 +1,69 @@
+@page "/admin/run/{SimulationId:guid}/surrender"
+@layout AdminLayout
+@inject IStringLocalizer<SharedStrings> Strings
+
+@if (Run is not { } run)
+{
+    <p class="muted">@Strings["AdminSelectRunHint"]</p>
+}
+else
+{
+    <PageTitle>@Strings["AdminSurrenderStatus"]</PageTitle>
+    <h1>@Strings["AdminSurrenderStatus"]</h1>
+
+    <section class="card wide">
+        <p class="muted small">@Strings["AutomaticSurrender"]</p>
+        <table class="grid">
+            <thead>
+                <tr>
+                    <th>@Strings["Company"]</th>
+                    <th>@Strings["UnitName"]</th>
+                    <th>@Strings["ComplianceObligation"]</th>
+                    <th>@Strings["Covered"]</th>
+                    <th>@Strings["AllowancesSurrenderedToGovernment"]</th>
+                    <th>@Strings["OffsetsSurrenderedToGovernment"]</th>
+                    <th>@Strings["AllowancesBankedForTheNextYear"]</th>
+                    <th>@Strings["Forfeited"]</th>
+                    <th>@Strings["Shortfall"]</th>
+                    <th>@Strings["PenaltyPerTonne"]</th>
+                    <th>@Strings["Status"]</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (AdminSurrenderView row in run.Surrender)
+                {
+                    <tr>
+                        <td>@row.Company</td>
+                        <td>@row.Units</td>
+                        <td>@Display.Tonnes(row.Obligation)</td>
+                        <td>@Display.Tonnes(row.Covered)</td>
+                        <td>@Display.Tonnes(row.AllowancesSurrendered)</td>
+                        <td>@Display.Tonnes(row.OffsetsSurrendered)</td>
+                        <td>@Display.Tonnes(row.Banked)</td>
+                        <td>@Display.Tonnes(row.Forfeited)</td>
+                        <td>@Display.Tonnes(row.Shortfall)</td>
+                        <td>@Display.Money(row.PenaltyCash)</td>
+                        <td>
+                            @if (row.Reconciled)
+                            {
+                                <span class="pill pill-inprofit">@Strings["State_YearEnded"]</span>
+                            }
+                            else
+                            {
+                                <span class="pill">@Strings["None"]</span>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </section>
+}
+
+@code {
+    [CascadingParameter] private AdminSnapshot? Snapshot { get; set; }
+
+    [Parameter] public Guid SimulationId { get; set; }
+
+    private AdminRunDetail? Run => Snapshot?.RunId == SimulationId ? Snapshot?.Run : null;
+}

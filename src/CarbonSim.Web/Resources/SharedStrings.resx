@@ -1,0 +1,363 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" />
+              <xsd:attribute name="type" />
+              <xsd:attribute name="mimetype" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" />
+              <xsd:attribute name="name" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="AppTitle" xml:space="preserve"><value>CarbonSim</value></data>
+  <data name="WaitingForSimulationToStart" xml:space="preserve"><value>Waiting for the simulation to start</value></data>
+  <data name="SimulationSettings" xml:space="preserve"><value>Simulation settings</value></data>
+  <data name="ThereWillBeXYearsInTheSimulation" xml:space="preserve"><value>There will be {0} years in the simulation</value></data>
+  <data name="ThereAreXAuctionsScheduledForEachYear" xml:space="preserve"><value>There are {0} allowance auctions scheduled for each year</value></data>
+  <data name="DurationOfYear_mins" xml:space="preserve"><value>A year lasts {0} minutes</value></data>
+  <data name="AuctionOpenDurationPercentage_X" xml:space="preserve"><value>Allowance auctions are open for {0}% of the year</value></data>
+  <data name="SimulationProgress" xml:space="preserve"><value>Simulation progress</value></data>
+  <data name="SectionProgress" xml:space="preserve"><value>Section progress</value></data>
+  <data name="Year_X" xml:space="preserve"><value>Year {0}</value></data>
+  <data name="Auction_X" xml:space="preserve"><value>Auction {0}</value></data>
+  <data name="WaitingForAuction_X" xml:space="preserve"><value>Auction {0} of year {1}</value></data>
+  <data name="AuctionStartsIn" xml:space="preserve"><value>Allowance auction starts in {0}</value></data>
+  <data name="AuctionEndsIn" xml:space="preserve"><value>Allowance auction ends in {0}</value></data>
+  <data name="AuctionOpen" xml:space="preserve"><value>Allowance auction open</value></data>
+  <data name="Paused" xml:space="preserve"><value>PAUSED</value></data>
+  <data name="State_Pending" xml:space="preserve"><value>Waiting to start</value></data>
+  <data name="State_Running" xml:space="preserve"><value>Running</value></data>
+  <data name="State_Paused" xml:space="preserve"><value>Paused</value></data>
+  <data name="State_PausedAfterAuction" xml:space="preserve"><value>Paused after the auction</value></data>
+  <data name="State_TradingHalted" xml:space="preserve"><value>Trading halted</value></data>
+  <data name="State_YearEnded" xml:space="preserve"><value>Year ended</value></data>
+  <data name="State_GameEnded" xml:space="preserve"><value>Simulation ended</value></data>
+  <data name="Dashboard" xml:space="preserve"><value>Dashboard</value></data>
+  <data name="CompanyManagement" xml:space="preserve"><value>Company management</value></data>
+  <data name="UnitInformation" xml:space="preserve"><value>Unit information</value></data>
+  <data name="Abatement" xml:space="preserve"><value>Abatement</value></data>
+  <data name="AllowanceAuction" xml:space="preserve"><value>Allowance auction</value></data>
+  <data name="ExchangeMarket" xml:space="preserve"><value>Exchange market</value></data>
+  <data name="OtcMarket" xml:space="preserve"><value>OTC market</value></data>
+  <data name="SystemInfo" xml:space="preserve"><value>System info</value></data>
+  <data name="SurrenderAndBanking" xml:space="preserve"><value>Surrender and banking</value></data>
+  <data name="Leaderboard" xml:space="preserve"><value>Leaderboard</value></data>
+  <data name="MessageLog" xml:space="preserve"><value>Messages</value></data>
+  <data name="Capital" xml:space="preserve"><value>Capital</value></data>
+  <data name="AvailableCapital" xml:space="preserve"><value>Available capital</value></data>
+  <data name="EscrowedCash" xml:space="preserve"><value>Committed cash</value></data>
+  <data name="Overdraft" xml:space="preserve"><value>Overdraft</value></data>
+  <data name="AvailableOverdraft" xml:space="preserve"><value>Available overdraft</value></data>
+  <data name="ForecastNetProfit" xml:space="preserve"><value>Forecast net profit</value></data>
+  <data name="InterestRate" xml:space="preserve"><value>Interest rate</value></data>
+  <data name="MyFinance" xml:space="preserve"><value>My finance</value></data>
+  <data name="MyCompliance" xml:space="preserve"><value>My compliance</value></data>
+  <data name="CostOfCompliance" xml:space="preserve"><value>Cost of compliance</value></data>
+  <data name="CurrentMarginalCostOfCompliance" xml:space="preserve"><value>This year, per tonne</value></data>
+  <data name="OverallMarginalCostOfCompliance" xml:space="preserve"><value>Marginal cost of compliance</value></data>
+  <data name="MyLongShortPosition" xml:space="preserve"><value>My long / short position</value></data>
+  <data name="FreeAllowancesThisYear" xml:space="preserve"><value>Free allocation</value></data>
+  <data name="ForecastEmissions" xml:space="preserve"><value>Forecast emissions</value></data>
+  <data name="CurrentPosition" xml:space="preserve"><value>Current position</value></data>
+  <data name="MyAbatementImplementationStatus" xml:space="preserve"><value>My abatement progress</value></data>
+  <data name="Building" xml:space="preserve"><value>Building</value></data>
+  <data name="Operating" xml:space="preserve"><value>Operating</value></data>
+  <data name="InProfit" xml:space="preserve"><value>In profit</value></data>
+  <data name="Expired" xml:space="preserve"><value>Complete</value></data>
+  <data name="MyAuctionHistory" xml:space="preserve"><value>My auction history</value></data>
+  <data name="MyTradeHistory" xml:space="preserve"><value>My trade history</value></data>
+  <data name="Year" xml:space="preserve"><value>Year</value></data>
+  <data name="AuctionNumber" xml:space="preserve"><value>Auction</value></data>
+  <data name="Vintage" xml:space="preserve"><value>Vintage</value></data>
+  <data name="TotalVolume" xml:space="preserve"><value>Total volume</value></data>
+  <data name="ClearedAt" xml:space="preserve"><value>Cleared at</value></data>
+  <data name="TotalAwarded" xml:space="preserve"><value>Awarded</value></data>
+  <data name="YouBid" xml:space="preserve"><value>You bid</value></data>
+  <data name="BidVolume" xml:space="preserve"><value>Bid volume</value></data>
+  <data name="UnitBidPrice" xml:space="preserve"><value>Bid price</value></data>
+  <data name="PlaceBid" xml:space="preserve"><value>Place bid</value></data>
+  <data name="CapitalCost" xml:space="preserve"><value>Capital cost</value></data>
+  <data name="VintagesThisAuction" xml:space="preserve"><value>Vintages this auction</value></data>
+  <data name="AllowancesToBeAuctionedThisYear" xml:space="preserve"><value>Allowances on offer this year</value></data>
+  <data name="AllowancesStillToBeAuctionedThisYear" xml:space="preserve"><value>Still to be auctioned</value></data>
+  <data name="AuctionHasEnded" xml:space="preserve"><value>The auction has ended</value></data>
+  <data name="Won" xml:space="preserve"><value>Won</value></data>
+  <data name="Paid" xml:space="preserve"><value>Paid</value></data>
+  <data name="Cost" xml:space="preserve"><value>Cost</value></data>
+  <data name="TradeActivity" xml:space="preserve"><value>Trade activity</value></data>
+  <data name="TopOfBook" xml:space="preserve"><value>Top of book</value></data>
+  <data name="LastTrades" xml:space="preserve"><value>Last trades</value></data>
+  <data name="ExchangeMarketOrders" xml:space="preserve"><value>Exchange market orders</value></data>
+  <data name="OrderType" xml:space="preserve"><value>Order type</value></data>
+  <data name="TargetVolume" xml:space="preserve"><value>Target volume</value></data>
+  <data name="TargetPrice" xml:space="preserve"><value>Target price</value></data>
+  <data name="StopPrice" xml:space="preserve"><value>Stop price</value></data>
+  <data name="PartialFillsAccepted" xml:space="preserve"><value>Partial fills accepted</value></data>
+  <data name="ImmediateOrCancel" xml:space="preserve"><value>Immediate or cancel</value></data>
+  <data name="Buy" xml:space="preserve"><value>Buy</value></data>
+  <data name="Sell" xml:space="preserve"><value>Sell</value></data>
+  <data name="Market" xml:space="preserve"><value>Market</value></data>
+  <data name="Limit" xml:space="preserve"><value>Limit</value></data>
+  <data name="StopLoss" xml:space="preserve"><value>Stop loss</value></data>
+  <data name="PlaceOrder" xml:space="preserve"><value>Place order</value></data>
+  <data name="MyCurrentOrders" xml:space="preserve"><value>My current orders</value></data>
+  <data name="Cancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="SendOfferToSell" xml:space="preserve"><value>Send an offer to sell</value></data>
+  <data name="UnitToTradeWith" xml:space="preserve"><value>Counterparty unit</value></data>
+  <data name="Volume" xml:space="preserve"><value>Volume</value></data>
+  <data name="Price" xml:space="preserve"><value>Price</value></data>
+  <data name="SendOffer" xml:space="preserve"><value>Send offer</value></data>
+  <data name="Offers" xml:space="preserve"><value>Offers</value></data>
+  <data name="OffersToAnswer" xml:space="preserve"><value>Offers waiting for my answer</value></data>
+  <data name="MyOffers" xml:space="preserve"><value>My offers</value></data>
+  <data name="State" xml:space="preserve"><value>State</value></data>
+  <data name="Accept" xml:space="preserve"><value>Accept</value></data>
+  <data name="Reject" xml:space="preserve"><value>Reject</value></data>
+  <data name="Rank" xml:space="preserve"><value>Rank</value></data>
+  <data name="Company" xml:space="preserve"><value>Company</value></data>
+  <data name="UnitNamePlayer" xml:space="preserve"><value>Unit (player)</value></data>
+  <data name="FinalLongShortPosition" xml:space="preserve"><value>Final position</value></data>
+  <data name="System" xml:space="preserve"><value>System</value></data>
+  <data name="UnitName" xml:space="preserve"><value>Unit</value></data>
+  <data name="Sector" xml:space="preserve"><value>Sector</value></data>
+  <data name="BaselineEmissions" xml:space="preserve"><value>Baseline emissions</value></data>
+  <data name="AllocationThisYear" xml:space="preserve"><value>Free allocation</value></data>
+  <data name="EmissionReductions" xml:space="preserve"><value>Emission reductions</value></data>
+  <data name="NormalOperatingProfit" xml:space="preserve"><value>Normal operating profit</value></data>
+  <data name="NOPWithAbatement" xml:space="preserve"><value>Operating profit with abatement</value></data>
+  <data name="AutoTrade" xml:space="preserve"><value>Automatic trading</value></data>
+  <data name="Shutdown" xml:space="preserve"><value>Temporarily shut down</value></data>
+  <data name="Implement" xml:space="preserve"><value>Implement</value></data>
+  <data name="UpfrontCapitalCost" xml:space="preserve"><value>Upfront capital cost</value></data>
+  <data name="AnnualEmissionReductions" xml:space="preserve"><value>Annual emission reductions</value></data>
+  <data name="ImplementationTime" xml:space="preserve"><value>Implementation time (years)</value></data>
+  <data name="ProjectLifetime" xml:space="preserve"><value>Project lifetime (years)</value></data>
+  <data name="AnnualNetRevenueCost" xml:space="preserve"><value>Annual net revenue / cost</value></data>
+  <data name="ForecastROI" xml:space="preserve"><value>Forecast ROI</value></data>
+  <data name="CostPerTonne" xml:space="preserve"><value>Cost per tonne</value></data>
+  <data name="MarginalAbatementCostCurve_MACC" xml:space="preserve"><value>Marginal abatement cost curve</value></data>
+  <data name="AvailableEmissionReductionOpportunities" xml:space="preserve"><value>Abatement options open to my units</value></data>
+  <data name="AbatementUndertaken" xml:space="preserve"><value>Abatement undertaken</value></data>
+  <data name="Project" xml:space="preserve"><value>Project</value></data>
+  <data name="Implemented" xml:space="preserve"><value>Implemented</value></data>
+  <data name="Holdings" xml:space="preserve"><value>Holdings</value></data>
+  <data name="Available" xml:space="preserve"><value>Available</value></data>
+  <data name="Held" xml:space="preserve"><value>Held</value></data>
+  <data name="SurrenderStatus" xml:space="preserve"><value>Surrender status</value></data>
+  <data name="ComplianceObligation" xml:space="preserve"><value>Compliance obligation</value></data>
+  <data name="AllowancesSurrenderedToGovernment" xml:space="preserve"><value>Allowances surrendered</value></data>
+  <data name="OffsetsSurrenderedToGovernment" xml:space="preserve"><value>Offsets surrendered</value></data>
+  <data name="BankingLimit" xml:space="preserve"><value>Banking limit</value></data>
+  <data name="AllowancesBankedForTheNextYear" xml:space="preserve"><value>Banked for next year</value></data>
+  <data name="Forfeited" xml:space="preserve"><value>Forfeited</value></data>
+  <data name="Shortfall" xml:space="preserve"><value>Shortfall</value></data>
+  <data name="Covered" xml:space="preserve"><value>Covered</value></data>
+  <data name="AutomaticSurrender" xml:space="preserve"><value>Surrender happens automatically when the year closes.</value></data>
+  <data name="SystemReport" xml:space="preserve"><value>System report</value></data>
+  <data name="ThisYear" xml:space="preserve"><value>This year</value></data>
+  <data name="ToDate" xml:space="preserve"><value>To date</value></data>
+  <data name="SignIn" xml:space="preserve"><value>Sign in</value></data>
+  <data name="SignOut" xml:space="preserve"><value>Sign out</value></data>
+  <data name="Email" xml:space="preserve"><value>Email</value></data>
+  <data name="Password" xml:space="preserve"><value>Password</value></data>
+  <data name="DisplayName" xml:space="preserve"><value>Display name</value></data>
+  <data name="RegistrationPin" xml:space="preserve"><value>Registration PIN</value></data>
+  <data name="Register" xml:space="preserve"><value>Register and claim a company</value></data>
+  <data name="SignInPrompt" xml:space="preserve"><value>Sign in to play.</value></data>
+  <data name="NoCompany" xml:space="preserve"><value>This account has not claimed a company in this simulation.</value></data>
+  <data name="NoSimulations" xml:space="preserve"><value>No simulation is running yet.</value></data>
+  <data name="Language" xml:space="preserve"><value>Language</value></data>
+  <data name="English" xml:space="preserve"><value>English</value></data>
+  <data name="Vietnamese" xml:space="preserve"><value>Vietnamese</value></data>
+  <data name="Message" xml:space="preserve"><value>Message</value></data>
+  <data name="Send" xml:space="preserve"><value>Send</value></data>
+  <data name="Rules" xml:space="preserve"><value>Rules</value></data>
+  <data name="Calculator" xml:space="preserve"><value>Calculator</value></data>
+  <data name="Briefcase" xml:space="preserve"><value>My orders</value></data>
+  <data name="BestBid" xml:space="preserve"><value>Best bid</value></data>
+  <data name="BestOffer" xml:space="preserve"><value>Best offer</value></data>
+  <data name="LastTrade" xml:space="preserve"><value>Last trade</value></data>
+  <data name="NetRevenue" xml:space="preserve"><value>Net revenue this year</value></data>
+  <data name="Player" xml:space="preserve"><value>Player</value></data>
+  <data name="Cap" xml:space="preserve"><value>Cap</value></data>
+  <data name="AnnualCapReductionRate" xml:space="preserve"><value>Annual cap reduction</value></data>
+  <data name="FreeAllocationShare" xml:space="preserve"><value>Free allocation share</value></data>
+  <data name="OffsetUsageLimit" xml:space="preserve"><value>Offset usage limit</value></data>
+  <data name="PenaltyPerTonne" xml:space="preserve"><value>Penalty per tonne</value></data>
+  <data name="PenaltyAllowanceDebit" xml:space="preserve"><value>Penalty allowance debit</value></data>
+  <data name="AuctionFloorPrice" xml:space="preserve"><value>Auction floor price</value></data>
+  <data name="AuctionCeilingPrice" xml:space="preserve"><value>Auction ceiling price</value></data>
+  <data name="AuctionsPerYear" xml:space="preserve"><value>Auctions per year</value></data>
+  <data name="YearLength" xml:space="preserve"><value>Year length</value></data>
+  <data name="AuctionDuration" xml:space="preserve"><value>Auction window</value></data>
+  <data name="VolatilityBand" xml:space="preserve"><value>Volatility band</value></data>
+  <data name="Offset" xml:space="preserve"><value>Offsets</value></data>
+  <data name="OffsetPriceDiscount" xml:space="preserve"><value>Offsets trade at a discount because only part of the obligation may be met with them.</value></data>
+  <data name="AuctionRevenueCollectedByGovernment" xml:space="preserve"><value>Auction revenue</value></data>
+  <data name="TotalAllowancesOnOffer" xml:space="preserve"><value>Allowances on offer</value></data>
+  <data name="GovernmentReserve" xml:space="preserve"><value>Government reserve</value></data>
+  <data name="Issued" xml:space="preserve"><value>Issued</value></data>
+  <data name="CalculatorHint" xml:space="preserve"><value>Price x volume = capital cost.</value></data>
+  <data name="ComplianceCostCalculator" xml:space="preserve"><value>Compliance cost calculator</value></data>
+  <data name="People" xml:space="preserve"><value>People</value></data>
+  <data name="None" xml:space="preserve"><value>None</value></data>
+  <data name="Total" xml:space="preserve"><value>Total</value></data>
+  <data name="OpenSimulation" xml:space="preserve"><value>Open</value></data>
+  <data name="Companies" xml:space="preserve"><value>Companies</value></data>
+  <data name="Units" xml:space="preserve"><value>Units</value></data>
+  <data name="SectorEmissions" xml:space="preserve"><value>Sectors</value></data>
+  <data name="PriceChart" xml:space="preserve"><value>Price history</value></data>
+  <data name="PriceChartHint" xml:space="preserve"><value>Clearing and traded prices by vintage and for offsets.</value></data>
+  <data name="Long" xml:space="preserve"><value>Long</value></data>
+  <data name="Short" xml:space="preserve"><value>Short</value></data>
+  <data name="PositionLegend" xml:space="preserve"><value>Free allocation and shortfall for the year.</value></data>
+  <data name="OpenOrders" xml:space="preserve"><value>Open orders</value></data>
+  <data name="Side" xml:space="preserve"><value>Side</value></data>
+  <data name="Filled" xml:space="preserve"><value>Filled</value></data>
+  <data name="Status" xml:space="preserve"><value>Status</value></data>
+  <data name="Buyer" xml:space="preserve"><value>Buyer</value></data>
+  <data name="Seller" xml:space="preserve"><value>Seller</value></data>
+  <data name="Channel" xml:space="preserve"><value>Channel</value></data>
+  <data name="Product" xml:space="preserve"><value>Product</value></data>
+  <data name="Quantity" xml:space="preserve"><value>Quantity</value></data>
+  <data name="NoRows" xml:space="preserve"><value>Nothing to show yet.</value></data>
+  <data name="Share" xml:space="preserve"><value>Share</value></data>
+  <data name="Average" xml:space="preserve"><value>Average</value></data>
+  <data name="PositionSummary" xml:space="preserve"><value>Position summary</value></data>
+  <data name="Vintage_ForwardSale" xml:space="preserve"><value>forward sale</value></data>
+  <data name="Committed" xml:space="preserve"><value>Committed</value></data>
+  <data name="SignInTitle" xml:space="preserve"><value>CarbonSim sign in</value></data>
+  <data name="MessagingSwitchedOff" xml:space="preserve"><value>The trainer has turned messaging off for this exercise.</value></data>
+  <data name="AdminConsole" xml:space="preserve"><value>Trainer console</value></data>
+  <data name="AdminConsoleSubtitle" xml:space="preserve"><value>Set the exercise up, steer it while it runs, and read its reports.</value></data>
+  <data name="AdminAccessDenied" xml:space="preserve"><value>Only a trainer account may use this console.</value></data>
+  <data name="AdminRuns" xml:space="preserve"><value>Exercises</value></data>
+  <data name="AdminSetup" xml:space="preserve"><value>New exercise</value></data>
+  <data name="AdminRunControls" xml:space="preserve"><value>Controls</value></data>
+  <data name="AdminReports" xml:space="preserve"><value>Reports</value></data>
+  <data name="AdminSurrenderStatus" xml:space="preserve"><value>Surrender status by company</value></data>
+  <data name="AdminSavedRuns" xml:space="preserve"><value>Saved exercises</value></data>
+  <data name="AdminNoRuns" xml:space="preserve"><value>No exercise is under way.</value></data>
+  <data name="AdminLoad" xml:space="preserve"><value>Load</value></data>
+  <data name="AdminDelete" xml:space="preserve"><value>Delete</value></data>
+  <data name="AdminAdd" xml:space="preserve"><value>Add</value></data>
+  <data name="AdminRemove" xml:space="preserve"><value>Remove</value></data>
+  <data name="AdminSave" xml:space="preserve"><value>Save</value></data>
+  <data name="AdminName" xml:space="preserve"><value>Exercise name</value></data>
+  <data name="AdminSeed" xml:space="preserve"><value>Random seed</value></data>
+  <data name="AdminLive" xml:space="preserve"><value>Under way</value></data>
+  <data name="AdminBeginYear" xml:space="preserve"><value>Start the year</value></data>
+  <data name="AdminBeginNextYear" xml:space="preserve"><value>Open the next year</value></data>
+  <data name="AdminPause" xml:space="preserve"><value>Pause the clock</value></data>
+  <data name="AdminResume" xml:space="preserve"><value>Let the clock run</value></data>
+  <data name="AdminHalt" xml:space="preserve"><value>Halt trading</value></data>
+  <data name="AdminHaltNow" xml:space="preserve"><value>Halt now</value></data>
+  <data name="AdminHaltWarn" xml:space="preserve"><value>Warn seconds before halting (leave blank to halt at once)</value></data>
+  <data name="AdminEndYear" xml:space="preserve"><value>Close the year</value></data>
+  <data name="AdminEndSimulation" xml:space="preserve"><value>End the exercise</value></data>
+  <data name="AdminMessaging" xml:space="preserve"><value>Player messaging</value></data>
+  <data name="AdminMessagingAllowed" xml:space="preserve"><value>Players may post messages.</value></data>
+  <data name="AdminMessagingBlocked" xml:space="preserve"><value>Messaging is switched off.</value></data>
+  <data name="AdminIssueFine" xml:space="preserve"><value>Fine a unit</value></data>
+  <data name="AdminFineAmount" xml:space="preserve"><value>Fine amount</value></data>
+  <data name="AdminFineDescription" xml:space="preserve"><value>Reason for the fine</value></data>
+  <data name="AdminDisburseOffsets" xml:space="preserve"><value>Hand out offsets</value></data>
+  <data name="AdminOffsetVolume" xml:space="preserve"><value>Offset volume</value></data>
+  <data name="AdminAddAbatement" xml:space="preserve"><value>Add abatement for a unit</value></data>
+  <data name="AdminShock" xml:space="preserve"><value>End-of-year modification</value></data>
+  <data name="AdminShockTonnes" xml:space="preserve"><value>Change in emissions (tonnes, negative to cut)</value></data>
+  <data name="AdminApply" xml:space="preserve"><value>Apply</value></data>
+  <data name="AdminParameters" xml:space="preserve"><value>Rules of the exercise</value></data>
+  <data name="AdminSectorsAndAbatement" xml:space="preserve"><value>Sectors and abatement menus</value></data>
+  <data name="AdminSectorName" xml:space="preserve"><value>Sector name</value></data>
+  <data name="AdminEmissionShare" xml:space="preserve"><value>Emission share</value></data>
+  <data name="AdminAbatementCode" xml:space="preserve"><value>Code</value></data>
+  <data name="AdminAbatementName" xml:space="preserve"><value>Project name</value></data>
+  <data name="AdminReductionShare" xml:space="preserve"><value>Reduction share of baseline</value></data>
+  <data name="AdminUpfrontPerTonne" xml:space="preserve"><value>Upfront cost per tonne</value></data>
+  <data name="AdminNetRevenuePerTonne" xml:space="preserve"><value>Net revenue per tonne</value></data>
+  <data name="AdminImplementationYears" xml:space="preserve"><value>Years to build</value></data>
+  <data name="AdminLifetimeYears" xml:space="preserve"><value>Years of life</value></data>
+  <data name="AdminAddOption" xml:space="preserve"><value>Add an abatement option</value></data>
+  <data name="AdminGrowth" xml:space="preserve"><value>Business-as-usual growth band</value></data>
+  <data name="AdminMinimumRate" xml:space="preserve"><value>Lowest annual growth</value></data>
+  <data name="AdminMaximumRate" xml:space="preserve"><value>Highest annual growth</value></data>
+  <data name="AdminRegistration" xml:space="preserve"><value>Registration</value></data>
+  <data name="AdminRegistrationOpen" xml:space="preserve"><value>Let players claim a company</value></data>
+  <data name="AdminAccessPin" xml:space="preserve"><value>Access PIN</value></data>
+  <data name="AdminCompaniesOnOffer" xml:space="preserve"><value>Companies the scenario defines</value></data>
+  <data name="AdminCreateRun" xml:space="preserve"><value>Create the exercise</value></data>
+  <data name="AdminOpen" xml:space="preserve"><value>Open</value></data>
+  <data name="AdminCreated" xml:space="preserve"><value>Exercise created.</value></data>
+  <data name="AdminLoaded" xml:space="preserve"><value>Exercise loaded.</value></data>
+  <data name="AdminDeleted" xml:space="preserve"><value>Exercise deleted.</value></data>
+  <data name="AdminYearStarted" xml:space="preserve"><value>The year has begun.</value></data>
+  <data name="AdminYearEnded" xml:space="preserve"><value>The year has closed.</value></data>
+  <data name="AdminPausedStatus" xml:space="preserve"><value>The clock is paused.</value></data>
+  <data name="AdminResumedStatus" xml:space="preserve"><value>The clock is running again.</value></data>
+  <data name="AdminHaltWarned" xml:space="preserve"><value>Trading will halt after the warning.</value></data>
+  <data name="AdminHaltedStatus" xml:space="preserve"><value>Trading has halted.</value></data>
+  <data name="AdminSimulationEnded" xml:space="preserve"><value>The exercise has ended.</value></data>
+  <data name="AdminFineIssued" xml:space="preserve"><value>The fine has been issued.</value></data>
+  <data name="AdminOffsetsDisbursed" xml:space="preserve"><value>The offsets have been handed out.</value></data>
+  <data name="AdminAbatementAdded" xml:space="preserve"><value>The abatement has been added.</value></data>
+  <data name="AdminShockApplied" xml:space="preserve"><value>The modification has been applied.</value></data>
+  <data name="AdminMessagingSaved" xml:space="preserve"><value>The messaging setting has been saved.</value></data>
+  <data name="AdminRegistrationSaved" xml:space="preserve"><value>The registration settings have been saved.</value></data>
+  <data name="AdminTimeLeftInYear" xml:space="preserve"><value>Time left in the year</value></data>
+  <data name="AdminAuctionOpensIn" xml:space="preserve"><value>Next auction opens in</value></data>
+  <data name="AdminAuctionClosesIn" xml:space="preserve"><value>Auction closes in</value></data>
+  <data name="AdminAutomaticTrading" xml:space="preserve"><value>Automatic trading</value></data>
+  <data name="AdminOn" xml:space="preserve"><value>On</value></data>
+  <data name="AdminOff" xml:space="preserve"><value>Off</value></data>
+  <data name="AdminExportCsv" xml:space="preserve"><value>Export as CSV</value></data>
+  <data name="AdminPriceReport" xml:space="preserve"><value>Average traded price by year</value></data>
+  <data name="AdminCompanyReport" xml:space="preserve"><value>Company report</value></data>
+  <data name="AdminUnitReport" xml:space="preserve"><value>Unit report</value></data>
+  <data name="AdminGovernmentRevenue" xml:space="preserve"><value>Government revenue</value></data>
+  <data name="AdminGovernmentReserve" xml:space="preserve"><value>Government reserve</value></data>
+  <data name="AdminSelectRunHint" xml:space="preserve"><value>Choose an exercise to see its console.</value></data>
+  <data name="AdminShockYear" xml:space="preserve"><value>Year to change</value></data>
+  <data name="AdminAbatementFor" xml:space="preserve"><value>Abatement for the chosen unit</value></data>
+</root>

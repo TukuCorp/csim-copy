@@ -36,6 +36,12 @@ public sealed class CarbonSimHostOptions
     public string ScenarioFile { get; set; } = "../../scenarios/vietnam-2024.json";
 
     /// <summary>
+    /// Development only: starts the configured scenario as a live run at boot so `dotnet run` shows
+    /// a game without an administrator console. The shipped configuration leaves it off.
+    /// </summary>
+    public bool StartDemoSimulation { get; set; }
+
+    /// <summary>
     /// How the host brings the database schema up: <see cref="MigrateSchema"/> (the default) applies
     /// the migrations the data project ships, while <see cref="SchemaFromModel"/> builds the schema
     /// from the model and keeps no history. A throwaway host - an integration test run, a demo box -
@@ -56,4 +62,14 @@ public sealed class CarbonSimHostOptions
 
     /// <summary>How many wrong codes an open reset accepts before the host closes it.</summary>
     public int ResetCodeMaxAttempts { get; set; } = 5;
+
+    /// <summary>
+    /// The address of the exercise administrator the host creates for itself at boot, or empty to
+    /// create none. A deployment supplies it so there is a way into the console without a second
+    /// tool; development sets one so `dotnet run` can be driven end to end.
+    /// </summary>
+    public string AdminEmail { get; set; } = string.Empty;
+
+    /// <summary>The password for <see cref="AdminEmail"/>; empty disables the bootstrap account.</summary>
+    public string AdminPassword { get; set; } = string.Empty;
 }

@@ -1,0 +1,152 @@
+@page "/run/{SimulationId:guid}/auction"
+@inject IStringLocalizer<SharedStrings> Strings
+@inject PlayerContext Context
+
+<PageTitle>@Strings["AllowanceAuction"]</PageTitle>
+<h1>@Strings["AllowanceAuction"]</h1>
+
+@if (View is not { } view)
+{
+    <ScreenFallback Screen="Screen" />
+}
+else
+{
+    <div class="cards">
+        <section class="card">
+            <h2>@Strings["PlaceBid"]</h2>
+            @if (view.CurrentAuction is not { } auction || auction.IsCleared)
+            {
+                <p class="muted">@Strings["AuctionHasEnded"]</p>
+            }
+            else
+            {
+                <label>
+                    @Strings["UnitName"]
+                    <select @bind="_unitId">
+                        @foreach (UnitView unit in view.Units)
+                        {
+                            <option value="@unit.Id">@unit.Name</option>
+                        }
+                    </select>
+                </label>
+                <label>
+                    @Strings["Vintage"]
+                    <select @bind="_vintage">
+                        @foreach (int vintage in Vintages(auction))
+                        {
+                            <option value="@vintage">@Strings["Vintage"] @vintage</option>
+                        }
+                    </select>
+                </label>
+                <label>
+                    @Strings["BidVolume"]
+                    <input type="number" step="1" min="1" @bind="_volume" />
+                </label>
+                <label>
+                    @Strings["UnitBidPrice"]
+                    <input type="range" min="@view.System.AuctionFloorPrice" max="@view.System.AuctionCeilingPrice" step="1" @bind="_price" />
+                    <span>@Display.Money(_price)</span>
+                </label>
+                <p class="small muted">@Strings["CapitalCost"]: @Display.Money(_price * _volume)</p>
+                <button class="button" disabled="@(!view.AuctionOpen)"
+                        @onclick="PlaceBidAsync">
+                    @Strings["PlaceBid"]
+                </button>
+                @if (!view.AuctionOpen)
+                {
+                    <p class="muted small">@Strings["WaitingForAuction_X", view.Auction, view.Year]</p>
+                }
+            }
+        </section>
+
+        <section class="card">
+            <h2>@Strings["VintagesThisAuction"]</h2>
+            @if (view.CurrentAuction is { } current)
+            {
+                <ul class="settings">
+                    @foreach (AuctionLotView lot in current.Lots)
+                    {
+                        <li>@Strings["Vintage"] @lot.Vintage &middot; @Display.Tonnes(lot.Volume) t @(lot.IsForward ? "(" + Strings["Vintage_ForwardSale"] + ")" : null)</li>
+                    }
+                </ul>
+            }
+            <p class="small">@Strings["AllowancesToBeAuctionedThisYear"]: @Display.Tonnes(view.AllowancesToBeAuctionedThisYear)</p>
+        </section>
+
+        @if (view.CurrentAuction is { IsCleared: true } ended)
+        {
+            <section class="card wide">
+                <h2>@Strings["AuctionHasEnded"]</h2>
+                @if (ended.MyAwards.Count == 0)
+                {
+                    <p class="muted">@Strings["NoRows"]</p>
+                }
+                else
+                {
+                    <QuickGrid Items="@ended.MyAwards.AsQueryable()" Class="grid">
+                        <TemplateColumn Title="@Strings["Vintage"]" Context="row">@row.Vintage</TemplateColumn>
+                        <TemplateColumn Title="@Strings["Won"]" Context="row">@Display.Tonnes(row.Volume)</TemplateColumn>
+                        <TemplateColumn Title="@Strings["Price"]" Context="row">@Display.Number(row.Price)</TemplateColumn>
+                        <TemplateColumn Title="@Strings["Paid"]" Context="row">@Display.Money(row.Cost)</TemplateColumn>
+                    </QuickGrid>
+                }
+            </section>
+        }
+
+        <section class="card wide">
+            <h2>@Strings["MyAuctionHistory"]</h2>
+            <QuickGrid Items="@view.Auctions.AsQueryable()" Class="grid">
+                <TemplateColumn Title="@Strings["Year"]" Context="row">@row.Year</TemplateColumn>
+                <TemplateColumn Title="@Strings["AuctionNumber"]" Context="row">@row.Sequence</TemplateColumn>
+                <TemplateColumn Title="@Strings["Vintage"]" Context="row">@string.Join(", ", row.Lots.Select(lot => lot.Vintage))</TemplateColumn>
+                <TemplateColumn Title="@Strings["TotalVolume"]" Context="row">@Display.Tonnes(row.OfferedVolume)</TemplateColumn>
+                <TemplateColumn Title="@Strings["ClearedAt"]" Context="row">@Display.Price(row.ClearingPrice)</TemplateColumn>
+                <TemplateColumn Title="@Strings["TotalAwarded"]" Context="row">@Display.Tonnes(row.VolumeSold)</TemplateColumn>
+                <TemplateColumn Title="@Strings["YouBid"]" Context="row">@Display.Tonnes(row.MyBids.Sum(bid => bid.Volume))</TemplateColumn>
+            </QuickGrid>
+        </section>
+    </div>
+}
+
+@code {
+    [CascadingParameter] private PlayerScreenSnapshot? Screen { get; set; }
+
+    [Parameter] public Guid SimulationId { get; set; }
+
+    private int _unitId;
+    private int _vintage = 1;
+    private decimal _volume = 1_000m;
+    private decimal _price;
+
+    private PlayerView? View => Screen?.View;
+
+    protected override void OnParametersSet()
+    {
+        if (View is not { } view)
+        {
+            return;
+        }
+
+        if (_unitId == 0 && view.Units.Count > 0)
+        {
+            _unitId = view.Units[0].Id;
+        }
+
+        if (_price == 0m)
+        {
+            _price = view.System.AuctionFloorPrice;
+        }
+
+        if (view.CurrentAuction is { } auction && auction.Lots.Count > 0 && !Vintages(auction).Contains(_vintage))
+        {
+            _vintage = Vintages(auction)[0];
+        }
+    }
+
+    private static List<int> Vintages(AuctionView auction) => [.. auction.Lots.Select(lot => lot.Vintage).Distinct().Order()];
+
+    private Task PlaceBidAsync() =>
+        Context.ActAsync(
+            session => session.PlaceBidAsync(SimulationId, _unitId, _vintage, _price, _volume),
+            Strings["PlaceBid"]);
+}

@@ -6,16 +6,26 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="bunit" />
     <PackageReference Include="coverlet.collector" />
     <PackageReference Include="FluentAssertions" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
+    <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="Microsoft.Playwright" />
     <PackageReference Include="xunit" />
     <PackageReference Include="xunit.runner.visualstudio" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\CarbonSim.Web\CarbonSim.Web.csproj" />
+    <ProjectReference Include="..\..\src\CarbonSim.Engine\CarbonSim.Engine.csproj" />
+    <ProjectReference Include="..\..\src\CarbonSim.Data\CarbonSim.Data.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Scenario files load relative to the test working directory, as the host loads them. -->
+    <Content Include="..\..\scenarios\*.json" Link="scenarios\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>

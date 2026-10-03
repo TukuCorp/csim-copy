@@ -1,0 +1,35 @@
+@page "/run/{SimulationId:guid}/units"
+@inject IStringLocalizer<SharedStrings> Strings
+
+<PageTitle>@Strings["UnitInformation"]</PageTitle>
+<h1>@Strings["UnitInformation"]</h1>
+
+@if (View is not { } view)
+{
+    <ScreenFallback Screen="Screen" />
+}
+else
+{
+    <section class="card wide">
+        <QuickGrid Items="@view.Units.AsQueryable()" Class="grid">
+            <TemplateColumn Title="@Strings["UnitName"]" Context="row">@row.Name</TemplateColumn>
+            <TemplateColumn Title="@Strings["Sector"]" Context="row">@row.SectorName</TemplateColumn>
+            <TemplateColumn Title="@Strings["BaselineEmissions"]" Context="row">@Display.Tonnes(row.BaselineEmissions)</TemplateColumn>
+            <TemplateColumn Title="@Strings["AllocationThisYear"]" Context="row">@Display.Tonnes(row.FreeAllocationThisYear)</TemplateColumn>
+            <TemplateColumn Title="@Strings["ForecastEmissions"]" Context="row">@Display.Tonnes(row.ForecastEmissions)</TemplateColumn>
+            <TemplateColumn Title="@Strings["EmissionReductions"]" Context="row">@Display.Tonnes(row.EmissionReductions)</TemplateColumn>
+            <TemplateColumn Title="@Strings["NormalOperatingProfit"]" Context="row">@Display.Money(row.NormalOperatingProfit)</TemplateColumn>
+            <TemplateColumn Title="@Strings["Abatement"]" Context="row">@row.ImplementedCount</TemplateColumn>
+            <TemplateColumn Title="@Strings["AutoTrade"]" Context="row">@(row.AutoTrade ? Strings["Implemented"] : Strings["None"])</TemplateColumn>
+            <TemplateColumn Title="@Strings["Shutdown"]" Context="row">@(row.ShutDownThisYear ? Strings["Shutdown"] : Strings["None"])</TemplateColumn>
+        </QuickGrid>
+    </section>
+}
+
+@code {
+    [CascadingParameter] private PlayerScreenSnapshot? Screen { get; set; }
+
+    [Parameter] public Guid SimulationId { get; set; }
+
+    private PlayerView? View => Screen?.View;
+}

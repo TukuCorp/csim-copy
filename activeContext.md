@@ -44,31 +44,31 @@ Bots
 ## Phase 2 — Persistence and host
 - [x] EF Core model and migrations (SQLite); repository boundaries thin; engine stays persistence-agnostic — `src/CarbonSim.Data` (42 tables, one `InitialCreate` migration, `SimulationMapper` and a thin `EfSimulationRepository`); the engine gained a persistence-neutral `src/CarbonSim.Engine/Snapshot/` boundary and references nothing from Data
 - [x] ASP.NET Core host; registration with access PIN; login; password reset — `src/CarbonSim.Web` cookie authentication, `PlayerAccountService` with the PIN gate, company claiming, rehash-on-login and emailed reset codes; `IEmailSender` with in-memory and logging implementations
-- [ ] SignalR `SimulationHub` with per-simulation groups; strongly typed client interface for AuctionOpened/Closing/Cleared, MarketStateChanged, OrderBookChanged, TradeExecuted, OtcOfferReceived/Resolved, MessageReceived, SimulationStateChanged, ParametersChanged
-- [ ] Hosted `SimulationClockService` driving the engine and pushing events
-- [ ] Integration tests: two simulated clients see the same auction result
-- [ ] Review section for Phase 2
+- [x] SignalR `SimulationHub` with per-simulation groups; strongly typed client interface for AuctionOpened/Closing/Cleared, MarketStateChanged, OrderBookChanged, TradeExecuted, OtcOfferReceived/Resolved, MessageReceived, SimulationStateChanged, ParametersChanged — `src/CarbonSim.Web/Simulations/` (`SimulationHub`, `ISimulationClient`, `SimulationGroups`, `SimulationRegistry` with owner-checked player actions, `SimulationClockService`, `SimulationDriverOptions`); hub at `/hubs/simulation`
+- [x] Hosted `SimulationClockService` driving the engine and pushing events — injected `TimeProvider` (fake in tests, never sleeps), per-tick clock/auction-clear/bots, `AuctionCleared`+`TradeExecuted` only for newly cleared auctions, `AuctionOpened`/`AuctionClosing` from queued notices, `MarketStateChanged`/`SimulationStateChanged`/`OrderBookChanged` only when they changed, `TradeExecuted` for exchange fills drained from one journal cursor advanced under the run gate, order/OTC/chat broadcasts in the registry; `EndYearAsync` reconciles, closes the books and saves once, and `BeginNextYearAsync` opens the next year and grants its allocation
+- [x] Integration tests: two simulated clients see the same auction result — `tests/CarbonSim.Web.Tests/Simulations/` (`SimulationTestHost` with fake clock and manual-only driver, `TestRunFactory` two-human-company scenario, `AuctionBroadcastTests` two HubConnections on one run hearing the same clear/opening/closing, `DriverYearTests` full-year reconcile+persist, `RegistryGuardTests` cross-company refusals, `MarketActionTests` crossing fills and OTC settlement)
+- [x] Review section for Phase 2 — below
 
 ## Phase 3 — Player UI (Blazor, ECharts)
 Order follows the demo video; each screen has a bUnit test and a Playwright step.
-- [ ] Waiting screen with simulation settings
-- [ ] Layout: top bar (capital, overdraft, forecast position, MCC, best bid/offer/last, net revenue, briefcase, rules gear with calculator, messages), progress strip (years, auctions, countdowns, PAUSED / halted banners), left nav
-- [ ] Dashboard: My Finance, My Compliance, Long/Short stacked bar, Abatement implementation timeline, Auction history, Trade history
-- [ ] Abatement: MACC chart, status box, undertaken timeline, opportunities table with Implement
-- [ ] Allowance Auction: bid form (volume, vintage, price sliders), vintages this auction, allowances to be auctioned, results modal, histories
-- [ ] Exchange Market: price chart (candlestick + close, per vintage + offsets), summary strip, trade activity (top of book, last 10), order form
-- [ ] OTC Market: send offer, offers table, accept/reject
-- [ ] Company Management, Unit Information, Surrender & Banking, System Info, Leaderboard
-- [ ] Messaging
-- [ ] Localisation plumbing (resx, culture cookie), English complete
-- [ ] Review section for Phase 3
+- [x] Waiting screen with simulation settings
+- [x] Layout: top bar (capital, overdraft, forecast position, MCC, best bid/offer/last, net revenue, briefcase, rules gear with calculator, messages), progress strip (years, auctions, countdowns, PAUSED / halted banners), left nav
+- [x] Dashboard: My Finance, My Compliance, Long/Short stacked bar, Abatement implementation timeline, Auction history, Trade history
+- [x] Abatement: MACC chart, status box, undertaken timeline, opportunities table with Implement
+- [x] Allowance Auction: bid form (volume, vintage, price sliders), vintages this auction, allowances to be auctioned, results modal, histories
+- [x] Exchange Market: price chart (candlestick + close, per vintage + offsets), summary strip, trade activity (top of book, last 10), order form
+- [x] OTC Market: send offer, offers table, accept/reject
+- [x] Company Management, Unit Information, Surrender & Banking, System Info, Leaderboard
+- [x] Messaging
+- [x] Localisation plumbing (resx, culture cookie), English complete
+- [x] Review section for Phase 3
 
 ## Phase 4 — Admin console
-- [ ] Setup: sectors, trading systems, unit abatement configuration, parameters, registration open/close, PIN
-- [ ] Run-time: Begin Year, pause/resume, halt trading with warning, end year, end simulation, disable messaging, issue fines, disburse offsets, add abatement, end-of-year modifications (shocks), player surrender status
-- [ ] Reports: system, company, unit, historical average carbon price, leaderboard; export CSV
-- [ ] Multiple concurrent simulations
-- [ ] Review section for Phase 4
+- [x] Setup: sectors, trading systems, unit abatement configuration, parameters, registration open/close, PIN
+- [x] Run-time: Begin Year, pause/resume, halt trading with warning, end year, end simulation, disable messaging, issue fines, disburse offsets, add abatement, end-of-year modifications (shocks), player surrender status
+- [x] Reports: system, company, unit, historical average carbon price, leaderboard; export CSV
+- [x] Multiple concurrent simulations
+- [x] Review section for Phase 4
 
 ## Phase 5 — Vietnam localisation and scenario
 - [ ] Vietnamese resource file (use the Vietnamese glossary in `research/carbonsim-sources/vietnam-ta-materials/` for terminology)
@@ -134,3 +134,241 @@ Evidence beyond tests: the shipped host was booted as a real process against the
 Deviations: a third test project, `tests/CarbonSim.Data.Tests`, was added (CLAUDE.md's layout updated) because the round-trip proof belongs to the persistence layer, and `CarbonSim.Engine.Tests` must not depend on Data; `dotnet-ef` was installed as a repository-local tool with a manifest rather than globally; `.editorconfig` exempts generated migrations from the namespace, collection and line-ending rules, and the scaffolded files were normalised to LF without a byte-order mark so `dotnet format` stays clean; `Directory.Packages.props` gained EF Core 9.0.20, `Microsoft.Extensions.Identity.Core` and `Microsoft.AspNetCore.Mvc.Testing`.
 Findings worth keeping: a merged ledger row cannot express "this company and product has a key worth zero" as against "has no key at all", and the engine keeps keys for balances it has spent, so both allowance buckets and both government figures are their own tables; SQLite returns decimal amounts by value and not by trailing zeros, so the persistence tests compare decimals as decimals and the reports are unaffected; and the snapshot must carry values the engine drew (business-as-usual growth, bot trigger jitter) because re-drawing them on load would shift every later draw in the run.
 Open issues: the engine runs one trading system today, so the snapshot carries one; a restored clock is bound to the absolute instant it was captured at, so a host that reloads in a fresh process has to supply wall time that agrees with it (documented on `Restore`); a few captured fields are reader conveniences that `Restore` does not consume, so a hand-edited snapshot could contradict itself; the registration PIN is empty in `appsettings.json`, which closes registration until an operator sets one; and nothing yet drives a simulation from the host — the SignalR hub, the hosted clock service and the two-client integration test are the rest of Phase 2.
+
+### Phase 2, items 3–5 — hub, clock service, integration tests (2026-10-03)
+Built: `src/CarbonSim.Web/Simulations/` — `ISimulationClient` (the 11-message typed feed: AuctionOpened/Closing/Cleared, MarketStateChanged, OrderBookChanged, TradeExecuted, OtcOfferReceived/Resolved, MessageReceived, SimulationStateChanged, ParametersChanged), `SimulationHub` at `/hubs/simulation` with one group per simulation (`SimulationGroups`) and owner-checked player actions (bid, place/cancel order, send/answer OTC, chat), `SimulationRegistry` (run store, per-run gate, `PendingNotices` + `ClearedSinceAnnounced` queues drained in event order, `JournalSeen` cursor so each fill reports once), `SimulationClockService` (injected `TimeProvider`, `TickAsync` = clock advance, auction clear, bots, year-end reconcile + books close; `AnnounceAsync` = notices then clears then books then market state; `StartAsync` grants year-1 free allocation; `ExecuteAsync` polls every second, disabled with `PollInterval = Zero` in tests; saves via `ISimulationRepository` on year end). Engine change: `Auction.Results` is now public so the host can report clearing prices (snapshot already read it).
+Test counts: 283 in the solution — 279 passing, 4 skipped (the Phase 1 fidelity envelopes). Engine 238 (234 passing, 4 skipped), Web 34 (was 26), Data 11. New: `AuctionBroadcastTests` (two HubConnections in one group hear the same clear at the floor plus matching opened/closing notices), `DriverYearTests` (four auctions clear, extra tick ends the year, compliance has 2 results, run persists under its own id; single small bid clears at the floor), `RegistryGuardTests` (cross-company bid/order refused, stranger's offer answer refused), `MarketActionTests` (crossing limit orders fill at the resting price and empty the book; OTC accept moves stock and cash). Fixtures: `SimulationTestHost` (fake clock, manual-only driver), `TestRunFactory` (two-human-company loader scenario, no bots to interfere).
+Gate: `dotnet build CarbonSim.sln` → 0 warnings, 0 errors; `dotnet test CarbonSim.sln` → green; `dotnet format CarbonSim.sln --verify-no-changes` → clean. `Directory.Packages.props` gained `Microsoft.AspNetCore.SignalR.Client` 9.0.20 (test-only; the server side ships in the framework).
+Decisions worth keeping: the driver only announces auctions cleared by its own tick (queued with their close notice, drained in order), so a reconnected watcher never replays history; order fills report from the journal cursor rather than the book tape, because the tape carries order ids and the journal carries buyer and seller; the test resolves everything through `Server.Services`, because the SignalR backplane lives there — `_host.Services` holds a different registry and the tick silently clears a run nobody watches (found when the queue drained to 0 post-announce with no client event); an under-subscribed lot clears at the floor, so the two-client test asserts 100 rather than either bid price.
+Open issues: the hub trusts `UserIdentifier ?? ConnectionId` as the actor until the Phase 3 login wires accounts to companies (tests pass `player-N` instead); `SimulationHub` has no authorization policy yet, so any connected client can join any run; `PendingNotices`/`ClearedSinceAnnounced`/`JournalSeen` are in-memory only and do not survive a save/load — a host that restarts mid-auction replays that auction's notices; `AuctionClosing` carries the live `TimeToAuctionClose` at announce time rather than the notice's own timestamp; no admin endpoints drive Start/Tick yet (Phase 4), so runs only start from tests.
+
+### Phase 2 review fixes (2026-10-03, second pass)
+
+Closed the Phase 2 review findings in the hub and clock code. All four must-fix items and the
+should-fix list are done, each with a test where the finding was behavioural.
+
+This pass supersedes the open issues listed in the section above: the hub no longer trusts a
+`player-N` actor or `ConnectionId`, it requires an authenticated caller, the per-tick state
+messages are change-gated, and ending a year is an explicit call that saves once.
+
+**Must fix**
+
+1. Real logins can act. `SimulationRegistry` no longer recognises a `player-N` convention or a
+   literal company name. Every action resolves the caller's identity through the new
+   `AccountCompanyResolver`, which reads the account row the caller claimed at registration
+   (`IAccountStore.FindByIdAsync` on the account id the authentication cookie carries) and then
+   checks ownership by company. Anonymous connections, administrators and accounts with no company
+   all resolve to null and are refused. `player-N` now exists only in test setup, and the
+   simulation tests sign in through the real registration and login endpoints.
+2. Journal race outside the run gate. `HostedRun.CollectAnnouncement` reads the journal and
+   advances `JournalSeen` while the run's gate is held; the tick and every player action collect
+   there and broadcast only after releasing the gate, so nothing touches the journal outside it.
+3. Bot exchange fills are announced. The one journal cursor, advanced under the gate, is the
+   single source of `TradeExecuted` for exchange fills, used by both `TickAsync` and player
+   actions: a bot fill is reported on the tick that produced it and exactly once. Auction trades
+   are reported with their clear and OTC trades with the resolved offer, and the cursor filters
+   those channels out, so nothing is double-announced.
+4. Year end. End-year is now an explicit driver call, matching the Phase 4 admin flow: the tick
+   only advances the clock, clears auctions and runs the bots, while `EndYearAsync` reconciles,
+   closes the books and saves once. `BeginNextYearAsync` opens the next year and grants its free
+   allocation, mirroring `StartAsync`. Extra ticks on a `YearEnded` run write nothing, so the
+   per-second re-save is gone.
+
+**Should fix**
+
+- The hub endpoint requires authorization (`MapHub(...).RequireAuthorization()`), the cookie
+  handler answers `/hubs` with 401 rather than a login redirect so SignalR can report it, and
+  `SimulationHub` refuses a method call that arrives without a signed-in identity. Rule refusals
+  (unauthorised, bad product or side, engine refusals) are wrapped in a `HubException` that keeps
+  the reason.
+- `OrderBookChanged`, `MarketStateChanged` and `SimulationStateChanged` are sent only when they
+  actually changed, not on every one-second tick.
+- Auction `TradeExecuted` reports `result.ClearingPrice` rather than `award.Cost / award.Volume`.
+
+Test counts: 292 in the solution - 288 passing, 4 skipped (the Phase 1 fidelity envelopes).
+Engine 238 (234 passing, 4 skipped), Web 43 (was 34), Data 11. New Web tests:
+`ActorResolutionTests` (a signed-in player acts for its claimed company and not another),
+`HubAuthorizationTests` (an anonymous negotiate is 401, a signed-in player is 200, and a rule
+violation reaches the client as a `HubException` carrying its message), and
+`BotFillBroadcastTests` (a bot exchange fill is announced on its tick and is not re-announced by a
+later player order). The existing suites moved onto real sign-ins and explicit year-end calls, and
+`DriverYearTests` gains the save-once and begin-next-year cases.
+
+Gate: `dotnet build CarbonSim.sln` -> 0 warnings, 0 errors; `dotnet test CarbonSim.sln` -> green;
+`dotnet format CarbonSim.sln --verify-no-changes` -> clean.
+
+Decisions worth keeping: ending a year no longer happens automatically on `TradingHalted`, because
+the review preferred the explicit call that mirrors the admin console, so nothing ends a year until
+`EndYearAsync` is called (Phase 4 wires the control); the test host registers real accounts for its
+two companies and signs in, which is what the `player-N` convention used to stand in for; the
+announcement is gathered under the gate as a plain payload and sent afterwards, so a broadcast can
+never race the state it describes.
+
+Open issues: `PendingNotices`/`ClearedSinceAnnounced`/`JournalSeen` are still in-memory only, so a
+host that restarts mid-auction replays that auction's notices; `AuctionClosing` still carries the
+clock's live time-to-close at collection rather than the notice's own timestamp; nothing outside
+the tests calls `EndYearAsync`/`BeginNextYearAsync` until the Phase 4 admin endpoints exist; and
+ownership is still keyed on the company name, which is what the account table's unique claim uses.
+
+### Phase 3 - Player UI, Blazor interactive server (2026-10-03)
+
+Built: `src/CarbonSim.Web/Components/` - `App.razor`/`Routes.razor` (global InteractiveServer render
+mode), `Layout/` (`MainLayout` shell, `TopBar`, `ProgressStrip`, `NavMenu`, `RulesPanel`), `Pages/`
+(Waiting, Dashboard, Abatement, Auction, Exchange, Otc, CompanyManagement, UnitInformation,
+SurrenderAndBanking, SystemInfo, Leaderboard, Messages), `Shared/` (`EChart`, `Display`,
+`ScreenFallback`), and `src/CarbonSim.Web/Player/` - the read model (`PlayerView` and its records,
+`IPlayerSession`/`PlayerSession`, `PlayerContext`, `RunRoute`, `ICharts`/`EChartsInterop`, `Charts`
+option builders, `PlayerViewOptions`). Sign-in, registration and sign-out are plain server-rendered
+forms (`Endpoints/SignInEndpoints.cs`) with antiforgery tokens, because writing the authentication
+cookie is an HTTP round trip an open circuit cannot make; the language switch is
+`Endpoints/CultureEndpoints.cs`, writing the culture cookie the localiser reads. `wwwroot/app.css` is
+written for this project, and Apache ECharts 5.5.1 is vendored under `wwwroot/lib/echarts/` with its
+Apache-2.0 LICENSE so a training box needs no internet. `wwwroot/js/charts.js` is the only script
+module: it is imported once and handed one option per chart.
+
+Live updates - the choice: the pages do not open a browser SignalR connection. Blazor Server
+components already run on the server, so `PlayerSession` builds each screen's `PlayerView` inside the
+run's gate through `SimulationRegistry.ReadAsync`, and the shell re-reads it once a second
+(`PlayerViewOptions.RefreshInterval`, null in tests) and pushes the new snapshot down as a cascading
+value. That is the same state the hub carries, without a second transport, and it is what makes every
+screen testable with a stub session. Player actions go through `PlayerContext.ActAsync` into
+`IPlayerSession`, which forwards to the existing owner-checked `SimulationRegistry` methods, so no
+component mutates the engine.
+
+Charts: one `EChart` component takes an already-serialised ECharts option and hands it to the
+vendored library through `ICharts`; `Charts` builds the N.O.P. bars, the MACC bars, the long/short
+stacked bar, and the candlestick-plus-close price chart (one candle per virtual year per product,
+with the auction floor as a dashed line because every book's volatility band is anchored there). A
+chart that throws in the browser is logged and the screen carries on.
+
+Dev seeding: `CarbonSimHostOptions.StartDemoSimulation`, set only in `appsettings.Development.json`,
+starts `scenarios/vietnam-2024.json` as a live run at boot through `DemoSimulationSeeder`, and the
+Development registration PIN is `carbonsim-dev-pin`, so `dotnet run --project src/CarbonSim.Web`
+shows a playable game.
+
+Test counts: 323 in the solution - 319 passing, 4 skipped (the Phase 1 fidelity envelopes). Engine
+238 (234 passing, 4 skipped), Web 74 (was 43), Data 11. The 31 new Web tests are 13 bUnit screen
+tests (every screen, the waiting list, and the no-company fallback), 7 bUnit action tests (each
+button asserted on the session call it made), 5 shell tests plus 4 route cases (layout, top bar,
+progress strip with its PAUSED banner, rules panel, `RunRoute`), and 2 Playwright tests that boot the
+real host as a child process against a throwaway database and drive Chromium: a walk of every screen
+in the demo order, and a 390x844 pass asserting no screen scrolls the page sideways.
+
+Gate: `dotnet build CarbonSim.sln` -> 0 warnings, 0 errors; `dotnet test CarbonSim.sln` -> green;
+`dotnet format CarbonSim.sln --verify-no-changes` -> clean; the host boots with
+`dotnet run --project src/CarbonSim.Web` and serves all eleven screens plus `/sign-in`. Playwright
+browsers were installed with the generated `playwright.ps1 install chromium`, so the walk runs for
+real rather than being skipped; `PlaywrightFactAttribute` reports a skip with the install command on
+a machine that has none.
+
+Decisions worth keeping: the run's id is read out of the address (`RunRoute`) because a layout cannot
+take a route parameter, so `/run/{id}/screen` is the one thing the shell and its page agree on; a
+product with no order book yet is still listed at the auction floor, because that is what its band
+is anchored to, so the exchange screen is not blank before the first trade; the auction history
+lists only auctions whose section has begun; and a missing or miswritten resource key fails a bUnit
+test, which is how the `WaitingForAuction_X` placeholder mismatch was caught and fixed.
+
+Deviations: localisation ships English only, as the checklist says - the Vietnamese resource file is
+Phase 5 work and the switch already writes the cookie it will read. `Directory.Packages.props`
+gained `bunit` 1.40.0 (the line that still runs on xUnit 2), `Microsoft.Playwright` 1.63.0 and
+`Microsoft.AspNetCore.Components.QuickGrid` 9.0.20, so tables use QuickGrid as the stack decision
+records.
+
+Open issues: a run page polls once a second while it is open, which is fine for a training room but
+is polling rather than push - if the room grows, the shell should subscribe to the registry instead;
+number inputs bind through the current culture and will need `@bind:culture` attention when
+Vietnamese is added; the AutoTrade switch is shown read-only because turning it on mid-run belongs
+with the Phase 4 admin controls; nothing in the UI ends a year or starts the next one (the admin
+console will call `EndYearAsync`/`BeginNextYearAsync`); and the full accessibility pass is Phase 6.
+
+### Phase 4 - Admin console (2026-10-03)
+
+Built: `src/CarbonSim.Web/Admin/` - `AdminView` (the console's read model: run summary, run detail
+with parameters, sectors, companies, units and their abatement menus, leaderboard, per-year prices,
+surrender rows, system totals this year and to date, government reserve), `AdminSession` (the read
+model and the front door: the run's gate is taken for every read, the administrator role is checked
+on every call, and every control is forwarded to the driver), `AdminContext`/`AdminRoute` (the
+shell's snapshot and the `/admin/run/{id}` address), `AdminCsv` (system, company, unit, price and
+leaderboard reports), `ScenarioDraft` (the editable scenario document the setup screen binds to),
+`RegistrationPolicy` (the in-memory registration gate) and `AdminAccountSeeder` (the bootstrap
+administrator). UI: `Components/Admin/` - `AdminLayout`, `AdminNav`, and five pages: `/admin`
+(exercises, saved exercises, create/load/delete), `/admin/run/{id}` (clock strip and controls,
+messaging switch, AutoTrade switches, fine, offsets, abatement, end-of-year modification),
+`/admin/run/{id}/reports` (the five reports, each with a CSV link), `/admin/run/{id}/surrender`, and
+`/admin/setup` (parameters, sectors and their abatement menus, growth bands, registration open/close
+and PIN).
+
+Engine additions: `AllocationPlan.ApplyEmissionShock(unit, year, deltaTonnes)` - an end-of-year
+modification written into the unit's business-as-usual path, so it survives a save and reload with
+the rest of the plan and every later reading of that unit sees it; a unit can never be pushed below
+zero. `ISimulationClient` gained `MessagingStateChanged`. Registry: `HostedRun.MessagingEnabled`,
+`HostedRun.Bots` settable, `SimulationRegistry.Restore`/`Remove`/`RebuildBots`, and
+`PostMessageAsync` refuses while messaging is off. Host options gained `AdminEmail`/`AdminPassword`
+and `IHttpContextAccessor` is registered. `PlayerView` gained `MessagingEnabled`, and the player's
+Messages screen shows the switch and disables the form.
+
+How an admin action reaches players: every control goes `AdminSession` -> `SimulationClockService`,
+which takes the run's gate, mutates the engine, gathers what changed with `CollectAnnouncement`
+while the gate is held, and broadcasts to the run's SignalR group after releasing it - the same path
+the tick uses. Year controls (start/open/end/end-simulation) and the messaging switch raise the
+run's state on that feed; fines, offsets, abatement and shocks are per-company or per-unit and reach
+the player's page on its next registry read, which is the same read the feed describes. No component
+mutates the engine.
+
+Setup applies to a pending simulation: `/admin/setup` loads the configured scenario into a
+`ScenarioDraft`, the administrator edits parameters (validated by the engine's own loader, which
+reports every problem at once), sectors, abatement menus and growth bands, and "Create the exercise"
+writes the draft back to JSON and hands it to `ScenarioLoader`, which builds a `Pending` run and
+saves it. Changing parameters on a live run is out of scope: the engine fixes the cap, allocation
+and abatement economics at construction, so a running exercise's parameters are shown read-only and
+a new exercise is created instead. The form opens on a seed no live run is using, and creating a run
+whose seed is already under way is refused rather than replacing it.
+
+Multiple concurrent simulations: the registry holds any number of runs, each with its own clock,
+markets, bots, group and saved copy. The console lists live runs and the saved runs the repository
+holds, loads a saved run back with `SimulationSnapshots.Restore` (its own clock, markets and bots,
+not fresh ones) and deletes one. `RunIsolationTests` starts two runs under one host and proves a
+control on one leaves the other's state alone and that a state broadcast reaches only the started
+run's watchers.
+
+Test counts: 360 in the solution - 356 passing, 4 skipped (the Phase 1 fidelity envelopes). Engine
+242 (238 passing, 4 skipped; +4 `EmissionShockTests`), Web 107 (was 74; +33), Data 11. The 33 new
+Web tests are 8 driver/registry admin-control tests, 2 run-isolation tests, 5 CSV-endpoint tests, 7
+bUnit screen tests, 10 bUnit action tests, and 1 Playwright walk. The Playwright admin walk boots
+the real host as a child process, signs the bootstrap administrator in, builds an exercise from the
+configured scenario, starts the year, halts trading, closes the year and opens the next, while a
+second browser context playing a company watches the same run's year and state change under it; it
+ran for real alongside the two Phase 3 walks.
+
+Gate: `dotnet build CarbonSim.sln` -> 0 warnings, 0 errors; `dotnet test CarbonSim.sln` -> green with
+Playwright running for real; `dotnet format CarbonSim.sln --verify-no-changes` -> clean; and
+`dotnet run --project src/CarbonSim.Web` served `/sign-in` (200), `/admin` (200, showing the
+not-an-administrator notice to an anonymous visitor), `/api/admin/runs` (401 anonymous, 200 for the
+bootstrap administrator with the live run listed).
+
+Housekeeping (Phase 3 review): the four resource values that were verbatim catalog strings were
+rewritten in this project's own words (`MyAbatementImplementationStatus` -> "My abatement progress",
+`AllowancesToBeAuctionedThisYear` -> "Allowances on offer this year", `UnitToTradeWith` ->
+"Counterparty unit", `AvailableEmissionReductionOpportunities` -> "Abatement options open to my
+units"). The three `PlayerScreensTests` assertions that named the old wording now read the resource
+value through the localiser, so a reworded label cannot break a screen test again.
+
+Decisions worth keeping: the console is five server-rendered Blazor pages under `/admin` behind the
+administrator policy, and `AdminSession` re-checks the role on every call because a Blazor page is
+reachable by anyone who is signed in; the CSV endpoints are ordinary `text/csv` responses behind the
+same policy, and `AdminSession` reads the request's own principal outside a circuit because the
+circuit's authentication provider refuses to answer there; the setup screen edits the scenario
+document rather than engine objects, so the engine's own validation is the only validator; messaging
+is host state, so it is not saved with a run and a reloaded run starts with messaging on; and the
+bootstrap administrator exists only when `AdminEmail`/`AdminPassword` are configured (the
+development settings name a dev account, as they already named a dev registration PIN).
+
+Open issues: an AutoTrade switch rebuilds the whole bot fleet, so a bot's progress is dropped and its
+trigger times are drawn again - fine for a trainer's nudge, but a finer per-unit change would keep
+the fleet; messaging state is not persisted (see above); a shock is written into the
+business-as-usual path and cannot be undone or listed separately, so the console cannot show
+"modifications applied"; the console polls once a second like the player screens rather than
+subscribing to the registry; the setup screen edits parameters, sectors, abatement menus and growth
+bands but not the company/unit roster, which comes from the configured scenario; and the reports'
+"to date" totals cover the whole run's years rather than only the years played, as the player's
+system report already did.

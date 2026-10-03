@@ -1,0 +1,32 @@
+@page "/run/{SimulationId:guid}/leaderboard"
+@inject IStringLocalizer<SharedStrings> Strings
+
+<PageTitle>@Strings["Leaderboard"]</PageTitle>
+<h1>@Strings["Leaderboard"]</h1>
+
+@if (View is not { } view)
+{
+    <ScreenFallback Screen="Screen" />
+}
+else
+{
+    <section class="card wide">
+        <QuickGrid Items="@view.Leaderboard.AsQueryable()" Class="grid">
+            <TemplateColumn Title="@Strings["Rank"]" Context="row">@row.Rank</TemplateColumn>
+            <TemplateColumn Title="@Strings["Company"]" Context="row">@row.Company @(row.IsMine ? "*" : null)</TemplateColumn>
+            <TemplateColumn Title="@Strings["UnitNamePlayer"]" Context="row">@row.Unit (@row.Player@(row.IsAutomated ? " - AI" : null))</TemplateColumn>
+            <TemplateColumn Title="@Strings["CostOfCompliance"]" Context="row">@Display.Signed(row.OverallCostOfCompliance)</TemplateColumn>
+            <TemplateColumn Title="@Strings["OverallMarginalCostOfCompliance"]" Context="row">@Display.Signed(row.MarginalCostOfCompliance)</TemplateColumn>
+            <TemplateColumn Title="@Strings["FinalLongShortPosition"]" Context="row">@Display.Tonnes(row.FinalPosition)</TemplateColumn>
+            <TemplateColumn Title="@Strings["System"]" Context="row">@view.System.Name</TemplateColumn>
+        </QuickGrid>
+    </section>
+}
+
+@code {
+    [CascadingParameter] private PlayerScreenSnapshot? Screen { get; set; }
+
+    [Parameter] public Guid SimulationId { get; set; }
+
+    private PlayerView? View => Screen?.View;
+}
