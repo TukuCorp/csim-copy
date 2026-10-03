@@ -43,14 +43,14 @@ else
             </label>
             <label>
                 @Strings["Volume"]
-                <input type="number" step="1" min="1" @bind="_volume" />
+                <input id="offer-volume" type="text" inputmode="decimal" @bind="_volume" @bind:culture="CultureInfo.CurrentCulture" />
             </label>
             <label>
-                @Strings["Price"]
-                <input type="number" step="1" @bind="_price" />
+                @Strings["Price"] (@Display.Currency.Code)
+                <input id="offer-price" type="text" inputmode="decimal" @bind="_price" @bind:culture="CultureInfo.CurrentCulture" />
             </label>
-            <p class="small muted">@Strings["CapitalCost"]: @Display.Money(_price * _volume)</p>
-            <button class="button" disabled="@(view.Counterparties.Count == 0)" @onclick="SendAsync">@Strings["SendOffer"]</button>
+            <p id="offer-capital-cost" class="small muted">@Strings["CapitalCost"]: @Display.Money(Display.PriceFromInput(_price ?? 0m) * _volume)</p>
+            <button id="send-offer" class="button" disabled="@(view.Counterparties.Count == 0)" @onclick="SendAsync">@Strings["SendOffer"]</button>
         </section>
 
         <section class="card wide">
@@ -65,7 +65,7 @@ else
                     <TemplateColumn Title="@Strings["Seller"]" Context="row">@row.SellerCompany - @row.SellerUnit</TemplateColumn>
                     <TemplateColumn Title="@Strings["Product"]" Context="row">@row.Product.Key</TemplateColumn>
                     <TemplateColumn Title="@Strings["Volume"]" Context="row">@Display.Tonnes(row.Volume)</TemplateColumn>
-                    <TemplateColumn Title="@Strings["Price"]" Context="row">@Display.Number(row.Price)</TemplateColumn>
+                    <TemplateColumn Title="@Strings["Price"]" Context="row">@Display.Price(row.Price)</TemplateColumn>
                     <TemplateColumn Title="@Strings["CapitalCost"]" Context="row">@Display.Money(row.Consideration)</TemplateColumn>
                     <TemplateColumn Title="@Strings["Accept"]" Context="row">
                         <button class="button small-button" @onclick="() => AnswerAsync(row, true)">@Strings["Accept"]</button>
@@ -84,13 +84,15 @@ else
         }
         else
         {
-            <QuickGrid Items="@view.MyOffers.AsQueryable()" Class="grid">
-                <TemplateColumn Title="@Strings["Buyer"]" Context="row">@row.BuyerCompany - @row.BuyerUnit</TemplateColumn>
-                <TemplateColumn Title="@Strings["Product"]" Context="row">@row.Product.Key</TemplateColumn>
-                <TemplateColumn Title="@Strings["Volume"]" Context="row">@Display.Tonnes(row.Volume)</TemplateColumn>
-                <TemplateColumn Title="@Strings["Price"]" Context="row">@Display.Number(row.Price)</TemplateColumn>
-                <TemplateColumn Title="@Strings["State"]" Context="row">@row.State</TemplateColumn>
-            </QuickGrid>
+            <div id="my-offers">
+                <QuickGrid Items="@view.MyOffers.AsQueryable()" Class="grid">
+                    <TemplateColumn Title="@Strings["Buyer"]" Context="row">@row.BuyerCompany - @row.BuyerUnit</TemplateColumn>
+                    <TemplateColumn Title="@Strings["Product"]" Context="row">@row.Product.Key</TemplateColumn>
+                    <TemplateColumn Title="@Strings["Volume"]" Context="row">@Display.Tonnes(row.Volume)</TemplateColumn>
+                    <TemplateColumn Title="@Strings["Price"]" Context="row">@Display.Price(row.Price)</TemplateColumn>
+                    <TemplateColumn Title="@Strings["State"]" Context="row">@row.State</TemplateColumn>
+                </QuickGrid>
+            </div>
         }
     </section>
 }
@@ -104,7 +106,7 @@ else
     private int _buyerUnitId;
     private string? _productKey;
     private decimal _volume = 1_000m;
-    private decimal _price = 100m;
+    private decimal? _price;
 
     private PlayerView? View => Screen?.View;
 
@@ -126,13 +128,15 @@ else
         }
 
         _productKey ??= view.TradableProducts.FirstOrDefault()?.Key;
+        // The price box holds what the player typed, in the currency on screen.
+        _price ??= Display.PriceInput(100m);
     }
 
     private Task SendAsync()
     {
         string product = _productKey ?? "Vintage 1";
         return Context.ActAsync(
-            session => session.SendOtcOfferAsync(SimulationId, _sellerUnitId, _buyerUnitId, product, _price, _volume),
+            session => session.SendOtcOfferAsync(SimulationId, _sellerUnitId, _buyerUnitId, product, Display.PriceFromInput(_price ?? 0m), _volume),
             Strings["SendOffer"]);
     }
 

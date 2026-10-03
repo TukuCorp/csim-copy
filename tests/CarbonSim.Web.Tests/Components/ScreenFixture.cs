@@ -1,3 +1,4 @@
+using System.Globalization;
 using Bunit;
 using CarbonSim.Web.Player;
 using CarbonSim.Web.Resources;
@@ -30,37 +31,38 @@ public sealed class StubPlayerSession : IPlayerSession
 
     public Task PlaceBidAsync(Guid simulationId, int unitId, int vintage, decimal price, decimal volume, CancellationToken cancellationToken = default)
     {
-        Actions.Add($"bid:{unitId}:{vintage}:{price}:{volume}");
+        // Invariant, so an assertion in this file reads the same whatever culture the test runs in.
+        Actions.Add(FormattableString.Invariant($"bid:{unitId}:{vintage}:{price}:{volume}"));
         return Task.CompletedTask;
     }
 
     public Task PlaceOrderAsync(Guid simulationId, int unitId, string product, string side, string kind, decimal volume, decimal? price, decimal? stopPrice, string fillPolicy, CancellationToken cancellationToken = default)
     {
-        Actions.Add($"order:{unitId}:{product}:{side}:{kind}:{volume}:{price}:{stopPrice}:{fillPolicy}");
+        Actions.Add(FormattableString.Invariant($"order:{unitId}:{product}:{side}:{kind}:{volume}:{price}:{stopPrice}:{fillPolicy}"));
         return Task.CompletedTask;
     }
 
     public Task CancelOrderAsync(Guid simulationId, int unitId, long orderId, CancellationToken cancellationToken = default)
     {
-        Actions.Add($"cancel:{unitId}:{orderId}");
+        Actions.Add(FormattableString.Invariant($"cancel:{unitId}:{orderId}"));
         return Task.CompletedTask;
     }
 
     public Task ImplementAbatementAsync(Guid simulationId, int unitId, int optionIndex, CancellationToken cancellationToken = default)
     {
-        Actions.Add($"implement:{unitId}:{optionIndex}");
+        Actions.Add(FormattableString.Invariant($"implement:{unitId}:{optionIndex}"));
         return Task.CompletedTask;
     }
 
     public Task SendOtcOfferAsync(Guid simulationId, int sellerUnitId, int buyerUnitId, string product, decimal price, decimal volume, CancellationToken cancellationToken = default)
     {
-        Actions.Add($"otc-offer:{sellerUnitId}:{buyerUnitId}:{product}:{price}:{volume}");
+        Actions.Add(FormattableString.Invariant($"otc-offer:{sellerUnitId}:{buyerUnitId}:{product}:{price}:{volume}"));
         return Task.CompletedTask;
     }
 
     public Task AnswerOtcOfferAsync(Guid simulationId, int buyerUnitId, long offerId, bool accept, CancellationToken cancellationToken = default)
     {
-        Actions.Add($"otc-answer:{buyerUnitId}:{offerId}:{accept}");
+        Actions.Add(FormattableString.Invariant($"otc-answer:{buyerUnitId}:{offerId}:{accept}"));
         return Task.CompletedTask;
     }
 

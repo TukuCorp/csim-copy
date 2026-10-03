@@ -2,7 +2,7 @@
 
 <div class="rules">
     <ul class="small">
-        <li>@Strings["Cap"]: @Display.Money(View.System.Cap)</li>
+        <li>@Strings["Cap"]: @Display.Tonnes(View.System.Cap) t</li>
         <li>@Strings["AnnualCapReductionRate"]: @Display.Percent2(View.System.AnnualCapReductionRate)</li>
         <li>@Strings["FreeAllocationShare"]: @Display.Percent(View.System.FreeAllocationShare)</li>
         <li>@Strings["OffsetUsageLimit"]: @Display.Percent(View.System.OffsetUsageLimit)</li>
@@ -10,6 +10,11 @@
         <li>@Strings["PenaltyPerTonne"]: @Display.Money(View.System.PenaltyPerTonne)</li>
         <li>@Strings["AuctionFloorPrice"] / @Strings["AuctionCeilingPrice"]: @Display.Money(View.System.AuctionFloorPrice) / @Display.Money(View.System.AuctionCeilingPrice)</li>
         <li>@Strings["VolatilityBand"]: @Display.Percent(View.System.VolatilityBand)</li>
+        <li>@Strings["DisplayCurrency"]: @Display.Currency.Code</li>
+        @if (Display.Currency.IsVnd)
+        {
+            <li>@Strings["VndPerUsdRate"]: @Display.Currency.VndPerUsd.ToString("N0", CultureInfo.CurrentCulture)</li>
+        }
     </ul>
     <p class="muted small">@Strings["OffsetPriceDiscount"]</p>
     <p class="small"><strong>@Strings["ComplianceCostCalculator"]</strong>: @Strings["CalculatorHint"]</p>

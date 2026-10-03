@@ -14,7 +14,7 @@ else
         <section class="card">
             <h2>@view.System.Name</h2>
             <dl class="metrics">
-                <div><dt>@Strings["Cap"]</dt><dd>@Display.Money(view.System.Cap)</dd></div>
+                <div><dt>@Strings["Cap"]</dt><dd>@Display.Tonnes(view.System.Cap) t</dd></div>
                 <div><dt>@Strings["AnnualCapReductionRate"]</dt><dd>@Display.Percent2(view.System.AnnualCapReductionRate)</dd></div>
                 <div><dt>@Strings["FreeAllocationShare"]</dt><dd>@Display.Percent(view.System.FreeAllocationShare)</dd></div>
                 <div><dt>@Strings["OffsetUsageLimit"]</dt><dd>@Display.Percent(view.System.OffsetUsageLimit)</dd></div>
@@ -88,8 +88,8 @@ else
             new ReportRow(Strings["Forfeited"], Display.Tonnes(now.Forfeited), Display.Tonnes(all.Forfeited)),
             new ReportRow(Strings["TotalVolume"], Display.Tonnes(now.AllowancesSold), Display.Tonnes(all.AllowancesSold)),
             new ReportRow(Strings["AuctionRevenueCollectedByGovernment"], Display.Money(now.AuctionRevenue), Display.Money(all.AuctionRevenue)),
-            new ReportRow(Strings["Average"] + " " + Strings["AllowanceAuction"], Display.Number(now.AverageAllowancePrice), Display.Number(all.AverageAllowancePrice)),
-            new ReportRow(Strings["Average"] + " " + Strings["Offset"], Display.Number(now.AverageOffsetPrice), Display.Number(all.AverageOffsetPrice)),
+            new ReportRow(Strings["Average"] + " " + Strings["AllowanceAuction"], Display.Price(now.AverageAllowancePrice), Display.Price(all.AverageAllowancePrice)),
+            new ReportRow(Strings["Average"] + " " + Strings["Offset"], Display.Price(now.AverageOffsetPrice), Display.Price(all.AverageOffsetPrice)),
             new ReportRow(Strings["Abatement"], now.AbatementsImplemented.ToString(CultureInfo.CurrentCulture), all.AbatementsImplemented.ToString(CultureInfo.CurrentCulture)),
             new ReportRow(Strings["EmissionReductions"], Display.Tonnes(now.EmissionsReduced), Display.Tonnes(all.EmissionsReduced)),
             new ReportRow(Strings["PenaltyPerTonne"], now.PenaltyCount.ToString(CultureInfo.CurrentCulture) + " / " + Display.Money(now.PenaltyValue), all.PenaltyCount.ToString(CultureInfo.CurrentCulture) + " / " + Display.Money(all.PenaltyValue)),

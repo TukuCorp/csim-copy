@@ -72,4 +72,14 @@ public sealed class CarbonSimHostOptions
 
     /// <summary>The password for <see cref="AdminEmail"/>; empty disables the bootstrap account.</summary>
     public string AdminPassword { get; set; } = string.Empty;
+
+    /// <summary>
+    /// The currency the screens show money in: <see cref="CurrencyDisplay.Usd"/> (the engine's own
+    /// unit, which the trainer deck quotes) or <see cref="CurrencyDisplay.Vnd"/>, converted at
+    /// <see cref="VndPerUsd"/>. The engine never sees a second currency.
+    /// </summary>
+    public string DisplayCurrency { get; set; } = CurrencyDisplay.Usd;
+
+    /// <summary>How many dong one internal (US dollar) unit is worth when the display is VND.</summary>
+    public decimal VndPerUsd { get; set; } = CurrencyDisplay.DefaultVndPerUsd;
 }

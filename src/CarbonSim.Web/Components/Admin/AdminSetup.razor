@@ -38,22 +38,22 @@ else
             <h2>@Strings["AdminParameters"]</h2>
             <dl class="metrics">
                 <div><dt>@Strings["AdminName"]</dt><dd><input type="text" @bind="Draft.Name" /></dd></div>
-                <div><dt>@Strings["AdminSeed"]</dt><dd><input type="number" @bind="Draft.Seed" /></dd></div>
-                <div><dt>@Strings["Cap"]</dt><dd><input id="setup-cap" type="number" @bind="Draft.Parameters.Cap" /></dd></div>
-                <div><dt>@Strings["AnnualCapReductionRate"]</dt><dd><input type="number" step="0.001" @bind="Draft.Parameters.AnnualCapReductionRate" /></dd></div>
-                <div><dt>@Strings["FreeAllocationShare"]</dt><dd><input type="number" step="0.01" @bind="Draft.Parameters.FreeAllocationShare" /></dd></div>
-                <div><dt>@Strings["Year"]</dt><dd><input type="number" @bind="Draft.Parameters.Years" /></dd></div>
-                <div><dt>@Strings["OffsetUsageLimit"]</dt><dd><input type="number" step="0.01" @bind="Draft.Parameters.OffsetUsageLimit" /></dd></div>
-                <div><dt>@Strings["BankingLimit"]</dt><dd><input type="number" step="0.01" @bind="Draft.Parameters.BankingLimit" /></dd></div>
-                <div><dt>@Strings["PenaltyPerTonne"]</dt><dd><input type="number" @bind="Draft.Parameters.PenaltyPerTonne" /></dd></div>
-                <div><dt>@Strings["PenaltyAllowanceDebit"]</dt><dd><input type="number" @bind="Draft.Parameters.PenaltyAllowanceDebit" /></dd></div>
-                <div><dt>@Strings["AuctionFloorPrice"]</dt><dd><input type="number" @bind="Draft.Parameters.AuctionFloorPrice" /></dd></div>
-                <div><dt>@Strings["AuctionCeilingPrice"]</dt><dd><input type="number" @bind="Draft.Parameters.AuctionCeilingPrice" /></dd></div>
-                <div><dt>@Strings["AuctionsPerYear"]</dt><dd><input type="number" @bind="Draft.Parameters.AuctionsPerYear" /></dd></div>
-                <div><dt>@Strings["YearLength"] (min)</dt><dd><input type="number" @bind="Draft.Parameters.YearLengthMinutes" /></dd></div>
-                <div><dt>@Strings["AuctionDuration"] (min)</dt><dd><input type="number" @bind="Draft.Parameters.AuctionDurationMinutes" /></dd></div>
-                <div><dt>@Strings["VolatilityBand"]</dt><dd><input type="number" step="0.01" @bind="Draft.Parameters.VolatilityBand" /></dd></div>
-                <div><dt>@Strings["InterestRate"]</dt><dd><input type="number" step="0.01" @bind="Draft.Parameters.OverdraftInterestRate" /></dd></div>
+                <div><dt>@Strings["AdminSeed"]</dt><dd><input type="text" inputmode="decimal" @bind="Draft.Seed" @bind:culture="CultureInfo.CurrentCulture" /></dd></div>
+                <div><dt>@Strings["Cap"]</dt><dd><input id="setup-cap" type="text" inputmode="decimal" @bind="Draft.Parameters.Cap" @bind:culture="CultureInfo.CurrentCulture" /></dd></div>
+                <div><dt>@Strings["AnnualCapReductionRate"]</dt><dd><input type="text" inputmode="decimal" step="0.001" @bind="Draft.Parameters.AnnualCapReductionRate" @bind:culture="CultureInfo.CurrentCulture" /></dd></div>
+                <div><dt>@Strings["FreeAllocationShare"]</dt><dd><input type="text" inputmode="decimal" step="0.01" @bind="Draft.Parameters.FreeAllocationShare" @bind:culture="CultureInfo.CurrentCulture" /></dd></div>
+                <div><dt>@Strings["Year"]</dt><dd><input type="text" inputmode="decimal" @bind="Draft.Parameters.Years" @bind:culture="CultureInfo.CurrentCulture" /></dd></div>
+                <div><dt>@Strings["OffsetUsageLimit"]</dt><dd><input type="text" inputmode="decimal" step="0.01" @bind="Draft.Parameters.OffsetUsageLimit" @bind:culture="CultureInfo.CurrentCulture" /></dd></div>
+                <div><dt>@Strings["BankingLimit"]</dt><dd><input type="text" inputmode="decimal" step="0.01" @bind="Draft.Parameters.BankingLimit" @bind:culture="CultureInfo.CurrentCulture" /></dd></div>
+                <div><dt>@Strings["PenaltyPerTonne"]</dt><dd><input type="text" inputmode="decimal" @bind="Draft.Parameters.PenaltyPerTonne" @bind:culture="CultureInfo.CurrentCulture" /></dd></div>
+                <div><dt>@Strings["PenaltyAllowanceDebit"]</dt><dd><input type="text" inputmode="decimal" @bind="Draft.Parameters.PenaltyAllowanceDebit" @bind:culture="CultureInfo.CurrentCulture" /></dd></div>
+                <div><dt>@Strings["AuctionFloorPrice"]</dt><dd><input type="text" inputmode="decimal" @bind="Draft.Parameters.AuctionFloorPrice" @bind:culture="CultureInfo.CurrentCulture" /></dd></div>
+                <div><dt>@Strings["AuctionCeilingPrice"]</dt><dd><input type="text" inputmode="decimal" @bind="Draft.Parameters.AuctionCeilingPrice" @bind:culture="CultureInfo.CurrentCulture" /></dd></div>
+                <div><dt>@Strings["AuctionsPerYear"]</dt><dd><input type="text" inputmode="decimal" @bind="Draft.Parameters.AuctionsPerYear" @bind:culture="CultureInfo.CurrentCulture" /></dd></div>
+                <div><dt>@Strings["YearLength"] (min)</dt><dd><input type="text" inputmode="decimal" @bind="Draft.Parameters.YearLengthMinutes" @bind:culture="CultureInfo.CurrentCulture" /></dd></div>
+                <div><dt>@Strings["AuctionDuration"] (min)</dt><dd><input type="text" inputmode="decimal" @bind="Draft.Parameters.AuctionDurationMinutes" @bind:culture="CultureInfo.CurrentCulture" /></dd></div>
+                <div><dt>@Strings["VolatilityBand"]</dt><dd><input type="text" inputmode="decimal" step="0.01" @bind="Draft.Parameters.VolatilityBand" @bind:culture="CultureInfo.CurrentCulture" /></dd></div>
+                <div><dt>@Strings["InterestRate"]</dt><dd><input type="text" inputmode="decimal" step="0.01" @bind="Draft.Parameters.OverdraftInterestRate" @bind:culture="CultureInfo.CurrentCulture" /></dd></div>
             </dl>
         </section>
 
@@ -63,7 +63,7 @@ else
             {
                 <fieldset class="card">
                     <label>@Strings["AdminSectorName"]<input type="text" @bind="sector.Name" /></label>
-                    <label>@Strings["AdminEmissionShare"]<input type="number" step="0.01" @bind="sector.EmissionShare" /></label>
+                    <label>@Strings["AdminEmissionShare"]<input type="text" inputmode="decimal" step="0.01" @bind="sector.EmissionShare" @bind:culture="CultureInfo.CurrentCulture" /></label>
 
                     <table class="grid">
                         <thead>
@@ -84,11 +84,11 @@ else
                                 <tr>
                                     <td><input type="text" @bind="option.Code" /></td>
                                     <td><input type="text" @bind="option.Name" /></td>
-                                    <td><input type="number" step="0.01" @bind="option.AnnualReductionShare" /></td>
-                                    <td><input type="number" @bind="option.UpfrontCostPerTonne" /></td>
-                                    <td><input type="number" @bind="option.AnnualNetRevenuePerTonne" /></td>
-                                    <td><input type="number" @bind="option.ImplementationYears" /></td>
-                                    <td><input type="number" @bind="option.LifetimeYears" /></td>
+                                    <td><input type="text" inputmode="decimal" step="0.01" @bind="option.AnnualReductionShare" @bind:culture="CultureInfo.CurrentCulture" /></td>
+                                    <td><input type="text" inputmode="decimal" @bind="option.UpfrontCostPerTonne" @bind:culture="CultureInfo.CurrentCulture" /></td>
+                                    <td><input type="text" inputmode="decimal" @bind="option.AnnualNetRevenuePerTonne" @bind:culture="CultureInfo.CurrentCulture" /></td>
+                                    <td><input type="text" inputmode="decimal" @bind="option.ImplementationYears" @bind:culture="CultureInfo.CurrentCulture" /></td>
+                                    <td><input type="text" inputmode="decimal" @bind="option.LifetimeYears" @bind:culture="CultureInfo.CurrentCulture" /></td>
                                     <td><button class="button ghost small-button" @onclick="() => sector.AbatementOptions.Remove(option)">@Strings["AdminRemove"]</button></td>
                                 </tr>
                             }
@@ -115,8 +115,8 @@ else
                     {
                         <tr>
                             <td>@growth.Sector</td>
-                            <td><input type="number" step="0.01" @bind="growth.MinAnnualRate" /></td>
-                            <td><input type="number" step="0.01" @bind="growth.MaxAnnualRate" /></td>
+                            <td><input type="text" inputmode="decimal" step="0.01" @bind="growth.MinAnnualRate" @bind:culture="CultureInfo.CurrentCulture" /></td>
+                            <td><input type="text" inputmode="decimal" step="0.01" @bind="growth.MaxAnnualRate" @bind:culture="CultureInfo.CurrentCulture" /></td>
                         </tr>
                     }
                 </tbody>

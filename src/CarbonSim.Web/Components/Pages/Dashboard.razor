@@ -102,7 +102,7 @@ else
                     <TemplateColumn Title="@Strings["Year"]" Context="row">@row.Year</TemplateColumn>
                     <TemplateColumn Title="@Strings["Channel"]" Context="row">@row.Channel</TemplateColumn>
                     <TemplateColumn Title="@Strings["Product"]" Context="row">@row.Product</TemplateColumn>
-                    <TemplateColumn Title="@Strings["Price"]" Context="row">@Display.Number(row.Price)</TemplateColumn>
+                    <TemplateColumn Title="@Strings["Price"]" Context="row">@Display.Price(row.Price)</TemplateColumn>
                     <TemplateColumn Title="@Strings["Volume"]" Context="row">@Display.Tonnes(row.Volume)</TemplateColumn>
                     <TemplateColumn Title="@Strings["Buyer"]" Context="row">@row.Buyer</TemplateColumn>
                     <TemplateColumn Title="@Strings["Seller"]" Context="row">@row.Seller</TemplateColumn>

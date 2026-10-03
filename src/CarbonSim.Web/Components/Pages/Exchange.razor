@@ -16,9 +16,9 @@ else
         <p class="muted small">@Strings["PriceChartHint"]</p>
         <EChart Option="@Charts.Prices(view.Books, view.Years, view.System.AuctionFloorPrice, Strings["AuctionFloorPrice"])" Height="260px" />
         <dl class="metrics">
-            <div><dt>@Strings["AllowanceAuction"] @Strings["AuctionFloorPrice"]</dt><dd>@Display.Number(view.AuctionPrices.Low ?? view.System.AuctionFloorPrice)</dd></div>
+            <div><dt>@Strings["AllowanceAuction"] @Strings["AuctionFloorPrice"]</dt><dd>@Display.Price(view.AuctionPrices.Low ?? view.System.AuctionFloorPrice)</dd></div>
             <div><dt>@Strings["ClearedAt"]</dt><dd>@Display.Price(view.AuctionPrices.Last)</dd></div>
-            <div><dt>@Strings["AuctionCeilingPrice"]</dt><dd>@Display.Number(view.AuctionPrices.High ?? view.System.AuctionCeilingPrice)</dd></div>
+            <div><dt>@Strings["AuctionCeilingPrice"]</dt><dd>@Display.Price(view.AuctionPrices.High ?? view.System.AuctionCeilingPrice)</dd></div>
             <div><dt>@Strings["Average"]</dt><dd>@Display.Price(view.AuctionPrices.Average)</dd></div>
         </dl>
     </section>
@@ -63,7 +63,7 @@ else
                     <ul class="settings">
                         @foreach (TradeRow trade in selected.RecentTrades)
                         {
-                            <li>@Strings["Year_X", trade.Year] &middot; @Display.Number(trade.Price) &middot; @Display.Tonnes(trade.Volume) t</li>
+                            <li>@Strings["Year_X", trade.Year] &middot; @Display.Price(trade.Price) &middot; @Display.Tonnes(trade.Volume) t</li>
                         }
                     </ul>
                 }
@@ -102,26 +102,26 @@ else
             </label>
             <label>
                 @Strings["TargetVolume"]
-                <input type="number" step="1" min="1" @bind="_volume" />
+                <input id="order-volume" type="text" inputmode="decimal" @bind="_volume" @bind:culture="CultureInfo.CurrentCulture" />
             </label>
             @if (_kind is "Limit")
             {
                 <label>
-                    @Strings["TargetPrice"]
-                    <input type="number" step="1" @bind="_price" />
+                    @Strings["TargetPrice"] (@Display.Currency.Code)
+                    <input id="order-price" type="text" inputmode="decimal" @bind="_price" @bind:culture="CultureInfo.CurrentCulture" />
                 </label>
             }
             @if (_kind is "StopLoss")
             {
                 <label>
-                    @Strings["StopPrice"]
-                    <input type="number" step="1" @bind="_stopPrice" />
+                    @Strings["StopPrice"] (@Display.Currency.Code)
+                    <input id="order-stop-price" type="text" inputmode="decimal" @bind="_stopPrice" @bind:culture="CultureInfo.CurrentCulture" />
                 </label>
             }
             <label class="check">
                 <input type="checkbox" @bind="_fillOrKill" /> @Strings["ImmediateOrCancel"]
             </label>
-            <p class="small muted">@Strings["CapitalCost"]: @Display.Money((_price ?? 0m) * _volume)</p>
+            <p id="order-capital-cost" class="small muted">@Strings["CapitalCost"]: @Display.Money(Display.PriceFromInput(_price ?? 0m) * _volume)</p>
             <button class="button" @onclick="PlaceOrderAsync">@Strings["PlaceOrder"]</button>
         </section>
     </div>
@@ -177,8 +177,9 @@ else
         }
 
         _productKey ??= view.TradableProducts.FirstOrDefault()?.Key;
-        _price ??= view.System.AuctionFloorPrice;
-        _stopPrice ??= view.System.AuctionFloorPrice;
+        // Price boxes hold what the player typed, in the currency on screen.
+        _price ??= Display.PriceInput(view.System.AuctionFloorPrice);
+        _stopPrice ??= Display.PriceInput(view.System.AuctionFloorPrice);
     }
 
     private static List<OrderView> myOrders(PlayerView view) =>
@@ -196,8 +197,8 @@ else
         string side = _side;
         string kind = _kind;
         decimal volume = _volume;
-        decimal? price = kind == "Limit" ? _price : null;
-        decimal? stopPrice = kind == "StopLoss" ? _stopPrice : null;
+        decimal? price = kind == "Limit" && _price is { } typed ? Display.PriceFromInput(typed) : null;
+        decimal? stopPrice = kind == "StopLoss" && _stopPrice is { } stop ? Display.PriceFromInput(stop) : null;
         string fillPolicy = _fillOrKill ? "FillOrKill" : "AllowPartial";
 
         return Context.ActAsync(

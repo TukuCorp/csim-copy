@@ -1,0 +1,367 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" />
+              <xsd:attribute name="type" />
+              <xsd:attribute name="mimetype" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" />
+              <xsd:attribute name="name" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="AppTitle" xml:space="preserve"><value>CarbonSim</value></data>
+  <data name="WaitingForSimulationToStart" xml:space="preserve"><value>Đang chờ mô phỏng bắt đầu</value></data>
+  <data name="SimulationSettings" xml:space="preserve"><value>Thiết lập mô phỏng</value></data>
+  <data name="ThereWillBeXYearsInTheSimulation" xml:space="preserve"><value>Mô phỏng sẽ kéo dài {0} năm</value></data>
+  <data name="ThereAreXAuctionsScheduledForEachYear" xml:space="preserve"><value>Mỗi năm có {0} phiên đấu giá hạn ngạch</value></data>
+  <data name="DurationOfYear_mins" xml:space="preserve"><value>Một năm kéo dài {0} phút</value></data>
+  <data name="AuctionOpenDurationPercentage_X" xml:space="preserve"><value>Phiên đấu giá hạn ngạch mở trong {0}% thời gian của năm</value></data>
+  <data name="SimulationProgress" xml:space="preserve"><value>Tiến độ mô phỏng</value></data>
+  <data name="SectionProgress" xml:space="preserve"><value>Tiến độ từng phần</value></data>
+  <data name="Year_X" xml:space="preserve"><value>Năm {0}</value></data>
+  <data name="Auction_X" xml:space="preserve"><value>Đấu giá {0}</value></data>
+  <data name="WaitingForAuction_X" xml:space="preserve"><value>Đấu giá {0} của năm {1}</value></data>
+  <data name="AuctionStartsIn" xml:space="preserve"><value>Phiên đấu giá hạn ngạch bắt đầu sau {0}</value></data>
+  <data name="AuctionEndsIn" xml:space="preserve"><value>Phiên đấu giá hạn ngạch kết thúc sau {0}</value></data>
+  <data name="AuctionOpen" xml:space="preserve"><value>Phiên đấu giá hạn ngạch đang mở</value></data>
+  <data name="Paused" xml:space="preserve"><value>TẠM DỪNG</value></data>
+  <data name="State_Pending" xml:space="preserve"><value>Chờ bắt đầu</value></data>
+  <data name="State_Running" xml:space="preserve"><value>Đang chạy</value></data>
+  <data name="State_Paused" xml:space="preserve"><value>Tạm dừng</value></data>
+  <data name="State_PausedAfterAuction" xml:space="preserve"><value>Tạm dừng sau phiên đấu giá</value></data>
+  <data name="State_TradingHalted" xml:space="preserve"><value>Giao dịch đã dừng</value></data>
+  <data name="State_YearEnded" xml:space="preserve"><value>Năm đã kết thúc</value></data>
+  <data name="State_GameEnded" xml:space="preserve"><value>Mô phỏng đã kết thúc</value></data>
+  <data name="Dashboard" xml:space="preserve"><value>Bảng điều khiển</value></data>
+  <data name="CompanyManagement" xml:space="preserve"><value>Quản lý công ty</value></data>
+  <data name="UnitInformation" xml:space="preserve"><value>Thông tin đơn vị</value></data>
+  <data name="Abatement" xml:space="preserve"><value>Biện pháp giảm phát thải</value></data>
+  <data name="AllowanceAuction" xml:space="preserve"><value>Đấu giá hạn ngạch</value></data>
+  <data name="ExchangeMarket" xml:space="preserve"><value>Thị trường giao dịch qua sàn</value></data>
+  <data name="OtcMarket" xml:space="preserve"><value>Thị trường OTC</value></data>
+  <data name="SystemInfo" xml:space="preserve"><value>Thông tin hệ thống</value></data>
+  <data name="SurrenderAndBanking" xml:space="preserve"><value>Giao nộp và lưu giữ</value></data>
+  <data name="Leaderboard" xml:space="preserve"><value>Bảng xếp hạng</value></data>
+  <data name="MessageLog" xml:space="preserve"><value>Tin nhắn</value></data>
+  <data name="Capital" xml:space="preserve"><value>Vốn</value></data>
+  <data name="AvailableCapital" xml:space="preserve"><value>Vốn hiện có</value></data>
+  <data name="EscrowedCash" xml:space="preserve"><value>Tiền đã cam kết</value></data>
+  <data name="Overdraft" xml:space="preserve"><value>Thấu chi</value></data>
+  <data name="AvailableOverdraft" xml:space="preserve"><value>Thấu chi khả dụng</value></data>
+  <data name="ForecastNetProfit" xml:space="preserve"><value>Lợi nhuận thuần dự báo</value></data>
+  <data name="InterestRate" xml:space="preserve"><value>Lãi suất</value></data>
+  <data name="MyFinance" xml:space="preserve"><value>Tài chính của tôi</value></data>
+  <data name="MyCompliance" xml:space="preserve"><value>Tuân thủ của tôi</value></data>
+  <data name="CostOfCompliance" xml:space="preserve"><value>Chi phí tuân thủ</value></data>
+  <data name="CurrentMarginalCostOfCompliance" xml:space="preserve"><value>Năm nay, mỗi tấn</value></data>
+  <data name="OverallMarginalCostOfCompliance" xml:space="preserve"><value>Chi phí tuân thủ biên</value></data>
+  <data name="MyLongShortPosition" xml:space="preserve"><value>Vị thế thừa / thiếu của tôi</value></data>
+  <data name="FreeAllowancesThisYear" xml:space="preserve"><value>Hạn ngạch miễn phí</value></data>
+  <data name="ForecastEmissions" xml:space="preserve"><value>Phát thải dự báo</value></data>
+  <data name="CurrentPosition" xml:space="preserve"><value>Vị thế hiện tại</value></data>
+  <data name="MyAbatementImplementationStatus" xml:space="preserve"><value>Tiến độ giảm phát thải của tôi</value></data>
+  <data name="Building" xml:space="preserve"><value>Đang xây dựng</value></data>
+  <data name="Operating" xml:space="preserve"><value>Đang vận hành</value></data>
+  <data name="InProfit" xml:space="preserve"><value>Đã có lãi</value></data>
+  <data name="Expired" xml:space="preserve"><value>Hoàn thành</value></data>
+  <data name="MyAuctionHistory" xml:space="preserve"><value>Lịch sử đấu giá của tôi</value></data>
+  <data name="MyTradeHistory" xml:space="preserve"><value>Lịch sử giao dịch của tôi</value></data>
+  <data name="Year" xml:space="preserve"><value>Năm</value></data>
+  <data name="AuctionNumber" xml:space="preserve"><value>Đấu giá</value></data>
+  <data name="Vintage" xml:space="preserve"><value>Thời hạn</value></data>
+  <data name="TotalVolume" xml:space="preserve"><value>Tổng khối lượng</value></data>
+  <data name="ClearedAt" xml:space="preserve"><value>Giá khớp</value></data>
+  <data name="TotalAwarded" xml:space="preserve"><value>Được cấp</value></data>
+  <data name="YouBid" xml:space="preserve"><value>Bạn đã đặt giá</value></data>
+  <data name="BidVolume" xml:space="preserve"><value>Khối lượng đặt giá</value></data>
+  <data name="UnitBidPrice" xml:space="preserve"><value>Giá đặt</value></data>
+  <data name="PlaceBid" xml:space="preserve"><value>Đặt giá</value></data>
+  <data name="CapitalCost" xml:space="preserve"><value>Chi phí vốn</value></data>
+  <data name="VintagesThisAuction" xml:space="preserve"><value>Các thời hạn trong phiên này</value></data>
+  <data name="AllowancesToBeAuctionedThisYear" xml:space="preserve"><value>Hạn ngạch đưa ra đấu giá trong năm</value></data>
+  <data name="AllowancesStillToBeAuctionedThisYear" xml:space="preserve"><value>Còn phải đấu giá</value></data>
+  <data name="AuctionHasEnded" xml:space="preserve"><value>Phiên đấu giá đã kết thúc</value></data>
+  <data name="Won" xml:space="preserve"><value>Trúng</value></data>
+  <data name="Paid" xml:space="preserve"><value>Đã trả</value></data>
+  <data name="Cost" xml:space="preserve"><value>Chi phí</value></data>
+  <data name="TradeActivity" xml:space="preserve"><value>Hoạt động giao dịch</value></data>
+  <data name="TopOfBook" xml:space="preserve"><value>Giá tốt nhất trên sổ lệnh</value></data>
+  <data name="LastTrades" xml:space="preserve"><value>Giao dịch gần nhất</value></data>
+  <data name="ExchangeMarketOrders" xml:space="preserve"><value>Lệnh trên sàn giao dịch</value></data>
+  <data name="OrderType" xml:space="preserve"><value>Loại lệnh</value></data>
+  <data name="TargetVolume" xml:space="preserve"><value>Khối lượng</value></data>
+  <data name="TargetPrice" xml:space="preserve"><value>Giá</value></data>
+  <data name="StopPrice" xml:space="preserve"><value>Giá cắt lỗ</value></data>
+  <data name="PartialFillsAccepted" xml:space="preserve"><value>Chấp nhận khớp một phần</value></data>
+  <data name="ImmediateOrCancel" xml:space="preserve"><value>Khớp ngay hoặc hủy</value></data>
+  <data name="Buy" xml:space="preserve"><value>Mua</value></data>
+  <data name="Sell" xml:space="preserve"><value>Bán</value></data>
+  <data name="Market" xml:space="preserve"><value>Thị trường</value></data>
+  <data name="Limit" xml:space="preserve"><value>Giới hạn</value></data>
+  <data name="StopLoss" xml:space="preserve"><value>Cắt lỗ</value></data>
+  <data name="PlaceOrder" xml:space="preserve"><value>Đặt lệnh</value></data>
+  <data name="MyCurrentOrders" xml:space="preserve"><value>Lệnh hiện có của tôi</value></data>
+  <data name="Cancel" xml:space="preserve"><value>Hủy</value></data>
+  <data name="SendOfferToSell" xml:space="preserve"><value>Gửi chào bán</value></data>
+  <data name="UnitToTradeWith" xml:space="preserve"><value>Đơn vị giao dịch</value></data>
+  <data name="Volume" xml:space="preserve"><value>Khối lượng</value></data>
+  <data name="Price" xml:space="preserve"><value>Giá</value></data>
+  <data name="SendOffer" xml:space="preserve"><value>Gửi chào hàng</value></data>
+  <data name="Offers" xml:space="preserve"><value>Chào hàng</value></data>
+  <data name="OffersToAnswer" xml:space="preserve"><value>Chào hàng chờ tôi trả lời</value></data>
+  <data name="MyOffers" xml:space="preserve"><value>Chào hàng của tôi</value></data>
+  <data name="State" xml:space="preserve"><value>Trạng thái</value></data>
+  <data name="Accept" xml:space="preserve"><value>Chấp nhận</value></data>
+  <data name="Reject" xml:space="preserve"><value>Từ chối</value></data>
+  <data name="Rank" xml:space="preserve"><value>Hạng</value></data>
+  <data name="Company" xml:space="preserve"><value>Công ty</value></data>
+  <data name="UnitNamePlayer" xml:space="preserve"><value>Đơn vị (người chơi)</value></data>
+  <data name="FinalLongShortPosition" xml:space="preserve"><value>Vị thế cuối cùng</value></data>
+  <data name="System" xml:space="preserve"><value>Hệ thống</value></data>
+  <data name="UnitName" xml:space="preserve"><value>Đơn vị</value></data>
+  <data name="Sector" xml:space="preserve"><value>Ngành</value></data>
+  <data name="BaselineEmissions" xml:space="preserve"><value>Phát thải cơ sở</value></data>
+  <data name="AllocationThisYear" xml:space="preserve"><value>Hạn ngạch miễn phí</value></data>
+  <data name="EmissionReductions" xml:space="preserve"><value>Giảm phát thải</value></data>
+  <data name="NormalOperatingProfit" xml:space="preserve"><value>Lợi nhuận hoạt động thông thường</value></data>
+  <data name="NOPWithAbatement" xml:space="preserve"><value>Lợi nhuận hoạt động khi áp dụng biện pháp giảm phát thải</value></data>
+  <data name="AutoTrade" xml:space="preserve"><value>Tự động giao dịch</value></data>
+  <data name="Shutdown" xml:space="preserve"><value>Tạm ngừng hoạt động</value></data>
+  <data name="Implement" xml:space="preserve"><value>Thực hiện</value></data>
+  <data name="UpfrontCapitalCost" xml:space="preserve"><value>Chi phí vốn ban đầu</value></data>
+  <data name="AnnualEmissionReductions" xml:space="preserve"><value>Giảm phát thải hằng năm</value></data>
+  <data name="ImplementationTime" xml:space="preserve"><value>Thời gian thực hiện (năm)</value></data>
+  <data name="ProjectLifetime" xml:space="preserve"><value>Thời gian hoạt động (năm)</value></data>
+  <data name="AnnualNetRevenueCost" xml:space="preserve"><value>Doanh thu / chi phí thuần hằng năm</value></data>
+  <data name="ForecastROI" xml:space="preserve"><value>Tỷ suất hoàn vốn dự báo</value></data>
+  <data name="CostPerTonne" xml:space="preserve"><value>Chi phí mỗi tấn</value></data>
+  <data name="MarginalAbatementCostCurve_MACC" xml:space="preserve"><value>Đường chi phí giảm phát thải biên (MACC)</value></data>
+  <data name="AvailableEmissionReductionOpportunities" xml:space="preserve"><value>Cơ hội giảm phát thải của các đơn vị tôi</value></data>
+  <data name="AbatementUndertaken" xml:space="preserve"><value>Biện pháp giảm phát thải đã thực hiện</value></data>
+  <data name="Project" xml:space="preserve"><value>Dự án</value></data>
+  <data name="Implemented" xml:space="preserve"><value>Đã thực hiện</value></data>
+  <data name="Holdings" xml:space="preserve"><value>Nắm giữ</value></data>
+  <data name="Available" xml:space="preserve"><value>Khả dụng</value></data>
+  <data name="Held" xml:space="preserve"><value>Đang giữ</value></data>
+  <data name="SurrenderStatus" xml:space="preserve"><value>Trạng thái giao nộp</value></data>
+  <data name="ComplianceObligation" xml:space="preserve"><value>Nghĩa vụ tuân thủ</value></data>
+  <data name="AllowancesSurrenderedToGovernment" xml:space="preserve"><value>Hạn ngạch đã giao nộp</value></data>
+  <data name="OffsetsSurrenderedToGovernment" xml:space="preserve"><value>Tín chỉ bù trừ đã giao nộp</value></data>
+  <data name="BankingLimit" xml:space="preserve"><value>Giới hạn lưu giữ</value></data>
+  <data name="AllowancesBankedForTheNextYear" xml:space="preserve"><value>Lưu giữ cho năm sau</value></data>
+  <data name="Forfeited" xml:space="preserve"><value>Bị thu hồi</value></data>
+  <data name="Shortfall" xml:space="preserve"><value>Thiếu hụt</value></data>
+  <data name="Covered" xml:space="preserve"><value>Đã đáp ứng</value></data>
+  <data name="AutomaticSurrender" xml:space="preserve"><value>Việc giao nộp diễn ra tự động khi năm kết thúc.</value></data>
+  <data name="SystemReport" xml:space="preserve"><value>Báo cáo hệ thống</value></data>
+  <data name="ThisYear" xml:space="preserve"><value>Năm nay</value></data>
+  <data name="ToDate" xml:space="preserve"><value>Lũy kế</value></data>
+  <data name="SignIn" xml:space="preserve"><value>Đăng nhập</value></data>
+  <data name="SignOut" xml:space="preserve"><value>Đăng xuất</value></data>
+  <data name="Email" xml:space="preserve"><value>Email</value></data>
+  <data name="Password" xml:space="preserve"><value>Mật khẩu</value></data>
+  <data name="DisplayName" xml:space="preserve"><value>Tên hiển thị</value></data>
+  <data name="RegistrationPin" xml:space="preserve"><value>Mã PIN đăng ký</value></data>
+  <data name="Register" xml:space="preserve"><value>Đăng ký và nhận một công ty</value></data>
+  <data name="SignInPrompt" xml:space="preserve"><value>Đăng nhập để chơi.</value></data>
+  <data name="NoCompany" xml:space="preserve"><value>Tài khoản này chưa nhận công ty nào trong mô phỏng.</value></data>
+  <data name="NoSimulations" xml:space="preserve"><value>Chưa có mô phỏng nào đang chạy.</value></data>
+  <data name="Language" xml:space="preserve"><value>Ngôn ngữ</value></data>
+  <data name="English" xml:space="preserve"><value>Tiếng Anh</value></data>
+  <data name="Vietnamese" xml:space="preserve"><value>Tiếng Việt</value></data>
+  <data name="Message" xml:space="preserve"><value>Tin nhắn</value></data>
+  <data name="Send" xml:space="preserve"><value>Gửi</value></data>
+  <data name="Rules" xml:space="preserve"><value>Quy định</value></data>
+  <data name="Calculator" xml:space="preserve"><value>Máy tính</value></data>
+  <data name="Briefcase" xml:space="preserve"><value>Lệnh của tôi</value></data>
+  <data name="BestBid" xml:space="preserve"><value>Giá mua tốt nhất</value></data>
+  <data name="BestOffer" xml:space="preserve"><value>Giá bán tốt nhất</value></data>
+  <data name="LastTrade" xml:space="preserve"><value>Giao dịch gần nhất</value></data>
+  <data name="NetRevenue" xml:space="preserve"><value>Doanh thu thuần năm nay</value></data>
+  <data name="Player" xml:space="preserve"><value>Người chơi</value></data>
+  <data name="Cap" xml:space="preserve"><value>Hạn mức</value></data>
+  <data name="AnnualCapReductionRate" xml:space="preserve"><value>Mức giảm hạn mức hằng năm</value></data>
+  <data name="FreeAllocationShare" xml:space="preserve"><value>Tỷ lệ phân bổ miễn phí</value></data>
+  <data name="OffsetUsageLimit" xml:space="preserve"><value>Giới hạn sử dụng tín chỉ bù trừ</value></data>
+  <data name="PenaltyPerTonne" xml:space="preserve"><value>Hình phạt mỗi tấn</value></data>
+  <data name="PenaltyAllowanceDebit" xml:space="preserve"><value>Hạn ngạch bị trừ do hình phạt</value></data>
+  <data name="AuctionFloorPrice" xml:space="preserve"><value>Giá sàn đấu giá</value></data>
+  <data name="AuctionCeilingPrice" xml:space="preserve"><value>Giá trần đấu giá</value></data>
+  <data name="AuctionsPerYear" xml:space="preserve"><value>Số phiên đấu giá mỗi năm</value></data>
+  <data name="YearLength" xml:space="preserve"><value>Thời gian một năm</value></data>
+  <data name="AuctionDuration" xml:space="preserve"><value>Thời gian mở đấu giá</value></data>
+  <data name="VolatilityBand" xml:space="preserve"><value>Biên độ biến động giá</value></data>
+  <data name="Offset" xml:space="preserve"><value>Tín chỉ bù trừ</value></data>
+  <data name="OffsetPriceDiscount" xml:space="preserve"><value>Tín chỉ bù trừ giao dịch thấp hơn hạn ngạch vì chỉ một phần nghĩa vụ được đáp ứng bằng chúng.</value></data>
+  <data name="AuctionRevenueCollectedByGovernment" xml:space="preserve"><value>Doanh thu đấu giá</value></data>
+  <data name="TotalAllowancesOnOffer" xml:space="preserve"><value>Hạn ngạch đưa ra đấu giá</value></data>
+  <data name="GovernmentReserve" xml:space="preserve"><value>Dự trữ của chính phủ</value></data>
+  <data name="Issued" xml:space="preserve"><value>Đã phát hành</value></data>
+  <data name="CalculatorHint" xml:space="preserve"><value>Giá x khối lượng = chi phí vốn.</value></data>
+  <data name="ComplianceCostCalculator" xml:space="preserve"><value>Máy tính chi phí tuân thủ</value></data>
+  <data name="People" xml:space="preserve"><value>Người</value></data>
+  <data name="None" xml:space="preserve"><value>Không có</value></data>
+  <data name="Total" xml:space="preserve"><value>Tổng</value></data>
+  <data name="OpenSimulation" xml:space="preserve"><value>Mở</value></data>
+  <data name="Companies" xml:space="preserve"><value>Công ty</value></data>
+  <data name="Units" xml:space="preserve"><value>Đơn vị</value></data>
+  <data name="SectorEmissions" xml:space="preserve"><value>Ngành</value></data>
+  <data name="PriceChart" xml:space="preserve"><value>Lịch sử giá</value></data>
+  <data name="PriceChartHint" xml:space="preserve"><value>Giá khớp và giá giao dịch theo thời hạn và tín chỉ bù trừ.</value></data>
+  <data name="Long" xml:space="preserve"><value>Thừa</value></data>
+  <data name="Short" xml:space="preserve"><value>Thiếu</value></data>
+  <data name="PositionLegend" xml:space="preserve"><value>Hạn ngạch miễn phí và phần thiếu hụt của năm.</value></data>
+  <data name="OpenOrders" xml:space="preserve"><value>Lệnh đang mở</value></data>
+  <data name="Side" xml:space="preserve"><value>Chiều</value></data>
+  <data name="Filled" xml:space="preserve"><value>Đã khớp</value></data>
+  <data name="Status" xml:space="preserve"><value>Trạng thái</value></data>
+  <data name="Buyer" xml:space="preserve"><value>Người mua</value></data>
+  <data name="Seller" xml:space="preserve"><value>Người bán</value></data>
+  <data name="Channel" xml:space="preserve"><value>Kênh</value></data>
+  <data name="Product" xml:space="preserve"><value>Sản phẩm</value></data>
+  <data name="Quantity" xml:space="preserve"><value>Số lượng</value></data>
+  <data name="NoRows" xml:space="preserve"><value>Chưa có gì để hiển thị.</value></data>
+  <data name="Share" xml:space="preserve"><value>Tỷ lệ</value></data>
+  <data name="Average" xml:space="preserve"><value>Trung bình</value></data>
+  <data name="PositionSummary" xml:space="preserve"><value>Tóm tắt vị thế</value></data>
+  <data name="Vintage_ForwardSale" xml:space="preserve"><value>bán kỳ hạn</value></data>
+  <data name="Committed" xml:space="preserve"><value>Đã cam kết</value></data>
+  <data name="SignInTitle" xml:space="preserve"><value>Đăng nhập CarbonSim</value></data>
+  <data name="MessagingSwitchedOff" xml:space="preserve"><value>Quản trị viên đã tắt tính năng tin nhắn cho bài tập này.</value></data>
+  <data name="AdminConsole" xml:space="preserve"><value>Bảng điều khiển của quản trị viên</value></data>
+  <data name="AdminConsoleSubtitle" xml:space="preserve"><value>Thiết lập bài tập, điều hành khi đang chạy và đọc báo cáo.</value></data>
+  <data name="AdminAccessDenied" xml:space="preserve"><value>Chỉ tài khoản quản trị viên mới dùng được bảng điều khiển này.</value></data>
+  <data name="AdminRuns" xml:space="preserve"><value>Bài tập</value></data>
+  <data name="AdminSetup" xml:space="preserve"><value>Bài tập mới</value></data>
+  <data name="AdminRunControls" xml:space="preserve"><value>Điều khiển</value></data>
+  <data name="AdminReports" xml:space="preserve"><value>Báo cáo</value></data>
+  <data name="AdminSurrenderStatus" xml:space="preserve"><value>Trạng thái giao nộp theo công ty</value></data>
+  <data name="AdminSavedRuns" xml:space="preserve"><value>Bài tập đã lưu</value></data>
+  <data name="AdminNoRuns" xml:space="preserve"><value>Không có bài tập nào đang diễn ra.</value></data>
+  <data name="AdminLoad" xml:space="preserve"><value>Tải</value></data>
+  <data name="AdminDelete" xml:space="preserve"><value>Xóa</value></data>
+  <data name="AdminAdd" xml:space="preserve"><value>Thêm</value></data>
+  <data name="AdminRemove" xml:space="preserve"><value>Bỏ</value></data>
+  <data name="AdminSave" xml:space="preserve"><value>Lưu</value></data>
+  <data name="AdminName" xml:space="preserve"><value>Tên bài tập</value></data>
+  <data name="AdminSeed" xml:space="preserve"><value>Hạt giống ngẫu nhiên</value></data>
+  <data name="AdminLive" xml:space="preserve"><value>Đang diễn ra</value></data>
+  <data name="AdminBeginYear" xml:space="preserve"><value>Bắt đầu năm</value></data>
+  <data name="AdminBeginNextYear" xml:space="preserve"><value>Mở năm tiếp theo</value></data>
+  <data name="AdminPause" xml:space="preserve"><value>Tạm dừng đồng hồ</value></data>
+  <data name="AdminResume" xml:space="preserve"><value>Cho đồng hồ chạy</value></data>
+  <data name="AdminHalt" xml:space="preserve"><value>Dừng giao dịch</value></data>
+  <data name="AdminHaltNow" xml:space="preserve"><value>Dừng ngay</value></data>
+  <data name="AdminHaltWarn" xml:space="preserve"><value>Số giây cảnh báo trước khi dừng (để trống để dừng ngay)</value></data>
+  <data name="AdminEndYear" xml:space="preserve"><value>Kết thúc năm</value></data>
+  <data name="AdminEndSimulation" xml:space="preserve"><value>Kết thúc bài tập</value></data>
+  <data name="AdminMessaging" xml:space="preserve"><value>Tin nhắn của người chơi</value></data>
+  <data name="AdminMessagingAllowed" xml:space="preserve"><value>Người chơi được gửi tin nhắn.</value></data>
+  <data name="AdminMessagingBlocked" xml:space="preserve"><value>Tính năng tin nhắn đã tắt.</value></data>
+  <data name="AdminIssueFine" xml:space="preserve"><value>Phạt một đơn vị</value></data>
+  <data name="AdminFineAmount" xml:space="preserve"><value>Số tiền phạt</value></data>
+  <data name="AdminFineDescription" xml:space="preserve"><value>Lý do phạt</value></data>
+  <data name="AdminDisburseOffsets" xml:space="preserve"><value>Cấp tín chỉ bù trừ</value></data>
+  <data name="AdminOffsetVolume" xml:space="preserve"><value>Khối lượng tín chỉ bù trừ</value></data>
+  <data name="AdminAddAbatement" xml:space="preserve"><value>Thêm biện pháp giảm phát thải cho một đơn vị</value></data>
+  <data name="AdminShock" xml:space="preserve"><value>Điều chỉnh cuối năm</value></data>
+  <data name="AdminShockTonnes" xml:space="preserve"><value>Thay đổi phát thải (tấn, số âm để giảm)</value></data>
+  <data name="AdminApply" xml:space="preserve"><value>Áp dụng</value></data>
+  <data name="AdminParameters" xml:space="preserve"><value>Quy định của bài tập</value></data>
+  <data name="AdminSectorsAndAbatement" xml:space="preserve"><value>Ngành và danh mục biện pháp giảm phát thải</value></data>
+  <data name="AdminSectorName" xml:space="preserve"><value>Tên ngành</value></data>
+  <data name="AdminEmissionShare" xml:space="preserve"><value>Tỷ lệ phát thải</value></data>
+  <data name="AdminAbatementCode" xml:space="preserve"><value>Mã</value></data>
+  <data name="AdminAbatementName" xml:space="preserve"><value>Tên dự án</value></data>
+  <data name="AdminReductionShare" xml:space="preserve"><value>Tỷ lệ giảm so với phát thải cơ sở</value></data>
+  <data name="AdminUpfrontPerTonne" xml:space="preserve"><value>Chi phí vốn ban đầu mỗi tấn</value></data>
+  <data name="AdminNetRevenuePerTonne" xml:space="preserve"><value>Doanh thu thuần mỗi tấn</value></data>
+  <data name="AdminImplementationYears" xml:space="preserve"><value>Số năm xây dựng</value></data>
+  <data name="AdminLifetimeYears" xml:space="preserve"><value>Số năm hoạt động</value></data>
+  <data name="AdminAddOption" xml:space="preserve"><value>Thêm một lựa chọn giảm phát thải</value></data>
+  <data name="AdminGrowth" xml:space="preserve"><value>Biên độ tăng trưởng phát thải thông thường</value></data>
+  <data name="AdminMinimumRate" xml:space="preserve"><value>Tăng trưởng hằng năm thấp nhất</value></data>
+  <data name="AdminMaximumRate" xml:space="preserve"><value>Tăng trưởng hằng năm cao nhất</value></data>
+  <data name="AdminRegistration" xml:space="preserve"><value>Đăng ký</value></data>
+  <data name="AdminRegistrationOpen" xml:space="preserve"><value>Cho người chơi nhận công ty</value></data>
+  <data name="AdminAccessPin" xml:space="preserve"><value>Mã PIN truy cập</value></data>
+  <data name="AdminCompaniesOnOffer" xml:space="preserve"><value>Các công ty do kịch bản định nghĩa</value></data>
+  <data name="AdminCreateRun" xml:space="preserve"><value>Tạo bài tập</value></data>
+  <data name="AdminOpen" xml:space="preserve"><value>Mở</value></data>
+  <data name="AdminCreated" xml:space="preserve"><value>Đã tạo bài tập.</value></data>
+  <data name="AdminLoaded" xml:space="preserve"><value>Đã tải bài tập.</value></data>
+  <data name="AdminDeleted" xml:space="preserve"><value>Đã xóa bài tập.</value></data>
+  <data name="AdminYearStarted" xml:space="preserve"><value>Năm đã bắt đầu.</value></data>
+  <data name="AdminYearEnded" xml:space="preserve"><value>Năm đã kết thúc.</value></data>
+  <data name="AdminPausedStatus" xml:space="preserve"><value>Đồng hồ đang tạm dừng.</value></data>
+  <data name="AdminResumedStatus" xml:space="preserve"><value>Đồng hồ đang chạy lại.</value></data>
+  <data name="AdminHaltWarned" xml:space="preserve"><value>Giao dịch sẽ dừng sau cảnh báo.</value></data>
+  <data name="AdminHaltedStatus" xml:space="preserve"><value>Giao dịch đã dừng.</value></data>
+  <data name="AdminSimulationEnded" xml:space="preserve"><value>Bài tập đã kết thúc.</value></data>
+  <data name="AdminFineIssued" xml:space="preserve"><value>Đã ban hành hình phạt.</value></data>
+  <data name="AdminOffsetsDisbursed" xml:space="preserve"><value>Đã cấp tín chỉ bù trừ.</value></data>
+  <data name="AdminAbatementAdded" xml:space="preserve"><value>Đã thêm biện pháp giảm phát thải.</value></data>
+  <data name="AdminShockApplied" xml:space="preserve"><value>Đã áp dụng điều chỉnh.</value></data>
+  <data name="AdminMessagingSaved" xml:space="preserve"><value>Đã lưu thiết lập tin nhắn.</value></data>
+  <data name="AdminRegistrationSaved" xml:space="preserve"><value>Đã lưu thiết lập đăng ký.</value></data>
+  <data name="AdminTimeLeftInYear" xml:space="preserve"><value>Thời gian còn lại của năm</value></data>
+  <data name="AdminAuctionOpensIn" xml:space="preserve"><value>Phiên đấu giá tiếp theo mở sau</value></data>
+  <data name="AdminAuctionClosesIn" xml:space="preserve"><value>Phiên đấu giá đóng sau</value></data>
+  <data name="AdminAutomaticTrading" xml:space="preserve"><value>Tự động giao dịch</value></data>
+  <data name="AdminOn" xml:space="preserve"><value>Bật</value></data>
+  <data name="AdminOff" xml:space="preserve"><value>Tắt</value></data>
+  <data name="AdminExportCsv" xml:space="preserve"><value>Xuất CSV</value></data>
+  <data name="AdminPriceReport" xml:space="preserve"><value>Giá giao dịch trung bình theo năm</value></data>
+  <data name="AdminCompanyReport" xml:space="preserve"><value>Báo cáo công ty</value></data>
+  <data name="AdminUnitReport" xml:space="preserve"><value>Báo cáo đơn vị</value></data>
+  <data name="AdminGovernmentRevenue" xml:space="preserve"><value>Doanh thu của chính phủ</value></data>
+  <data name="AdminGovernmentReserve" xml:space="preserve"><value>Dự trữ của chính phủ</value></data>
+  <data name="AdminSelectRunHint" xml:space="preserve"><value>Chọn một bài tập để xem bảng điều khiển.</value></data>
+  <data name="AdminShockYear" xml:space="preserve"><value>Năm cần điều chỉnh</value></data>
+  <data name="AdminAbatementFor" xml:space="preserve"><value>Biện pháp giảm phát thải cho đơn vị đã chọn</value></data>
+  <data name="DisplayCurrency" xml:space="preserve"><value>Đơn vị tiền hiển thị</value></data>
+  <data name="VndPerUsdRate" xml:space="preserve"><value>VND trên 1 USD</value></data>
+</root>
+
+

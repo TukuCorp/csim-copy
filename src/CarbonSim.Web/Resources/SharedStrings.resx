@@ -360,4 +360,6 @@
   <data name="AdminSelectRunHint" xml:space="preserve"><value>Choose an exercise to see its console.</value></data>
   <data name="AdminShockYear" xml:space="preserve"><value>Year to change</value></data>
   <data name="AdminAbatementFor" xml:space="preserve"><value>Abatement for the chosen unit</value></data>
+  <data name="DisplayCurrency" xml:space="preserve"><value>Display currency</value></data>
+  <data name="VndPerUsdRate" xml:space="preserve"><value>VND per USD</value></data>
 </root>

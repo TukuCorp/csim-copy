@@ -71,11 +71,13 @@ Order follows the demo video; each screen has a bUnit test and a Playwright step
 - [x] Review section for Phase 4
 
 ## Phase 5 — Vietnam localisation and scenario
-- [ ] Vietnamese resource file (use the Vietnamese glossary in `research/carbonsim-sources/vietnam-ta-materials/` for terminology)
-- [ ] VND and USD currency display with configurable rate
-- [ ] Vietnam scenario tuned to the trainer-deck parameters (cap 355.85 Mt, 3%/yr, 90% free, 4 auctions, 100/300 collar, 10% offsets, penalty 300 + 1)
-- [ ] Trainer runbook for the two-day agenda
-- [ ] Review section for Phase 5
+- [x] Vietnamese resource file (`SharedStrings.vi.resx`, 312 keys) written from the glossary's terminology; a test fails if either file is missing a key or carries an empty value — `tests/CarbonSim.Web.Tests/LocalizationTests.cs`
+- [x] Number entry under Vietnamese culture: bid, order and offer boxes are culture-bound text inputs and accept `1.000` and `120,25`; bUnit tests in both cultures — `Components/Pages/{Auction,Exchange,Otc}.razor`, `tests/CarbonSim.Web.Tests/Components/NumberEntryTests.cs`
+- [x] VND and USD currency display with a configurable rate: `DisplayCurrency` and `VndPerUsd` host options, `CurrencyDisplay` conversion, every money figure routed through it — `src/CarbonSim.Web/CurrencyDisplay.cs`, `CarbonSimHostOptions`, `Components/Shared/Display.cs`
+- [x] Vietnam scenario tuned to the trainer-deck parameters: `scenarios/vietnam-2024.json` kept (the listed parameters already matched); `notes` rewritten with the deck cross-check and the discrepancies (see the review) — fidelity suite re-run, measured envelopes recorded below
+- [x] Trainer runbook for the two-day agenda — `docs/trainer-runbook.md`
+- [x] Playwright walk extended: switch to Vietnamese, translated labels, a Vietnamese-formatted number accepted — `tests/CarbonSim.Web.Tests/Components/PlaywrightVietnamTests.cs`
+- [x] Review section for Phase 5 — below
 
 ## Phase 6 — Hardening and deployment
 - [ ] Load test: 250 connected clients, 20-minute year, no missed auction close
@@ -372,3 +374,111 @@ subscribing to the registry; the setup screen edits parameters, sectors, abateme
 bands but not the company/unit roster, which comes from the configured scenario; and the reports'
 "to date" totals cover the whole run's years rather than only the years played, as the player's
 system report already did.
++### Phase 5 — Vietnam localisation and scenario (2026-10-03)
+
+Built: src/CarbonSim.Web/Resources/SharedStrings.vi.resx (312 keys) written for this project from
+the terminology of the Vietnamese glossary under research/carbonsim-sources/vietnam-ta-materials/
+(Hạn ngạch for allowance, Tín chỉ bù trừ for offset, Hạn mức for cap, Đấu giá hạn ngạch for the
+auction, Thị trường giao dịch qua sàn for the exchange, Thị trường OTC, Biện pháp giảm phát thải for
+abatement, Nghĩa vụ tuân thủ for the compliance obligation, Lưu giữ for banking, Hình phạt for the
+penalty, Công ty and Đơn vị for company and unit). No sentence was taken from the harvested material:
+the glossary fixed the vocabulary, the wording is ours. src/CarbonSim.Web/CurrencyDisplay.cs carries
+the display currency and the VND/USD rate; the host options gained DisplayCurrency and VndPerUsd, and
+Display.Money/Money2 route through the ambient Display.Currency. The player and admin number inputs
+became culture-bound text inputs. docs/trainer-runbook.md is the two-day runbook.
+
+Localisation mechanics: the language switch already worked end to end. The culture cookie reaches the
+Blazor circuit, so the interactive render (not only the server-rendered shell) is Vietnamese; the
+Playwright Vietnamese walk proves it by reading translated headings and interacting with a
+Vietnamese-formatted order after hydration. No circuit-culture plumbing was needed. The resource
+parity test reads both .resx files off disk and fails on a missing or empty key in either, and a
+second test loads the satellite assembly through the real localiser and asserts Vietnamese values, so
+a resx that never reaches the build is caught too. Two keys were added to both files for the currency
+line on the Rules panel (DisplayCurrency, VndPerUsdRate).
+
+Number entry (the Phase 3 open issue): every money or volume box on the Auction, Exchange and OTC
+screens, and on the admin setup and run screens, is now type="text" inputmode="decimal" with
+@bind:culture="CultureInfo.CurrentCulture". A browser's own number input only accepts a dot, so a
+Vietnamese player typing 1.000 for a thousand tonnes would have been misread as one tonne. The bid
+and order boxes now parse 1.000 as 1000 and 120,25 as 120.25, and the same form still reads 1,000 as
+1000 under English. Note: Blazor does not support @bind:format for numeric types (it compiles only
+for DateTime/DateTimeOffset/DateOnly/TimeOnly), so the boxes show a plain culture-formatted number
+rather than a grouped one; grouping still applies everywhere a figure is written by Display. The
+auction price slider binds invariantly, because an HTML range input must.
+
+Currency: the engine keeps one internal unit, which is the US dollar the trainer deck quotes the
+collar and penalty in; only the UI converts. DisplayCurrency is USD (the internal unit) or VND, and
+VndPerUsd is the rate. A converted figure carries its code ("1,250,000 USD", "25.000.000 VND"), so a
+figure is never ambiguous. The three places that showed the cap through the money formatter (Rules
+panel, System info, Waiting) now use tonnes, which the currency change exposed. CSV exports stay in
+the internal unit with invariant numbers, so a spreadsheet reads them as numbers. Tests cover USD
+formatting, VND conversion and round-trip, grouping in both cultures, and the accepted codes.
+
+Scenario: scenarios/vietnam-2024.json is kept, not replaced, because every listed trainer-deck
+parameter already matched it and the Phase 1-4 tests and the fidelity run reference that file by
+name. Its notes field was rewritten to record the cross-check against the deck's "ETS parameters"
+slide. Agreement: cap 355,850,000 t; 3%/yr cap reduction (deck: 15-18% over the term); 90% free
+allocation; 4 auctions per year; USD 100/300 collar; 10% offset limit; banking capped at the
+obligation; penalty USD 300 plus one allowance; 10% exchange volatility band; 20 minutes per virtual
+year; 242 units. Discrepancies noted, not forced: (1) the deck offers 5-6 years and this file runs 3,
+kept short so the seeded fidelity run and the earlier tests stay quick, with the term left a trainer
+setting; (2) the deck's timeline shows 2:45 auction windows with 2:15 interims, while this file opens
+each auction for 2:15 of a 5:00 section (45% of the year in total open time, reading the deck's "45%
+of the year" as total open time); (3) the deck says about 36 human and 206 AI companies, this file has
+37 human and 205 AI. A fourth finding is in the engine, not the scenario: tradingOpenShareOfYear is
+validated, persisted and displayed, but the clock derives the auction window from AuctionDuration and
+AuctionsPerYear alone, so the parameter drives nothing. The shipped file happens to agree (2.25 min of
+a 5 min section is 45%), but the two can silently drift.
+
+Fidelity re-run against the shipped scenario (seed 20240916, 242 units, 3 years), from
+fidelity-run.md. Normal difficulty: auction averages 100.00 / 101.60 / 106.77; year-1 auction volume
+16,636,423 t; average allowance price 103.31 against offsets 87.57, a 15.2% discount; prices by
+vintage 100.00 / 101.60 / 106.77; year-1 abatement 3,558,500 t (1.00% of the cap); year-1 offsets
+surrendered 21,663,710 t (6.09% of the cap); 346 penalties worth 5,946,343,341 over a 19,821,144 t
+market shortfall; 380 of 726 company-years compliant; bot cost per tonne -10.11 to 29.32. Hard
+difficulty: 100.12 / 101.45 / 103.37; 17,792,522 t; 101.85 against 96.30, a 5.4% discount; 1.00% of
+the cap abated; 5.83% offsets surrendered; 107 penalties worth 5,857,064,382 over a 19,523,548 t
+shortfall; 619 of 726 compliant; -12.86 to 26.83. Seven envelopes hold (floor clearance, offset
+discount, later vintages above earlier ones, year-1 abatement share, leaderboard spread with negative
+outliers, plus the two monotonicity/record checks). Four remain skipped with their measured value in
+the reason and were not unskipped or hand-tuned: full compliance at Normal (346 company-years short),
+prices climbing to the ceiling by year three (only 3.4% of the way), the 2-3% offset surrender share
+(6.09%, set by the harness's disbursement), and a mid-run price shock inside one virtual month (no
+shock in this harness). Closing the first three is the bot-calibration item, not a scenario edit.
+
+Trainer runbook: docs/trainer-runbook.md covers host configuration (including DisplayCurrency and
+VndPerUsd), building an exercise, registration and the PIN, the two-day agenda mapped to the console
+controls (start/open the year, pause/resume, halt with a warning, close the year, end the exercise,
+fine, disburse offsets, add abatement, end-of-year modification, automatic trading, messaging), what
+to point out on each player screen, the five reports and their CSV paths, and recovery (load a saved
+run, restart the host, and the in-memory notice caveat). Its final section states plainly which
+fidelity envelopes hold and which do not, so a trainer does not present a number as the original's.
+
+Test counts: 376 passing, 4 skipped in the solution. Engine 238 passing + 4 skipped (the fidelity
+envelopes), Web 127 passing, Data 11 passing. Web gained 20 tests: LocalizationTests (parity in both
+cultures, the supported list and cookie, and the real localiser answering in Vietnamese),
+CurrencyDisplayTests (10, including the theory over the accepted codes), NumberEntryTests (5, both
+cultures, a bid, an order and an offer), and PlaywrightVietnamTests (1, the Vietnamese walk). The
+Playwright walk now boots five real hosts across the walk, phone, admin and Vietnamese tests; all ran
+for real rather than skipping.
+
+Gate: dotnet build CarbonSim.sln -> 0 warnings, 0 errors; dotnet test CarbonSim.sln -> green with
+Playwright running for real (376 passed, 4 skipped); dotnet format CarbonSim.sln --verify-no-changes
+-> clean; and dotnet run --project src/CarbonSim.Web served /sign-in (200), /admin (200), and with
+the culture cookie set to vi answered /sign-in, /admin and a run dashboard at lang=vi, so the player
+and admin screens render in both languages.
+
+Open issues: Display.Currency is a static ambient, which fits one display currency per deployment but
+not two languages wanting different currencies on one box; input boxes show a culture-formatted but
+ungrouped number, because Blazor has no @bind:format for numerics; tradingOpenShareOfYear is inert in the
+clock (see above); the four fidelity envelopes above are still open; and the runbook's recovery steps
+assume the in-memory notice caveat from the Phase 2 review, which is unchanged.
+
+Review fix (2026-10-04): prices now follow the display currency both ways. Under VND, every per-tonne
+price on the player and admin screens (top of book, auction and trade histories, OTC offers, auction
+floor/ceiling, average prices) is converted and carries its code, and the bid slider, order, stop and
+offer price boxes take dong, name their currency, and are converted back to the internal unit before
+reaching the session. `Display.UseCurrency` gives a per-async-flow override so a dong screen can be
+tested without changing what parallel tests see; the host still sets one deployment-wide currency.
+Tests: `DongPriceEntryTests` (5 bUnit: order, offer and auction-slider entry in dong, labelled price
+boxes, converted market prices) and a `CurrencyDisplay.Price` case; Web 133 passing.

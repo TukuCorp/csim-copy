@@ -40,15 +40,18 @@ else
                 </label>
                 <label>
                     @Strings["BidVolume"]
-                    <input type="number" step="1" min="1" @bind="_volume" />
+                    @* Text, not number: the browser's number input only accepts a dot, which
+                       would fight a Vietnamese player typing 1.000 for a thousand tonnes. *@
+                    <input id="bid-volume" type="text" inputmode="decimal" @bind="_volume" @bind:culture="CultureInfo.CurrentCulture" />
                 </label>
                 <label>
-                    @Strings["UnitBidPrice"]
-                    <input type="range" min="@view.System.AuctionFloorPrice" max="@view.System.AuctionCeilingPrice" step="1" @bind="_price" />
-                    <span>@Display.Money(_price)</span>
+                    @Strings["UnitBidPrice"] (@Display.Currency.Code)
+                    @* The slider runs in the currency on screen; the bid is converted back on placing. *@
+                    <input id="bid-price" type="range" min="@Invariant(Display.PriceInput(view.System.AuctionFloorPrice))" max="@Invariant(Display.PriceInput(view.System.AuctionCeilingPrice))" step="@Invariant(Display.PriceInput(1m))" @bind="_price" @bind:culture="CultureInfo.InvariantCulture" />
+                    <span>@Display.Price(Display.PriceFromInput(_price))</span>
                 </label>
-                <p class="small muted">@Strings["CapitalCost"]: @Display.Money(_price * _volume)</p>
-                <button class="button" disabled="@(!view.AuctionOpen)"
+                <p id="bid-capital-cost" class="small muted">@Strings["CapitalCost"]: @Display.Money(Display.PriceFromInput(_price) * _volume)</p>
+                <button id="place-bid" class="button" disabled="@(!view.AuctionOpen)"
                         @onclick="PlaceBidAsync">
                     @Strings["PlaceBid"]
                 </button>
@@ -86,7 +89,7 @@ else
                     <QuickGrid Items="@ended.MyAwards.AsQueryable()" Class="grid">
                         <TemplateColumn Title="@Strings["Vintage"]" Context="row">@row.Vintage</TemplateColumn>
                         <TemplateColumn Title="@Strings["Won"]" Context="row">@Display.Tonnes(row.Volume)</TemplateColumn>
-                        <TemplateColumn Title="@Strings["Price"]" Context="row">@Display.Number(row.Price)</TemplateColumn>
+                        <TemplateColumn Title="@Strings["Price"]" Context="row">@Display.Price(row.Price)</TemplateColumn>
                         <TemplateColumn Title="@Strings["Paid"]" Context="row">@Display.Money(row.Cost)</TemplateColumn>
                     </QuickGrid>
                 }
@@ -134,7 +137,7 @@ else
 
         if (_price == 0m)
         {
-            _price = view.System.AuctionFloorPrice;
+            _price = Display.PriceInput(view.System.AuctionFloorPrice);
         }
 
         if (view.CurrentAuction is { } auction && auction.Lots.Count > 0 && !Vintages(auction).Contains(_vintage))
@@ -143,10 +146,12 @@ else
         }
     }
 
+    private static string Invariant(decimal value) => value.ToString(CultureInfo.InvariantCulture);
+
     private static List<int> Vintages(AuctionView auction) => [.. auction.Lots.Select(lot => lot.Vintage).Distinct().Order()];
 
     private Task PlaceBidAsync() =>
         Context.ActAsync(
-            session => session.PlaceBidAsync(SimulationId, _unitId, _vintage, _price, _volume),
+            session => session.PlaceBidAsync(SimulationId, _unitId, _vintage, Display.PriceFromInput(_price), _volume),
             Strings["PlaceBid"]);
 }

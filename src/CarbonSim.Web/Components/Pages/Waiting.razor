@@ -27,7 +27,7 @@
                     <li>@Strings["AuctionOpenDurationPercentage_X", (run.TradingOpenShareOfYear * 100m).ToString("N0", CultureInfo.CurrentCulture)]</li>
                 </ul>
                 <dl class="metrics">
-                    <div><dt>@Strings["Cap"]</dt><dd>@Display.Money(run.Cap)</dd></div>
+                    <div><dt>@Strings["Cap"]</dt><dd>@Display.Tonnes(run.Cap) t</dd></div>
                     <div><dt>@Strings["FreeAllocationShare"]</dt><dd>@Display.Percent(run.FreeAllocationShare)</dd></div>
                     <div><dt>@Strings["OffsetUsageLimit"]</dt><dd>@Display.Percent(run.OffsetUsageLimit)</dd></div>
                     <div><dt>@Strings["Companies"]</dt><dd>@run.Companies</dd></div>

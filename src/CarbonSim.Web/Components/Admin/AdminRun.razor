@@ -64,7 +64,7 @@ else
 
             <label>
                 @Strings["AdminHaltWarn"]
-                <input id="admin-halt-warn" type="number" min="0" @bind="_warnSeconds" />
+                <input id="admin-halt-warn" type="text" inputmode="decimal" min="0" @bind="_warnSeconds" @bind:culture="CultureInfo.CurrentCulture" />
             </label>
 
             <p>
@@ -94,7 +94,7 @@ else
                     }
                 </select>
             </label>
-            <label>@Strings["AdminFineAmount"]<input id="fine-amount" type="number" @bind="_fineAmount" /></label>
+            <label>@Strings["AdminFineAmount"]<input id="fine-amount" type="text" inputmode="decimal" @bind="_fineAmount" @bind:culture="CultureInfo.CurrentCulture" /></label>
             <label>@Strings["AdminFineDescription"]<input id="fine-description" type="text" @bind="_fineDescription" /></label>
             <button class="button" @onclick="IssueFineAsync">@Strings["AdminIssueFine"]</button>
         </section>
@@ -110,7 +110,7 @@ else
                     }
                 </select>
             </label>
-            <label>@Strings["AdminOffsetVolume"]<input id="offset-volume" type="number" @bind="_offsetVolume" /></label>
+            <label>@Strings["AdminOffsetVolume"]<input id="offset-volume" type="text" inputmode="decimal" @bind="_offsetVolume" @bind:culture="CultureInfo.CurrentCulture" /></label>
             <button class="button" @onclick="DisburseAsync">@Strings["AdminDisburseOffsets"]</button>
         </section>
 
@@ -148,8 +148,8 @@ else
                     }
                 </select>
             </label>
-            <label>@Strings["AdminShockYear"]<input id="shock-year" type="number" min="1" max="@run.Years" @bind="_shockYear" /></label>
-            <label>@Strings["AdminShockTonnes"]<input id="shock-tonnes" type="number" @bind="_shockTonnes" /></label>
+            <label>@Strings["AdminShockYear"]<input id="shock-year" type="text" inputmode="decimal" min="1" max="@run.Years" @bind="_shockYear" @bind:culture="CultureInfo.CurrentCulture" /></label>
+            <label>@Strings["AdminShockTonnes"]<input id="shock-tonnes" type="text" inputmode="decimal" @bind="_shockTonnes" @bind:culture="CultureInfo.CurrentCulture" /></label>
             <button class="button" @onclick="ApplyShockAsync">@Strings["AdminApply"]</button>
         </section>
 

@@ -49,9 +49,9 @@ else
                         <tr>
                             <td>@price.Year</td>
                             <td>@Display.Tonnes(price.AllowanceVolume)</td>
-                            <td>@Display.Number(price.AllowanceAverage)</td>
+                            <td>@Display.Price(price.AllowanceAverage)</td>
                             <td>@Display.Tonnes(price.OffsetVolume)</td>
-                            <td>@Display.Number(price.OffsetAverage)</td>
+                            <td>@Display.Price(price.OffsetAverage)</td>
                             <td>@Display.Price(price.AuctionAverage)</td>
                             <td>@Display.Price(price.AuctionLow) - @Display.Price(price.AuctionHigh)</td>
                         </tr>
@@ -185,8 +185,8 @@ else
             new ReportRow(Strings["AllowancesBankedForTheNextYear"], Display.Tonnes(now.Banked), Display.Tonnes(all.Banked)),
             new ReportRow(Strings["Forfeited"], Display.Tonnes(now.Forfeited), Display.Tonnes(all.Forfeited)),
             new ReportRow(Strings["AuctionRevenueCollectedByGovernment"], Display.Money(now.AuctionRevenue), Display.Money(all.AuctionRevenue)),
-            new ReportRow(Strings["Average"] + " " + Strings["AllowanceAuction"], Display.Number(now.AverageAllowancePrice), Display.Number(all.AverageAllowancePrice)),
-            new ReportRow(Strings["Average"] + " " + Strings["Offset"], Display.Number(now.AverageOffsetPrice), Display.Number(all.AverageOffsetPrice)),
+            new ReportRow(Strings["Average"] + " " + Strings["AllowanceAuction"], Display.Price(now.AverageAllowancePrice), Display.Price(all.AverageAllowancePrice)),
+            new ReportRow(Strings["Average"] + " " + Strings["Offset"], Display.Price(now.AverageOffsetPrice), Display.Price(all.AverageOffsetPrice)),
             new ReportRow(Strings["EmissionReductions"], Display.Tonnes(now.EmissionsReduced), Display.Tonnes(all.EmissionsReduced)),
             new ReportRow(Strings["PenaltyPerTonne"], now.PenaltyCount.ToString(CultureInfo.CurrentCulture) + " / " + Display.Money(now.PenaltyValue), all.PenaltyCount.ToString(CultureInfo.CurrentCulture) + " / " + Display.Money(all.PenaltyValue)),
         ];

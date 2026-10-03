@@ -8,6 +8,7 @@ using CarbonSim.Web;
 using CarbonSim.Web.Accounts;
 using CarbonSim.Web.Admin;
 using CarbonSim.Web.Components;
+using CarbonSim.Web.Components.Shared;
 using CarbonSim.Web.Endpoints;
 using CarbonSim.Web.Infrastructure;
 using CarbonSim.Web.Player;
@@ -36,6 +37,23 @@ if (hostOptions.Schema is not (CarbonSimHostOptions.MigrateSchema or CarbonSimHo
         $"'{CarbonSimHostOptions.SectionName}:{nameof(CarbonSimHostOptions.Schema)}' must be " +
         $"'{CarbonSimHostOptions.MigrateSchema}' or '{CarbonSimHostOptions.SchemaFromModel}' (was '{hostOptions.Schema}').");
 }
+
+if (!CurrencyDisplay.IsKnown(hostOptions.DisplayCurrency))
+{
+    throw new InvalidOperationException(
+        $"'{CarbonSimHostOptions.SectionName}:{nameof(CarbonSimHostOptions.DisplayCurrency)}' must be " +
+        $"'{CurrencyDisplay.Usd}' or '{CurrencyDisplay.Vnd}' (was '{hostOptions.DisplayCurrency}').");
+}
+
+if (hostOptions.VndPerUsd <= 0m)
+{
+    throw new InvalidOperationException(
+        $"'{CarbonSimHostOptions.SectionName}:{nameof(CarbonSimHostOptions.VndPerUsd)}' must be greater than zero " +
+        $"(was {hostOptions.VndPerUsd.ToString(CultureInfo.InvariantCulture)}).");
+}
+
+// Every screen writes money through Display, so the chosen currency is set once here.
+Display.Currency = new CurrencyDisplay(hostOptions.DisplayCurrency, hostOptions.VndPerUsd);
 
 builder.Services.AddSingleton(hostOptions);
 builder.Services.AddHttpContextAccessor();
