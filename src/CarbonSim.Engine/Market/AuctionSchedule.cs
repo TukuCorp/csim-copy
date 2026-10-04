@@ -10,26 +10,35 @@ namespace CarbonSim.Engine.Market;
 /// </summary>
 public sealed class AuctionSchedule
 {
+    private readonly Simulation _simulation;
+    private readonly List<Auction> _order;
     private readonly Dictionary<(int Year, int Sequence), Auction> _bySection;
 
-    private AuctionSchedule(IReadOnlyList<Auction> auctions)
+    private AuctionSchedule(Simulation simulation, List<Auction> auctions)
     {
-        Auctions = auctions;
+        _simulation = simulation;
+        _order = auctions;
         _bySection = auctions.ToDictionary(auction => (auction.Year, auction.Sequence));
+
+        foreach (Auction auction in auctions)
+        {
+            auction.Schedule = this;
+        }
     }
 
-    public IReadOnlyList<Auction> Auctions { get; }
+    public IReadOnlyList<Auction> Auctions => _order;
 
     /// <summary>
     /// Rebuilds a schedule from auctions a snapshot already holds. The auctions are taken as
     /// they are rather than rebuilt through <see cref="Build"/>: building offers lots out of the
     /// government's reserve, and a restore puts the reserve back exactly as it was.
     /// </summary>
-    internal static AuctionSchedule Restore(IReadOnlyList<Auction> auctions)
+    internal static AuctionSchedule Restore(Simulation simulation, IReadOnlyList<Auction> auctions)
     {
+        ArgumentNullException.ThrowIfNull(simulation);
         ArgumentNullException.ThrowIfNull(auctions);
 
-        return new AuctionSchedule(auctions);
+        return new AuctionSchedule(simulation, [.. auctions]);
     }
 
     /// <summary>
@@ -81,7 +90,58 @@ public sealed class AuctionSchedule
             }
         }
 
-        return new AuctionSchedule(auctions);
+        return new AuctionSchedule(simulation, auctions);
+    }
+
+    /// <summary>
+    /// Offers the government's reserve again once an auction has closed: the administrator's
+    /// share of everything the government still holds, including the volume this auction could
+    /// not sell, goes into the next auction that has not closed, oldest vintage first. With the
+    /// share at zero this does nothing and the reserve stays where it was.
+    /// </summary>
+    internal void ReofferReserve(Auction closed)
+    {
+        ArgumentNullException.ThrowIfNull(closed);
+
+        Parameters parameters = _simulation.TradingSystems.Single().Parameters;
+        decimal percent = parameters.GovernmentReserveToAuctionPercent;
+
+        // The reserve is reviewed once a year, when the last auction of the year closes: its
+        // share is offered in the next year's auctions. Doing it at every close instead would
+        // push each auction's unsold volume straight into the next one and leave the whole run
+        // permanently over-supplied, with no price ever above the floor.
+        if (percent <= 0m || closed.Sequence != parameters.AuctionsPerYear)
+        {
+            return;
+        }
+
+        int index = _order.IndexOf(closed);
+        Auction? target = index >= 0 && index + 1 < _order.Count ? _order[index + 1] : null;
+
+        if (target is null || target.IsCleared)
+        {
+            return;
+        }
+
+        decimal eligible = 0m;
+
+        for (int vintage = 1; vintage <= target.Year; vintage++)
+        {
+            eligible += _simulation.Government.Held(vintage);
+        }
+
+        decimal toOffer = Round(percent * eligible);
+
+        for (int vintage = 1; vintage <= target.Year && toOffer > 0m; vintage++)
+        {
+            decimal take = Math.Min(toOffer, _simulation.Government.Held(vintage));
+
+            if (take > 0m)
+            {
+                target.AddLot(vintage, take);
+                toOffer -= take;
+            }
+        }
     }
 
     public Auction ForSection(int year, int sequence)

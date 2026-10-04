@@ -68,7 +68,8 @@ public sealed record ParametersSnapshot(
     TimeSpan AuctionDuration,
     decimal TradingOpenShareOfYear,
     decimal VolatilityBand,
-    decimal OverdraftInterestRate);
+    decimal OverdraftInterestRate,
+    decimal GovernmentReserveToAuctionPercent);
 
 /// <summary>The growth band a sector's business-as-usual emissions were drawn from.</summary>
 public sealed record SectorBausGrowthSnapshot(string Sector, decimal MinAnnualRate, decimal MaxAnnualRate);

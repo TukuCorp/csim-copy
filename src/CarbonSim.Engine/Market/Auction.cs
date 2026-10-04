@@ -19,6 +19,7 @@ public sealed class Auction
     private readonly Parameters _parameters;
     private readonly List<AuctionBid> _bids = [];
     private readonly List<AuctionResult> _results = [];
+    private readonly List<AuctionLot> _lots = [];
 
     internal Auction(Simulation simulation, int year, int sequence, IReadOnlyList<AuctionLot> lots)
         : this(simulation, year, sequence, lots, offersLots: true)
@@ -44,7 +45,7 @@ public sealed class Auction
         _parameters = simulation.TradingSystems.Single().Parameters;
         Year = year;
         Sequence = sequence;
-        Lots = lots;
+        _lots.AddRange(lots);
 
         if (offersLots)
         {
@@ -62,7 +63,13 @@ public sealed class Auction
     /// <summary>Which auction of the year this is, 1-based.</summary>
     public int Sequence { get; }
 
-    public IReadOnlyList<AuctionLot> Lots { get; }
+    public IReadOnlyList<AuctionLot> Lots => _lots;
+
+    /// <summary>
+    /// The schedule this auction belongs to, so that when it closes the schedule can offer the
+    /// government's reserve again in a later auction. Null for an auction built on its own.
+    /// </summary>
+    internal AuctionSchedule? Schedule { get; set; }
 
     /// <summary>The bids placed so far, in the order they arrived.</summary>
     public IReadOnlyList<AuctionBid> Bids => _bids;
@@ -151,7 +158,43 @@ public sealed class Auction
             _results.Add(result);
         }
 
+        Schedule?.ReofferReserve(this);
+
         return results;
+    }
+
+    /// <summary>
+    /// Offers more of a vintage in an auction that has not opened yet, drawing the volume out of
+    /// the government's reserve so it cannot be offered twice. A vintage already on offer is
+    /// topped up rather than added again: the auction clears one book per vintage, and a second
+    /// lot of the same vintage would settle the same bids twice.
+    /// </summary>
+    internal void AddLot(int vintage, decimal volume)
+    {
+        if (IsCleared)
+        {
+            throw new InvalidOperationException($"Auction {Sequence} of year {Year} has already cleared.");
+        }
+
+        if (volume <= 0m)
+        {
+            return;
+        }
+
+        _simulation.Government.Offer(vintage, volume);
+
+        int existing = _lots.FindIndex(lot => lot.Vintage == vintage && !lot.IsForward);
+
+        if (existing >= 0)
+        {
+            _lots[existing] = _lots[existing] with { Volume = _lots[existing].Volume + volume };
+        }
+        else
+        {
+            _lots.Add(new AuctionLot(vintage, volume, false));
+        }
+
+        UnsoldVolume += volume;
     }
 
     private AuctionResult ClearLot(AuctionLot lot)

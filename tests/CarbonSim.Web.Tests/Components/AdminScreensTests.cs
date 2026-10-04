@@ -1,3 +1,4 @@
+using System.Globalization;
 using Bunit;
 using CarbonSim.Web.Admin;
 using CarbonSim.Web.Components.Admin;
@@ -79,6 +80,19 @@ public sealed class AdminScreensTests : AdminScreenTestContext
         page.Find("#setup-cap").Should().NotBeNull();
         page.Find("#admin-save-registration").Should().NotBeNull();
         page.Find("#admin-create-run").Should().NotBeNull();
+    }
+
+    [Fact]
+    public void The_setup_screen_offers_the_government_reserve_reoffer_share()
+    {
+        Session.Draft = Draft();
+        Session.Draft.Parameters.GovernmentReserveToAuctionPercent = 0.5m;
+
+        IRenderedComponent<AdminSetup> page = RenderComponent<AdminSetup>();
+
+        AngleSharp.Dom.IElement input = page.Find("#setup-reserve-to-auction");
+        input.GetAttribute("aria-label").Should().Be(Localizer(Services)["GovernmentReserveToAuctionPercent"]);
+        input.GetAttribute("value").Should().Be(0.5m.ToString(CultureInfo.CurrentCulture));
     }
 
     [Fact]

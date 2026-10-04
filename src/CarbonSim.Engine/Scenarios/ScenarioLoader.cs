@@ -156,6 +156,7 @@ public static class ScenarioLoader
             TradingOpenShareOfYear = file.TradingOpenShareOfYear!.Value,
             VolatilityBand = file.VolatilityBand!.Value,
             OverdraftInterestRate = file.OverdraftInterestRate!.Value,
+            GovernmentReserveToAuctionPercent = file.GovernmentReserveToAuctionPercent ?? 0m,
         };
 
         errors.AddRange(parameters.Validate().Select(error => $"{Prefix}: {error}"));

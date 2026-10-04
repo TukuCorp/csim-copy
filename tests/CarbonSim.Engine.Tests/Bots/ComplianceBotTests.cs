@@ -103,7 +103,7 @@ public sealed class ComplianceBotTests
     }
 
     [Fact]
-    public void A_bot_bids_part_of_its_shortfall_at_auction_and_only_once_per_auction()
+    public void A_bot_bids_a_share_of_its_shortfall_at_auction_and_only_once_per_auction()
     {
         Run run = Build();
         Unit unit = run.Simulation.FindUnit(3);
@@ -118,7 +118,9 @@ public sealed class ComplianceBotTests
         bidsAfterFirstTurn.Should().Be(1, "a bot bids once per auction");
         auction.Bids.Should().HaveCount(1);
         auction.Bids[0].Unit.Should().BeSameAs(unit);
-        auction.Bids[0].Volume.Should().BeApproximately(shortfall * 0.7m, 1m);
+        // The year's need is spread over the auctions left in the year at the Normal appetite,
+        // so the first of the four auctions takes a quarter of nine tenths of it.
+        auction.Bids[0].Volume.Should().BeApproximately(shortfall * 0.9m / 4m, 1m);
         auction.Bids[0].Price.Should().BeInRange(100m, 300m);
     }
 

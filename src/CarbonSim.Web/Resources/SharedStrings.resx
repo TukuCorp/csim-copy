@@ -223,6 +223,7 @@
   <data name="Cap" xml:space="preserve"><value>Cap</value></data>
   <data name="AnnualCapReductionRate" xml:space="preserve"><value>Annual cap reduction</value></data>
   <data name="FreeAllocationShare" xml:space="preserve"><value>Free allocation share</value></data>
+  <data name="GovernmentReserveToAuctionPercent" xml:space="preserve"><value>Government reserve re-offered at auction (share)</value></data>
   <data name="OffsetUsageLimit" xml:space="preserve"><value>Offset usage limit</value></data>
   <data name="PenaltyPerTonne" xml:space="preserve"><value>Penalty per tonne</value></data>
   <data name="PenaltyAllowanceDebit" xml:space="preserve"><value>Penalty allowance debit</value></data>

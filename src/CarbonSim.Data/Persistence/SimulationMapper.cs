@@ -64,6 +64,7 @@ public static class SimulationMapper
                     AuctionDuration = parameters.AuctionDuration,
                     TradingOpenShareOfYear = parameters.TradingOpenShareOfYear,
                     VolatilityBand = parameters.VolatilityBand,
+                    GovernmentReserveToAuctionPercent = parameters.GovernmentReserveToAuctionPercent,
                     OverdraftInterestRate = parameters.OverdraftInterestRate,
                 },
             ],
@@ -671,7 +672,8 @@ public static class SimulationMapper
                     parameters.AuctionDuration,
                     parameters.TradingOpenShareOfYear,
                     parameters.VolatilityBand,
-                    parameters.OverdraftInterestRate)),
+                    parameters.OverdraftInterestRate,
+                    parameters.GovernmentReserveToAuctionPercent)),
             [
                 .. run.Sectors
                     .OrderBy(sector => sector.Name, StringComparer.Ordinal)
