@@ -10,15 +10,39 @@ public static class DataServiceCollectionExtensions
 {
     /// <summary>
     /// Registers the database and the account store over it. SQLite is the development and
-    /// single-box training store; the connection string is the only thing that decides where the
-    /// data lives, so a PostgreSQL provider can be swapped in here without touching anything else.
+    /// single-box training store; PostgreSQL is the server option. The <paramref name="provider"/>
+    /// is the only thing that decides which, so a deployment switches store in configuration and
+    /// nothing above this method changes.
     /// </summary>
-    public static IServiceCollection AddCarbonSimData(this IServiceCollection services, string connectionString)
+    public static IServiceCollection AddCarbonSimData(
+        this IServiceCollection services,
+        string connectionString,
+        string provider = DatabaseProviders.Sqlite)
     {
         ArgumentNullException.ThrowIfNull(services);
         ArgumentException.ThrowIfNullOrWhiteSpace(connectionString);
 
-        services.AddDbContext<CarbonSimDbContext>(options => options.UseSqlite(connectionString));
+        ArgumentException.ThrowIfNullOrWhiteSpace(provider);
+
+        if (!DatabaseProviders.IsKnown(provider))
+        {
+            throw new ArgumentException(
+                $"Unknown database provider '{provider}'; use '{DatabaseProviders.Sqlite}' or '{DatabaseProviders.Postgres}'.",
+                nameof(provider));
+        }
+
+        services.AddDbContext<CarbonSimDbContext>(options =>
+        {
+            if (DatabaseProviders.IsPostgres(provider))
+            {
+                options.UseNpgsql(connectionString);
+            }
+            else
+            {
+                options.UseSqlite(connectionString);
+            }
+        });
+
         services.AddScoped<IAccountStore, EfAccountStore>();
         services.AddScoped<ISimulationRepository, EfSimulationRepository>();
 

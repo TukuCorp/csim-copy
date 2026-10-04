@@ -27,6 +27,14 @@ public sealed class CarbonSimHostOptions
     public string ConnectionString { get; set; } = "Data Source=carbonsim.sqlite";
 
     /// <summary>
+    /// Which database engine <see cref="ConnectionString"/> opens: <c>Sqlite</c> (the default, a
+    /// file next to the host) or <c>Postgres</c> (a server). The engine is persistence-neutral, so
+    /// this and the connection string are the whole of the choice. PostgreSQL is built from the
+    /// model rather than the SQLite migration set, which the deployment notes explain.
+    /// </summary>
+    public string Provider { get; set; } = CarbonSim.Data.DatabaseProviders.Sqlite;
+
+    /// <summary>
     /// The administrator access PIN a visitor must quote to register. Empty closes registration,
     /// so a deployment that forgets to configure a PIN cannot be registered against.
     /// </summary>

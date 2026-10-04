@@ -204,13 +204,13 @@ public sealed class PlayerSession : IPlayerSession
             BuildBooks(simulation, run, company, tradable),
             tradable,
             BuildAuctionPrices(run),
-            BuildCounterparties(simulation, company),
+            BuildCounterparties(run, company),
             BuildOffersToAnswer(run, company),
             BuildMyOffers(run, company),
             BuildHoldings(simulation, company, tradable),
-            BuildMyTrades(simulation, company),
-            BuildLeaderboard(simulation, company),
-            BuildSystemInfo(simulation, parameters, year, started),
+            BuildMyTrades(run, company),
+            BuildLeaderboard(run, company),
+            BuildSystemInfo(run, parameters, year, started),
             [.. run.Chat.TakeLast(50).Select(entry => new ChatLine(entry.Year, entry.From, entry.Text))],
             run.MessagingEnabled);
     }
@@ -429,24 +429,27 @@ public sealed class PlayerSession : IPlayerSession
             Product product = ToProduct(view);
             OrderBook? book = run.Exchange.Products.Contains(product) ? run.Exchange.Book(product) : null;
 
-            List<OrderView> openOrders =
-            [
-                .. (book?.OpenOrders ?? []).Take(12).Select(ToView),
-            ];
+            // The top of the book, the tape and the candles are the same for every player, so each
+            // is built once per change; only a player's own resting orders are cut per player.
+            IReadOnlyList<OrderView> openOrders = run.Shared(
+                $"book-open:{view.Key}",
+                () => (IReadOnlyList<OrderView>)[.. (book?.OpenOrders ?? []).Take(12).Select(ToView)]);
 
             List<OrderView> myOrders =
             [
                 .. (book?.OpenOrders ?? []).Where(order => ReferenceEquals(order.Company, company)).Select(ToView),
             ];
 
-            List<TradeRow> recent =
-            [
-                .. simulation.Journal.Trades
-                    .Where(trade => trade.Channel == TradeChannel.Exchange && trade.Product == product)
-                    .TakeLast(RecentTradeCount)
-                    .Reverse()
-                    .Select(trade => ToRow(trade, company)),
-            ];
+            IReadOnlyList<MarketTrade> recentTrades = run.Shared(
+                $"book-trades:{view.Key}",
+                () => (IReadOnlyList<MarketTrade>)
+                [
+                    .. simulation.Journal.Trades
+                        .Where(trade => trade.Channel == TradeChannel.Exchange && trade.Product == product)
+                        .TakeLast(RecentTradeCount),
+                ]);
+            IReadOnlyList<TradeRow> recent =
+                [.. recentTrades.Reverse().Select(trade => ToRow(trade, company))];
 
             books.Add(new ProductBookView(
                 view,
@@ -459,7 +462,7 @@ public sealed class PlayerSession : IPlayerSession
                 openOrders,
                 myOrders,
                 recent,
-                YearPrices(simulation, product)));
+                run.Shared($"book-yearprices:{view.Key}", () => YearPrices(simulation, product))));
         }
 
         return books;
@@ -481,6 +484,11 @@ public sealed class PlayerSession : IPlayerSession
     ];
 
     private static AuctionPriceSummaryView BuildAuctionPrices(HostedRun run)
+    {
+        return run.Shared("auction-prices", () => BuildAuctionPricesCore(run));
+    }
+
+    private static AuctionPriceSummaryView BuildAuctionPricesCore(HostedRun run)
     {
         List<decimal> all =
         [
@@ -507,14 +515,22 @@ public sealed class PlayerSession : IPlayerSession
             thisYear.Count == 0 ? null : thisYear.Average());
     }
 
-    private static List<CounterpartyView> BuildCounterparties(Simulation simulation, Company company) =>
-    [
-        .. simulation.Units
-            .Where(unit => !ReferenceEquals(unit.Company, company))
-            .OrderBy(unit => unit.Company.Name, StringComparer.Ordinal)
-            .ThenBy(unit => unit.Id)
-            .Select(unit => new CounterpartyView(unit.Id, unit.Name, unit.Company.Name, unit.Sector.Name)),
-    ];
+    private static IReadOnlyList<CounterpartyView> BuildCounterparties(HostedRun run, Company company)
+    {
+        // The roster of other units is the same for everyone, so it is sorted once per change and
+        // each player only filters out their own company from it.
+        IReadOnlyList<CounterpartyView> all = run.Shared(
+            "counterparties",
+            () => (IReadOnlyList<CounterpartyView>)
+            [
+                .. run.Simulation.Units
+                    .OrderBy(unit => unit.Company.Name, StringComparer.Ordinal)
+                    .ThenBy(unit => unit.Id)
+                    .Select(unit => new CounterpartyView(unit.Id, unit.Name, unit.Company.Name, unit.Sector.Name)),
+            ]);
+
+        return [.. all.Where(candidate => !string.Equals(candidate.CompanyName, company.Name, StringComparison.Ordinal))];
+    }
 
     private static List<OtcOfferView> BuildOffersToAnswer(HostedRun run, Company company) =>
     [
@@ -551,41 +567,61 @@ public sealed class PlayerSession : IPlayerSession
         return holdings;
     }
 
-    private static List<TradeRow> BuildMyTrades(Simulation simulation, Company company) =>
-    [
-        .. simulation.Journal.Trades
-            .Where(trade => ReferenceEquals(trade.Buyer, company) || ReferenceEquals(trade.Seller, company))
-            .TakeLast(HistoryCount)
-            .Reverse()
-            .Select(trade => ToRow(trade, company)),
-    ];
+    private static IReadOnlyList<TradeRow> BuildMyTrades(HostedRun run, Company company) =>
+        run.Shared(
+            $"my-trades:{company.Name}",
+            () => (IReadOnlyList<TradeRow>)
+            [
+                .. run.Simulation.Journal.Trades
+                    .Where(trade => ReferenceEquals(trade.Buyer, company) || ReferenceEquals(trade.Seller, company))
+                    .TakeLast(HistoryCount)
+                    .Reverse()
+                    .Select(trade => ToRow(trade, company)),
+            ]);
 
-    private static List<LeaderboardRow> BuildLeaderboard(Simulation simulation, Company company) =>
-    [
-        .. Leaderboard.Rank(simulation).Select(entry => new LeaderboardRow(
-            entry.Rank,
-            entry.Company.Name,
-            string.Join(", ", entry.Company.Units.Select(unit => unit.Name)),
-            entry.Company.Owner.Name,
-            entry.OverallCostOfCompliance,
-            entry.OverallMarginalCostOfCompliance,
-            entry.FinalPosition,
-            entry.IsAutomated,
-            ReferenceEquals(entry.Company, company))),
-    ];
+    private static IReadOnlyList<LeaderboardRow> BuildLeaderboard(HostedRun run, Company company)
+    {
+        // The ranking touches every company in the run, so it is built once per change and shared;
+        // only the "is this mine" flag is per player, and that is set as the rows are handed out.
+        IReadOnlyList<LeaderboardEntry> ranked = run.Shared(
+            "leaderboard",
+            () => (IReadOnlyList<LeaderboardEntry>)Leaderboard.Rank(run.Simulation));
+
+        return
+        [
+            .. ranked.Select(entry => new LeaderboardRow(
+                entry.Rank,
+                entry.Company.Name,
+                string.Join(", ", entry.Company.Units.Select(unit => unit.Name)),
+                entry.Company.Owner.Name,
+                entry.OverallCostOfCompliance,
+                entry.OverallMarginalCostOfCompliance,
+                entry.FinalPosition,
+                entry.IsAutomated,
+                ReferenceEquals(entry.Company, company))),
+        ];
+    }
 
     private static SystemInfoView BuildSystemInfo(
+        HostedRun run,
+        Parameters parameters,
+        int year,
+        bool started)
+    {
+        // The system report walks every company and unit, so it is built once per change and the
+        // same answer is handed to every player; before the first year starts nothing is reported.
+        return run.Shared("system-info", () => BuildSystemInfoCore(run.Simulation, parameters, year, started));
+    }
+
+    private static SystemInfoView BuildSystemInfoCore(
         Simulation simulation,
         Parameters parameters,
         int year,
         bool started)
     {
-        SystemTotalsView thisYear = started
-            ? ToTotals(simulation, SystemReport.For(simulation, year).ThisYear, year)
-            : EmptyTotals();
-        SystemTotalsView toDate = started
-            ? ToTotals(simulation, SystemReport.For(simulation, year).ToDate, 0, toDate: true)
-            : EmptyTotals();
+        SystemReport? report = started ? SystemReport.For(simulation, year) : null;
+        SystemTotalsView thisYear = report is null ? EmptyTotals() : ToTotals(simulation, report.ThisYear, year);
+        SystemTotalsView toDate = report is null ? EmptyTotals() : ToTotals(simulation, report.ToDate, 0, toDate: true);
 
         List<SectorView> sectors =
         [

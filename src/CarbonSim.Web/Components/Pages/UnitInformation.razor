@@ -10,7 +10,7 @@
 }
 else
 {
-    <section class="card wide">
+    <section class="card wide" tabindex="0">
         <QuickGrid Items="@view.Units.AsQueryable()" Class="grid">
             <TemplateColumn Title="@Strings["UnitName"]" Context="row">@row.Name</TemplateColumn>
             <TemplateColumn Title="@Strings["Sector"]" Context="row">@row.SectorName</TemplateColumn>

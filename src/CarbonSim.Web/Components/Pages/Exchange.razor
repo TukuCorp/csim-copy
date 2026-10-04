@@ -11,10 +11,10 @@
 }
 else
 {
-    <section class="card wide">
+    <section class="card wide" tabindex="0">
         <h2>@Strings["PriceChart"]</h2>
         <p class="muted small">@Strings["PriceChartHint"]</p>
-        <EChart Option="@Charts.Prices(view.Books, view.Years, view.System.AuctionFloorPrice, Strings["AuctionFloorPrice"])" Height="260px" />
+        <EChart Option="@Charts.Prices(view.Books, view.Years, view.System.AuctionFloorPrice, Strings["AuctionFloorPrice"])" Height="260px" Label="@Strings["PriceChart"]" />
         <dl class="metrics">
             <div><dt>@Strings["AllowanceAuction"] @Strings["AuctionFloorPrice"]</dt><dd>@Display.Price(view.AuctionPrices.Low ?? view.System.AuctionFloorPrice)</dd></div>
             <div><dt>@Strings["ClearedAt"]</dt><dd>@Display.Price(view.AuctionPrices.Last)</dd></div>
@@ -126,7 +126,7 @@ else
         </section>
     </div>
 
-    <section class="card wide">
+    <section class="card wide" tabindex="0">
         <h2>@Strings["MyCurrentOrders"]</h2>
         @if (myOrders(view).Count == 0)
         {

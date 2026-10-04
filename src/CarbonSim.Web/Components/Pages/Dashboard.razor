@@ -20,7 +20,7 @@ else
                 <div><dt>@Strings["Abatement"]</dt><dd>@view.Abatements.Count</dd></div>
                 <div><dt>@Strings["NOPWithAbatement"]</dt><dd>@Display.Money(view.Finance.NopWithAbatement)</dd></div>
             </dl>
-            <EChart Option="@Charts.NetProfit(view.Finance.NormalOperatingProfit, view.Finance.NopWithAbatement, Strings["NormalOperatingProfit"], Strings["NOPWithAbatement"])" Height="140px" />
+            <EChart Option="@Charts.NetProfit(view.Finance.NormalOperatingProfit, view.Finance.NopWithAbatement, Strings["NormalOperatingProfit"], Strings["NOPWithAbatement"])" Height="140px" Label="@Strings["NormalOperatingProfit"]" />
         </section>
 
         <section class="card">
@@ -43,7 +43,7 @@ else
 
         <section class="card">
             <h2>@Strings["MyLongShortPosition"]</h2>
-            <EChart Option="@Charts.LongShort(view.Position, view.CompanyName, Strings["FreeAllowancesThisYear"], Strings["Short"])" Height="140px" />
+            <EChart Option="@Charts.LongShort(view.Position, view.CompanyName, Strings["FreeAllowancesThisYear"], Strings["Short"])" Height="140px" Label="@Strings["MyLongShortPosition"]" />
             <dl class="metrics">
                 <div><dt>@Strings["FreeAllowancesThisYear"]</dt><dd>@Display.Tonnes(view.Position.FreeAllocation)</dd></div>
                 <div><dt>@Strings["ForecastEmissions"]</dt><dd>@Display.Tonnes(view.Position.ForecastEmissions)</dd></div>
@@ -72,7 +72,7 @@ else
             }
         </section>
 
-        <section class="card wide">
+        <section class="card wide" tabindex="0">
             <h2>@Strings["MyAuctionHistory"]</h2>
             @if (view.Auctions.Count == 0)
             {
@@ -90,7 +90,7 @@ else
             }
         </section>
 
-        <section class="card wide">
+        <section class="card wide" tabindex="0">
             <h2>@Strings["MyTradeHistory"]</h2>
             @if (view.MyTrades.Count == 0)
             {

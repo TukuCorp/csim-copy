@@ -13,4 +13,9 @@
     <ProjectReference Include="..\CarbonSim.Data\CarbonSim.Data.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- The tests measure the shared view cache directly, which is internal to the host. -->
+    <InternalsVisibleTo Include="CarbonSim.Web.Tests" />
+  </ItemGroup>
+
 </Project>

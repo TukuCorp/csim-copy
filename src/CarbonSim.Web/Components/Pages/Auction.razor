@@ -78,7 +78,9 @@ else
 
         @if (view.CurrentAuction is { IsCleared: true } ended)
         {
-            <section class="card wide">
+            @* A polite live region: when the auction clears, its result is announced rather than
+               waiting for the player to notice the section appear. *@
+            <section class="card wide" tabindex="0" role="status" aria-live="polite">
                 <h2>@Strings["AuctionHasEnded"]</h2>
                 @if (ended.MyAwards.Count == 0)
                 {
@@ -96,7 +98,7 @@ else
             </section>
         }
 
-        <section class="card wide">
+        <section class="card wide" tabindex="0">
             <h2>@Strings["MyAuctionHistory"]</h2>
             <QuickGrid Items="@view.Auctions.AsQueryable()" Class="grid">
                 <TemplateColumn Title="@Strings["Year"]" Context="row">@row.Year</TemplateColumn>

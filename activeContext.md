@@ -80,10 +80,10 @@ Order follows the demo video; each screen has a bUnit test and a Playwright step
 - [x] Review section for Phase 5 — below
 
 ## Phase 6 — Hardening and deployment
-- [ ] Load test: 250 connected clients, 20-minute year, no missed auction close
-- [ ] Docker image; single-server deployment notes; backup of SQLite/Postgres
-- [ ] Accessibility and phone-width layout pass
-- [ ] Final review and handover notes
+- [x] Load test: 250 connected clients, 20-minute year, no missed auction close - tests/CarbonSim.Web.Tests/Load/ (LoadScenario, LoadTestHost, LoadHarness, LoadSmokeTests, opt-in LoadFullTests); the smoke run guards the harness in dotnet test, the full run is CARBONSIM_LOAD_FULL=1 with the exact command documented; the shared view cache in PlayerSession/HostedRun is the fix for the per-client whole-run re-read (see the review)
+- [x] Docker image; single-server deployment notes; backup of SQLite/Postgres - Dockerfile (multi-stage, non-root), .dockerignore, docker-compose.yml (SQLite default, optional Postgres profile); the provider switch made real in DatabaseProviders/AddCarbonSimData/CarbonSimHostOptions; docs/deployment.md; a tested SQLite VACUUM INTO restore drill in tests/CarbonSim.Data.Tests/SqliteBackupRestoreTests.cs; Docker is not installed here, so the image was not built (stated plainly in the report)
+- [x] Accessibility and phone-width layout pass - palette contrast fixed, :focus-visible ring, wide table cards made keyboard-focusable, parameter and table inputs labelled, chart text alternatives, messages role=log, auction result live region; axe-core vendored and run over every player and admin screen in PlaywrightAccessibilityTests, plus an admin phone-width pass
+- [x] Final review and handover notes - docs/handover.md and the Phase 6 review below
 
 ## Parallel track (non-code)
 - [ ] Send requests for the three Training Reports to ETP/UNOPS, VNEEC and Josh Margolis; ask VnEconomy programme about results sharing
@@ -482,3 +482,106 @@ reaching the session. `Display.UseCurrency` gives a per-async-flow override so a
 tested without changing what parallel tests see; the host still sets one deployment-wide currency.
 Tests: `DongPriceEntryTests` (5 bUnit: order, offer and auction-slider entry in dong, labelled price
 boxes, converted market prices) and a `CurrencyDisplay.Price` case; Web 133 passing.
+
+### Phase 6 - Hardening and deployment (2026-10-04)
+
+Built, load: tests/CarbonSim.Web.Tests/Load/ - LoadScenario (authors a 250-human-company, one-unit-each
+exercise with four auctions a year, in the trainer-deck parameter shape), LoadTestHost (the real host
+on a throwaway SQLite database playing that scenario; its clock and driver are the production ones
+unless a test asks to hand-drive them), LoadHarness (signs players in through the real registration
+and sign-in endpoints, builds a real PlayerSession per session, refreshes every view at the
+production interval, has a quarter of the room bid and order, watches each auction scheduled close,
+times a gate-only read, and samples CPU and working set), LoadSmokeTests (12 clients, compressed,
+runs in the normal suite) and LoadFullTests (250 clients, uncompressed 20-minute year, opt-in with
+CARBONSIM_LOAD_FULL=1). A test project rather than a tools/ console tool: the harness must boot the
+real host and share its fixtures, and the smoke version must run inside dotnet test.
+
+The bottleneck and the fix: every screen built the whole run view on every refresh. PlayerSession
+Build ranked all companies (Leaderboard.Rank calls Scoring.Overall and FinalPosition per company),
+walked the whole run for the system report (twice), sorted every counterparty, and re-scanned the
+journal per product - all of it once per client per second, under the run gate. HostedRun now carries
+a revision counter and a Shared(key, factory) cache that CollectAnnouncement empties whenever the run
+changes, and PlayerSession builds the leaderboard, the system report, the auction price summary, the
+counterparty roster, each book top/tape/candles and each company own trade list through it. The
+run-wide work is therefore done once per change and each player is handed only their own slice; the
+1-second interval was left alone. SharedViewCacheTests asserts that a second player on the same run
+pays for exactly one extra company-keyed value, and that a tick throws the cache away.
+
+Full load run (250 clients, uncompressed 20-minute virtual year, seed 20261004, one box, shipped
+logging level), executed once for real:
+- auctions 4, missed 0, worst lateness 895 ms (inside the one-second driver tick)
+- refreshes 297,145; refresh p50 3.67 ms, p95 9.72 ms, p99 15.15 ms, max 1,269 ms
+- gate wait p50 0.01 ms, p95 0.03 ms, p99 2.42 ms, max 1,254 ms
+- actions 1,608 placed, 3,984 refused by the market, 0 refresh errors
+- CPU 487.98 s over 1,202 s wall (about 41% of one core), peak working set 164 MB
+The single ~1.25 s spike is the year-end save: EndYearAsync holds the run gate while it writes 250
+companies to SQLite. That is the deliberate save-once-under-the-gate design, it happens once a year,
+and it is why p99 is 15 ms rather than a tail problem. The refusals are market refusals (bids after a
+window closed, orders outside the band or unbacked), not errors.
+
+Built, deployment: Dockerfile (multi-stage, SDK build then ASP.NET runtime, non-root app user,
+scenarios copied in, /data the one writable place), .dockerignore, docker-compose.yml (SQLite in a
+named volume by default, an optional postgres profile with a PostgreSQL 17 service), and
+docs/deployment.md (single server, the full configuration reference, TLS and reverse-proxy notes,
+SQLite VACUUM INTO and PostgreSQL pg_dump/pg_restore, and the restore drill).
+
+Docker: not installed on this machine (docker is not on PATH and there is no Docker service), so the
+image was NOT built or run and /sign-in was not hit through it. The files are written but unverified;
+the report says so plainly.
+
+PostgreSQL: it was not really switchable - AddCarbonSimData hard-coded UseSqlite. It now comes from
+configuration (CarbonSim:Provider Sqlite or Postgres, default Sqlite), an unknown provider stops the
+host, and the Npgsql provider is referenced. The shipped migration set is SQLite, so the host refuses
+Provider=Postgres with Schema=Migrate and PostgreSQL builds from the model (Schema=FromModel).
+DatabaseProviderTests proves the registration picks the right provider name from configuration and
+that the model scripts as PostgreSQL SQL (uuid, numeric) without a server. Not exercised: a live
+PostgreSQL server, so the schema has not been applied to one - deployment.md states that.
+
+Backup and restore: SqliteBackupRestoreTests plays a seeded year, saves it, takes an online-safe copy
+with VACUUM INTO, opens the copy on its own and loads the run back out of it, checking the leaderboard
+and clock match. That is the tested drill; deployment.md documents the operator commands for SQLite
+and pg_dump/pg_restore for PostgreSQL.
+
+Accessibility and phone width: the palette was measured against WCAG AA - --muted (#6b7280) was
+4.47:1 on the paper background and is now #646b78 (4.95:1), and --blue (#3f7fbf) was 4.20:1 and is
+now #2f6fbf (5.06:1), so links and white-on-blue buttons both pass. Every focusable element gets a
+visible focus ring. Wide table cards, which scroll horizontally, are now keyboard-focusable
+(tabindex). The admin setup parameter inputs (which sat in a dl with no label) and the abatement and
+growth table inputs now carry aria-labels. Each chart is role=img with a label, and its figures are
+always beside it as text or a table. The message log is role=log with aria-live and the auction
+result is a polite status region. axe-core 4.10.2 is vendored under tests/CarbonSim.Web.Tests/
+Compliance/ (no CDN, no network) and PlaywrightAccessibilityTests runs it over all 11 player screens
+and the admin run list, setup, run controls, reports and surrender with zero WCAG 2.0/2.1 A/AA
+violations, plus an admin phone-width pass (390x844, no sideways scroll).
+
+Handover: docs/handover.md - what the system is, the architecture map, where each mechanic lives,
+build/test/run/deploy, the known gaps (the four open fidelity envelopes, bot calibration, the
+in-memory notice queues, the single display currency, tradingOpenShareOfYear being inert, the
+per-refresh account lookup, PostgreSQL unexercised, Docker unverified) and a prioritised next-step
+list.
+
+Files added: src/CarbonSim.Data/DatabaseProviders.cs; Dockerfile, .dockerignore, docker-compose.yml;
+docs/deployment.md, docs/handover.md; tests/CarbonSim.Data.Tests/DatabaseProviderTests.cs and
+SqliteBackupRestoreTests.cs; tests/CarbonSim.Web.Tests/Load/ (LoadScenario, LoadTestHost,
+LoadHarness, LoadSmokeTests, LoadFullTests); Components/PlaywrightAccessibilityTests.cs;
+Simulations/SharedViewCacheTests.cs; Compliance/axe.min.js (vendored). Changed:
+DataServiceCollectionExtensions, CarbonSimHostOptions, Program, SimulationRegistry, PlayerSession,
+CarbonSim.Data.csproj, CarbonSim.Web.csproj, Directory.Packages.props, EChart.razor and the four
+pages that use it, Messages.razor, Auction.razor, app.css, and the wide-card and admin labelling
+edits across the components.
+
+Test counts: 392 passing, 5 skipped in the solution - Engine 238 passing + 4 skipped (the fidelity
+envelopes), Data 16 passing, Web 138 passing + 1 skipped (the opt-in full load run). New Web tests:
+SharedViewCacheTests (1), LoadSmokeTests (1), PlaywrightAccessibilityTests (3). New Data tests:
+DatabaseProviderTests (4), SqliteBackupRestoreTests (1).
+
+Gate: dotnet build CarbonSim.sln -> 0 warnings, 0 errors; dotnet test CarbonSim.sln -> green with
+Playwright running for real (392 passed, 5 skipped; the four fidelity envelopes stay skipped, plus
+the opt-in load run); dotnet format CarbonSim.sln --verify-no-changes -> clean; and the host booted
+from the built DLL and answered /sign-in 200, /admin 200 and / 200.
+
+Open issues: the per-refresh account lookup is still one SQLite round trip per client per second (and
+EF logs each one); the PostgreSQL schema has not been applied to a live server; the Docker image is
+unbuilt; the four fidelity envelopes and the bot-calibration item remain; the year-end save holds the
+run gate for about 1.25 s (one event per year); and tradingOpenShareOfYear is still inert.
+

@@ -13,18 +13,18 @@ else
     <h1>@run.Name</h1>
 
     <div class="cards">
-        <section class="card wide">
-            <div class="metrics">
+        <section class="card wide" tabindex="0">
+            <dl class="metrics">
                 <div><dt>@Strings["State"]</dt><dd>@Display.State(Strings, run.State)</dd></div>
                 <div><dt>@Strings["Year"]</dt><dd>@run.Year / @run.Years</dd></div>
                 <div><dt>@Strings["AuctionNumber"]</dt><dd>@run.Auction / @run.AuctionsPerYear</dd></div>
                 <div><dt>@Strings["AdminTimeLeftInYear"]</dt><dd>@Display.Duration(run.TimeLeftInYear)</dd></div>
                 <div><dt>@Strings["AdminAuctionOpensIn"]</dt><dd>@Display.Duration(run.TimeToAuctionOpen)</dd></div>
                 <div><dt>@Strings["AdminAuctionClosesIn"]</dt><dd>@Display.Duration(run.TimeToAuctionClose)</dd></div>
-            </div>
+            </dl>
         </section>
 
-        <section class="card wide">
+        <section class="card wide" tabindex="0">
             <h2>@Strings["AdminRunControls"]</h2>
             <div class="segments">
                 @if (run.State == "Pending")
@@ -153,7 +153,7 @@ else
             <button class="button" @onclick="ApplyShockAsync">@Strings["AdminApply"]</button>
         </section>
 
-        <section class="card wide">
+        <section class="card wide" tabindex="0">
             <h2>@Strings["AdminAutomaticTrading"]</h2>
             <table class="grid">
                 <thead>
@@ -182,7 +182,7 @@ else
             </table>
         </section>
 
-        <section class="card wide">
+        <section class="card wide" tabindex="0">
             <h2>@Strings["AdminParameters"]</h2>
             <dl class="metrics">
                 <div><dt>@Strings["Cap"]</dt><dd>@Display.Tonnes(run.Parameters.Cap)</dd></div>

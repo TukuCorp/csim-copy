@@ -41,7 +41,7 @@ else
             </QuickGrid>
         </section>
 
-        <section class="card wide">
+        <section class="card wide" tabindex="0">
             <h2>@Strings["SystemReport"]</h2>
             <QuickGrid Items="@ReportRows(view).AsQueryable()" Class="grid">
                 <TemplateColumn Title="@Strings["Product"]" Context="row">@row.Label</TemplateColumn>
@@ -50,7 +50,7 @@ else
             </QuickGrid>
         </section>
 
-        <section class="card wide">
+        <section class="card wide" tabindex="0">
             <h2>@Strings["GovernmentReserve"]</h2>
             <p class="small">@Strings["AuctionRevenueCollectedByGovernment"]: @Display.Money(view.System.GovernmentRevenue)</p>
             <QuickGrid Items="@view.System.GovernmentReserve.AsQueryable()" Class="grid">

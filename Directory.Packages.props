@@ -10,6 +10,7 @@
     <XunitRunnerVisualStudioVersion>2.8.2</XunitRunnerVisualStudioVersion>
     <CoverletCollectorVersion>6.0.2</CoverletCollectorVersion>
     <EntityFrameworkCoreVersion>9.0.20</EntityFrameworkCoreVersion>
+    <NpgsqlEfCoreVersion>9.0.4</NpgsqlEfCoreVersion>
     <AspNetCoreTestVersion>9.0.20</AspNetCoreTestVersion>
     <IdentityCoreVersion>9.0.20</IdentityCoreVersion>
     <!-- bUnit 1.x is the line that still runs on xUnit 2, which this solution uses; bUnit 2.x
@@ -26,6 +27,7 @@
     <PackageVersion Include="coverlet.collector" Version="$(CoverletCollectorVersion)" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Sqlite" Version="$(EntityFrameworkCoreVersion)" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="$(EntityFrameworkCoreVersion)" />
+    <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="$(NpgsqlEfCoreVersion)" />
     <PackageVersion Include="Microsoft.Extensions.Identity.Core" Version="$(IdentityCoreVersion)" />
     <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="$(AspNetCoreTestVersion)" />
     <PackageVersion Include="Microsoft.AspNetCore.SignalR.Client" Version="$(AspNetCoreTestVersion)" />

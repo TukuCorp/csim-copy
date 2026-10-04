@@ -52,12 +52,31 @@ if (hostOptions.VndPerUsd <= 0m)
         $"(was {hostOptions.VndPerUsd.ToString(CultureInfo.InvariantCulture)}).");
 }
 
+if (!CarbonSim.Data.DatabaseProviders.IsKnown(hostOptions.Provider))
+{
+    throw new InvalidOperationException(
+        $"'{CarbonSimHostOptions.SectionName}:{nameof(CarbonSimHostOptions.Provider)}' must be " +
+        $"'{CarbonSim.Data.DatabaseProviders.Sqlite}' or '{CarbonSim.Data.DatabaseProviders.Postgres}' " +
+        $"(was '{hostOptions.Provider}').");
+}
+
+// The shipped migration set is SQLite's; a PostgreSQL deployment builds its schema from the model
+// instead (see docs/deployment.md), so the two settings cannot be combined by accident.
+if (CarbonSim.Data.DatabaseProviders.IsPostgres(hostOptions.Provider)
+    && string.Equals(hostOptions.Schema, CarbonSimHostOptions.MigrateSchema, StringComparison.Ordinal))
+{
+    throw new InvalidOperationException(
+        $"'{CarbonSimHostOptions.SectionName}:{nameof(CarbonSimHostOptions.Schema)}' must be " +
+        $"'{CarbonSimHostOptions.SchemaFromModel}' for the {CarbonSim.Data.DatabaseProviders.Postgres} provider: " +
+        "the shipped migrations are written for SQLite. See docs/deployment.md.");
+}
+
 // Every screen writes money through Display, so the chosen currency is set once here.
 Display.Currency = new CurrencyDisplay(hostOptions.DisplayCurrency, hostOptions.VndPerUsd);
 
 builder.Services.AddSingleton(hostOptions);
 builder.Services.AddHttpContextAccessor();
-builder.Services.AddCarbonSimData(hostOptions.ConnectionString);
+builder.Services.AddCarbonSimData(hostOptions.ConnectionString, hostOptions.Provider);
 
 // Only the password hasher comes from Identity: the host has one user type (the account row) and
 // the engine owns the notion of a player, so no second user store is brought in beside them.

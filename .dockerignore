@@ -1,0 +1,37 @@
+# Everything the image build does not need. The source, the two build props files and the
+# scenarios folder are the whole of the build context's useful content.
+.git
+.gitignore
+.gitattributes
+.vs
+.vscode
+.idea
+
+**/bin
+**/obj
+**/*.user
+
+# Tests are not part of the image; the gate runs them on the host.
+tests
+tools
+
+# Research and background are read-only reference material for the team, not assets to ship.
+research
+background
+reports
+docs
+
+# Local databases and scratch files.
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
+*.db
+plans
+research-local
+
+# Container and local editor leftovers.
+Dockerfile
+.dockerignore
+docker-compose.yml
+*.md
+!README.md

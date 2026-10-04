@@ -53,7 +53,7 @@ else
             <button id="send-offer" class="button" disabled="@(view.Counterparties.Count == 0)" @onclick="SendAsync">@Strings["SendOffer"]</button>
         </section>
 
-        <section class="card wide">
+        <section class="card wide" tabindex="0">
             <h2>@Strings["OffersToAnswer"]</h2>
             @if (view.OffersToAnswer.Count == 0)
             {
@@ -76,7 +76,7 @@ else
         </section>
     </div>
 
-    <section class="card wide">
+    <section class="card wide" tabindex="0">
         <h2>@Strings["MyOffers"]</h2>
         @if (view.MyOffers.Count == 0)
         {

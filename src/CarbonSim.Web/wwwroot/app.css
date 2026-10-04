@@ -2,13 +2,17 @@
 
 :root {
     --ink: #1d2433;
-    --muted: #6b7280;
+    /* --muted is a text colour on the paper background: this value keeps it above the WCAG AA
+       4.5:1 ratio against #f4f6fa (it was #6b7280 at 4.47:1, just under). */
+    --muted: #646b78;
     --line: #dde2ea;
     --paper: #f4f6fa;
     --card: #ffffff;
     --nav: #1f2a3d;
     --nav-ink: #e7ecf5;
-    --blue: #3f7fbf;
+    /* --blue is both link text and button fill with white text: 5.06:1 on white, so it passes AA
+       for normal text in both roles (the previous #3f7fbf was 4.20:1). */
+    --blue: #2f6fbf;
     --green: #2f6f4f;
     --red: #c0392b;
     --amber: #d68910;
@@ -17,6 +21,13 @@
 
 * {
     box-sizing: border-box;
+}
+
+/* Keyboard users need to see where they are; the browser default ring is invisible on the dark
+   top bar and the white cards alike, so one explicit ring is used everywhere. */
+:focus-visible {
+    outline: 3px solid var(--blue);
+    outline-offset: 2px;
 }
 
 html, body {

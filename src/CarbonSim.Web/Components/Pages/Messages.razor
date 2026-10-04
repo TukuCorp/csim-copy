@@ -11,13 +11,15 @@
 }
 else
 {
-    <section class="card wide">
+    <section class="card wide" tabindex="0">
         @if (!view.MessagingEnabled)
         {
             <p class="notice notice-error">@Strings["MessagingSwitchedOff"]</p>
         }
 
-        <div class="messages">
+        @* role=log marks this as a live region: a new message is announced without the reader
+           having to hunt for it. *@
+        <div class="messages" role="log" aria-live="polite" aria-label="@Strings["MessageLog"]">
             @if (view.Messages.Count == 0)
             {
                 <p class="muted">@Strings["NoRows"]</p>

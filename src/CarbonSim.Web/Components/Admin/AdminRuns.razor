@@ -11,7 +11,7 @@
 @if (Snapshot is { } snapshot)
 {
     <div class="cards">
-        <section class="card wide">
+        <section class="card wide" tabindex="0">
             <h2>@Strings["AdminRuns"]</h2>
 
             @if (snapshot.Runs.Count == 0)
@@ -52,7 +52,7 @@
             <p><a class="button" href="/admin/setup">@Strings["AdminSetup"]</a></p>
         </section>
 
-        <section class="card wide">
+        <section class="card wide" tabindex="0">
             <h2>@Strings["AdminSavedRuns"]</h2>
 
             @if (snapshot.Saved.Count == 0)

@@ -1,0 +1,46 @@
+# Single-box CarbonSim. The default profile is SQLite in a named volume, which is what a training
+# room on one laptop runs. The optional "postgres" profile brings up a PostgreSQL server beside it;
+# switch the host to it with the four CARBONSIM_* variables the deployment notes list.
+#
+#   SQLite:    docker compose up --build
+#   Postgres:  docker compose --profile postgres up --build
+#
+# Secrets come from the environment (or a .env file beside this one); nothing sensitive is baked in.
+
+services:
+  carbonsim:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: carbonsim:latest
+    ports:
+      - "${CARBONSIM_PORT:-8080}:8080"
+    environment:
+      CarbonSim__Provider: "${CARBONSIM_PROVIDER:-Sqlite}"
+      CarbonSim__ConnectionString: "${CARBONSIM_CONNECTION:-Data Source=/data/carbonsim.sqlite}"
+      CarbonSim__Schema: "${CARBONSIM_SCHEMA:-Migrate}"
+      CarbonSim__ScenarioFile: "/app/scenarios/${CARBONSIM_SCENARIO:-vietnam-2024.json}"
+      CarbonSim__RegistrationPin: "${CARBONSIM_PIN:?set CARBONSIM_PIN before starting the room}"
+      CarbonSim__AdminEmail: "${CARBONSIM_ADMIN_EMAIL:?set CARBONSIM_ADMIN_EMAIL}"
+      CarbonSim__AdminPassword: "${CARBONSIM_ADMIN_PASSWORD:?set CARBONSIM_ADMIN_PASSWORD}"
+      CarbonSim__EmailSender: "${CARBONSIM_EMAIL_SENDER:-Log}"
+      CarbonSim__DisplayCurrency: "${CARBONSIM_CURRENCY:-USD}"
+      CarbonSim__VndPerUsd: "${CARBONSIM_VND_PER_USD:-25000}"
+    volumes:
+      - carbonsim-data:/data
+    restart: unless-stopped
+
+  postgres:
+    profiles: ["postgres"]
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: "${CARBONSIM_DB_NAME:-carbonsim}"
+      POSTGRES_USER: "${CARBONSIM_DB_USER:-carbonsim}"
+      POSTGRES_PASSWORD: "${CARBONSIM_DB_PASSWORD:?set CARBONSIM_DB_PASSWORD}"
+    volumes:
+      - carbonsim-postgres:/var/lib/postgresql/data
+    restart: unless-stopped
+
+volumes:
+  carbonsim-data:
+  carbonsim-postgres:

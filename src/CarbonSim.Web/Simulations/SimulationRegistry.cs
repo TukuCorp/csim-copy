@@ -51,10 +51,12 @@ internal sealed class Announcement
 public sealed class HostedRun
 {
     private readonly Dictionary<Product, BookAnnouncement> _announcedBooks = [];
+    private readonly Dictionary<string, object> _shared = new(StringComparer.Ordinal);
 
     private (string State, int Year)? _announcedState;
     private (string State, int Year, int Auction, bool Open)? _announcedMarket;
     private bool _announcedMessaging = true;
+    private long _revision;
 
     internal HostedRun(
         Simulation simulation,
@@ -96,6 +98,44 @@ public sealed class HostedRun
     public bool MessagingEnabled { get; internal set; } = true;
 
     public SemaphoreSlim Gate { get; } = new(1, 1);
+
+    /// <summary>
+    /// How many times the run has changed since it was started. A screen reads this to decide
+    /// whether the run-wide part of its view it cached a moment ago is still good, so the work
+    /// that does not depend on who is asking is done once per change rather than once per player.
+    /// </summary>
+    internal long Revision => _revision;
+
+    /// <summary>
+    /// A run-wide value built once per revision and handed to every player who asks for it. The
+    /// value must be immutable, because one instance is shared between players, and it must only
+    /// be built while the run's gate is held - every caller of this already is. The cache empties
+    /// the moment the run changes, so a screen never reads a figure from an earlier tick.
+    /// </summary>
+    internal T Shared<T>(string key, Func<T> build)
+        where T : class
+    {
+        if (_shared.TryGetValue(key, out object? cached) && cached is T value)
+        {
+            return value;
+        }
+
+        T built = build();
+        _shared[key] = built;
+        SharedBuilds++;
+
+        return built;
+    }
+
+    /// <summary>How many run-wide values this run has had to build; a cache test watches it stall.</summary>
+    internal int SharedBuilds { get; private set; }
+
+    /// <summary>Starts a new revision: the run changed, so every cached run-wide value is stale.</summary>
+    private void Invalidate()
+    {
+        _revision++;
+        _shared.Clear();
+    }
 
     /// <summary>Clock notices not yet broadcast, in event order; cleared auctions ride with their close notice.</summary>
     public List<ClockEvent> PendingNotices { get; } = [];
@@ -188,6 +228,10 @@ public sealed class HostedRun
             _announcedMessaging = MessagingEnabled;
             announcement.Messaging = MessagingEnabled;
         }
+
+        // The run has been read to build this announcement, so this is the one place a change is
+        // certain to have been observed: everything cached for the screens belongs to the old state.
+        Invalidate();
 
         return announcement;
     }

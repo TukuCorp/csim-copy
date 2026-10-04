@@ -11,9 +11,9 @@
 }
 else
 {
-    <section class="card wide">
+    <section class="card wide" tabindex="0">
         <h2>@Strings["MarginalAbatementCostCurve_MACC"]</h2>
-        <EChart Option="@Charts.Macc(Opportunities(view))" Height="260px" />
+        <EChart Option="@Charts.Macc(Opportunities(view))" Height="260px" Label="@Strings["MarginalAbatementCostCurve_MACC"]" />
     </section>
 
     <section class="card">
@@ -26,7 +26,7 @@ else
         </ul>
     </section>
 
-    <section class="card wide">
+    <section class="card wide" tabindex="0">
         <h2>@Strings["AbatementUndertaken"]</h2>
         @if (view.Abatements.Count == 0)
         {
@@ -45,7 +45,7 @@ else
         }
     </section>
 
-    <section class="card wide">
+    <section class="card wide" tabindex="0">
         <h2>@Strings["AvailableEmissionReductionOpportunities"]</h2>
         <QuickGrid Items="@Items(view).AsQueryable()" Class="grid">
             <TemplateColumn Title="@Strings["Project"]" Context="row">@row.Code @row.Name</TemplateColumn>
