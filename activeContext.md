@@ -585,3 +585,34 @@ EF logs each one); the PostgreSQL schema has not been applied to a live server; 
 unbuilt; the four fidelity envelopes and the bot-calibration item remain; the year-end save holds the
 run gate for about 1.25 s (one event per year); and tradingOpenShareOfYear is still inert.
 
+### Flaky-test review (2026-10-04)
+
+Two independent causes of the intermittent failures in tests/CarbonSim.Web.Tests, found by repeat runs
+of the project with a trx logger and fixed without retries, longer sleeps or skips. The HubException
+"'Delta Power' does not play 'Red River Power'" in the failure log is expected noise from
+HubAuthorizationTests and was not a cause.
+
+Playwright drove a page before the circuit was listening. Blazor sends the prerendered markup first
+and attaches its event handlers only on the first interactive render, so a click, or a value typed
+into an `@bind` box, in between is dropped with no error. Evidence: a captured run where the OTC
+offer rested with the default volume 1.000 while the typed price 120,25 landed (the change event from
+the volume box was lost), and an admin run where the WebSocket had already connected yet the
+create-exercise click produced no request and no navigation. A connected WebSocket is therefore not a
+sufficient gate: handlers attach after the initial render batch. Fix: MainLayout.razor and
+AdminLayout.razor render `data-interactive="true"` only in the interactive render, from
+RendererInfo.IsInteractive; the new tests/CarbonSim.Web.Tests/Components/InteractivePage.cs gate
+(WaitUntilInteractiveAsync) is awaited after every navigation before typing or clicking in the four
+Playwright test classes, and it replaces the Vietnam walk's 1500 ms sleep; the bUnit contexts
+(ScreenFixture, AdminFixture) set RendererInfo so the layouts render as they do after hydration.
+
+CarbonSimWebHost.Dispose cleared the SQLite pool process-wide. SqliteConnection.ClearAllPools() from
+one host's teardown closed the pooled connections of every host running beside it, and a query already
+in flight failed with ObjectDisposedException: 'SQLitePCL.sqlite3' (seen in
+PasswordResetTests.An_expired_code_is_refused). Fix: SqliteConnection.ClearPool on this host's own
+connection string only.
+
+Evidence: 10 consecutive runs of tests/CarbonSim.Web.Tests, each 139 tests with 138 passed and 1
+skipped (the opt-in full load run); the full solution green (Engine 238 + 4 skipped, Data 16, Web 138
++ 1 skipped); dotnet build CarbonSim.sln with 0 warnings and 0 errors; dotnet format
+--verify-no-changes clean. The same ClearAllPools pattern remains in tests/CarbonSim.Data.Tests (a
+separate test process, so it cannot reach the Web tests) and was left alone.

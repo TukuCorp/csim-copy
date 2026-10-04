@@ -5,9 +5,10 @@
 @inject AdminContextOptions Options
 @inject IStringLocalizer<SharedStrings> Strings
 
+@* The interactive marker mirrors MainLayout: absent while the page is only prerendered. *@
 @if (!Context.Snapshot.IsAdministrator)
 {
-    <div class="plain">
+    <div class="plain" data-interactive="@(RendererInfo.IsInteractive ? "true" : null)">
         <h1>@Strings["AdminConsole"]</h1>
         <p class="notice notice-error">@Strings["AdminAccessDenied"]</p>
     </div>
@@ -16,7 +17,7 @@ else
 {
     @* A fresh record on every refresh, so the pages below redraw with it. *@
     <CascadingValue Value="Context.Snapshot" IsFixed="false">
-        <div class="app">
+        <div class="app" data-interactive="@(RendererInfo.IsInteractive ? "true" : null)">
             <header class="topbar">
                 <div class="topbar-identity">
                     <span class="company">@Strings["AdminConsole"]</span>

@@ -31,30 +31,35 @@ public sealed class PlaywrightVietnamTests : IClassFixture<PlaywrightHostFixture
         await page.GotoAsync($"{_host.BaseUrl}/culture/set?culture=vi&redirect=/run/{runId}/dashboard");
         await ExpectHeadingAsync(page, "Bảng điều khiển");
 
-        // Hydration must not put the English back: after a beat the heading is still Vietnamese and
-        // the live figures are grouped the Vietnamese way.
-        await page.WaitForTimeoutAsync(1500);
+        // The interactive render must not put the English back: once the circuit has replaced the
+        // prerendered markup the heading is still Vietnamese, and the live figures are grouped the
+        // Vietnamese way.
+        await page.WaitUntilInteractiveAsync();
         await ExpectHeadingAsync(page, "Bảng điều khiển");
         (await page.TextContentAsync("body") ?? string.Empty)
             .Should().MatchRegex(@"\d{1,3}(\.\d{3})+", "Vietnamese figures use a dot as the thousands separator");
 
         // The auction screen speaks Vietnamese and understands a volume of one thousand written 1.000.
         await page.GotoAsync($"{_host.BaseUrl}/run/{runId}/auction");
+        await page.WaitUntilInteractiveAsync();
         await ExpectHeadingAsync(page, "Đấu giá hạn ngạch");
         await page.FillAsync("#bid-volume", "1.000");
         await page.PressAsync("#bid-volume", "Tab");
         await page.WaitForFunctionAsync(
             "() => (document.querySelector('#bid-capital-cost')?.textContent ?? '').includes('100.000')",
+            null,
             new PageWaitForFunctionOptions { Timeout = 15000 });
 
         // An offer written in Vietnamese numbers is accepted by the engine and rests in my offers.
         await page.GotoAsync($"{_host.BaseUrl}/run/{runId}/otc");
+        await page.WaitUntilInteractiveAsync();
         await ExpectHeadingAsync(page, "Thị trường OTC");
         await page.FillAsync("#offer-volume", "1.500");
         await page.FillAsync("#offer-price", "120,25");
         await page.ClickAsync("#send-offer");
         await page.WaitForFunctionAsync(
             "() => (document.querySelector('#my-offers')?.textContent ?? '').includes('1.500')",
+            null,
             new PageWaitForFunctionOptions { Timeout = 15000 });
 
         await page.CloseAsync();

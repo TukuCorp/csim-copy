@@ -33,6 +33,7 @@ public sealed class PlaywrightAdminTests : IClassFixture<PlaywrightHostFixture>
 
         // Build a fresh exercise from the configured scenario, then start its first year.
         await admin.GotoAsync(_host.BaseUrl + "/admin/setup");
+        await admin.WaitUntilInteractiveAsync();
         await admin.WaitForSelectorAsync("#admin-create-run");
         await admin.ClickAsync("#admin-create-run");
         await admin.WaitForURLAsync("**/admin/run/**");
@@ -46,6 +47,7 @@ public sealed class PlaywrightAdminTests : IClassFixture<PlaywrightHostFixture>
         // The player claims a company and opens the same run.
         await _host.SignInAsync(player, "playwright-admin-player@example.com");
         await player.GotoAsync($"{_host.BaseUrl}/run/{runId}/dashboard");
+        await player.WaitUntilInteractiveAsync();
         await ExpectCurrentYearAsync(player, "Year 1");
 
         await admin.ClickAsync("#admin-halt");
@@ -72,4 +74,5 @@ public sealed class PlaywrightAdminTests : IClassFixture<PlaywrightHostFixture>
             "expected => document.querySelector('.segments .segment-current')?.textContent.trim() === expected",
             expected);
     }
+
 }

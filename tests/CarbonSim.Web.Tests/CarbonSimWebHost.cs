@@ -88,7 +88,12 @@ public class CarbonSimWebHost : WebApplicationFactory<Program>
         }
 
         // SQLite pools its connections, and Windows will not delete a file they still hold open.
-        SqliteConnection.ClearAllPools();
+        // Clear this host's pool only: ClearAllPools closes the pooled connections of every host
+        // running beside this one, and a query already in flight then fails on a closed handle.
+        using (SqliteConnection pooled = new($"Data Source={_databasePath}"))
+        {
+            SqliteConnection.ClearPool(pooled);
+        }
 
         try
         {

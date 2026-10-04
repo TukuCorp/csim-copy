@@ -74,6 +74,7 @@ public sealed class PlaywrightAccessibilityTests : IClassFixture<PlaywrightHostF
         await page.WaitForSelectorAsync("#admin-create-run");
         problems.AddRange(await ViolationsAsync(page, "admin/setup"));
 
+        await page.WaitUntilInteractiveAsync();
         await page.ClickAsync("#admin-create-run");
         await page.WaitForURLAsync("**/admin/run/**");
         await page.WaitForSelectorAsync("#admin-begin-year");
@@ -109,6 +110,7 @@ public sealed class PlaywrightAccessibilityTests : IClassFixture<PlaywrightHostF
         await page.WaitForSelectorAsync("#admin-create-run");
         (await PageOverflowAsync(page)).Should().BeLessThanOrEqualTo(1, "the setup screen must fit a phone");
 
+        await page.WaitUntilInteractiveAsync();
         await page.ClickAsync("#admin-create-run");
         await page.WaitForURLAsync("**/admin/run/**");
         await page.WaitForSelectorAsync("#admin-begin-year");

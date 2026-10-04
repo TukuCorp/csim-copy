@@ -131,6 +131,7 @@ public abstract class AdminScreenTestContext : TestContext
     protected AdminScreenTestContext()
     {
         JSInterop.Mode = JSRuntimeMode.Loose;
+
         Services.AddLocalization();
         Services.AddSingleton<IAdminSession>(Session);
         Services.AddSingleton(new AdminContextOptions { RefreshInterval = null });
@@ -141,6 +142,12 @@ public abstract class AdminScreenTestContext : TestContext
 
             return context;
         });
+
+        // Last, because touching the Renderer seals the service collection: the console layout reads
+        // RendererInfo.IsInteractive for its interactive marker, so a screen test renders the way
+        // the connected circuit does.
+        Renderer.SetRendererInfo(
+            new Microsoft.AspNetCore.Components.RendererInfo("Server", isInteractive: true));
     }
 
     protected StubAdminSession Session { get; } = new();

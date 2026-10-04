@@ -4,9 +4,11 @@
 @inject PlayerContext Context
 @inject PlayerViewOptions ViewOptions
 
+@* data-interactive is true only in the interactive render, never in the prerendered HTML, so a
+   client can tell when the circuit is listening before it types or clicks. See RendererInfo. *@
 @if (Context.Snapshot.SimulationId is null)
 {
-    <div class="plain">
+    <div class="plain" data-interactive="@(RendererInfo.IsInteractive ? "true" : null)">
         @Body
     </div>
 }
@@ -14,7 +16,7 @@ else
 {
     @* The snapshot is a fresh record every refresh, so the pages below re-render with it. *@
     <CascadingValue Value="Context.Snapshot" IsFixed="false">
-        <div class="app">
+        <div class="app" data-interactive="@(RendererInfo.IsInteractive ? "true" : null)">
             <TopBar />
             <ProgressStrip />
             <div class="shell">

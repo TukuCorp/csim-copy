@@ -25,6 +25,7 @@ public sealed class PlaywrightScreenWalkTests : IClassFixture<PlaywrightHostFixt
 
         await _host.SignInAsync(page, "playwright-walk@example.com");
 
+        await page.WaitUntilInteractiveAsync();
         await ExpectHeadingAsync(page, "Dashboard");
 
         foreach ((string Screen, string Heading) step in Walk)

@@ -113,6 +113,11 @@ public abstract class ScreenTestContext : TestContext
 
             return context;
         });
+
+        // Last, because touching the Renderer seals the service collection: the layouts read
+        // RendererInfo.IsInteractive for their interactive marker, so a screen test renders the way
+        // the connected circuit does.
+        Renderer.SetRendererInfo(new RendererInfo("Server", isInteractive: true));
     }
 
     protected StubPlayerSession Session { get; } = new();
