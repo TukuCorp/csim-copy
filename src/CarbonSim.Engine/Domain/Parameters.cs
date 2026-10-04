@@ -66,6 +66,13 @@ public sealed record Parameters
     public required decimal OverdraftInterestRate { get; init; }
 
     /// <summary>
+    /// Share of the government's reserve, including volume an auction could not sell, that is
+    /// offered again in the next auction. Zero leaves the reserve untouched, as it was before
+    /// this setting existed.
+    /// </summary>
+    public decimal GovernmentReserveToAuctionPercent { get; init; }
+
+    /// <summary>
     /// Returns one message per value that cannot be run, so an administrator sees every
     /// problem with a scenario in a single pass. Empty means the parameters are usable.
     /// </summary>
@@ -161,6 +168,14 @@ public sealed record Parameters
         if (OverdraftInterestRate is < 0m or > 1m)
         {
             errors.Add(Message("overdraftInterestRate", "must be between 0 and 1", OverdraftInterestRate));
+        }
+
+        if (GovernmentReserveToAuctionPercent is < 0m or > 1m)
+        {
+            errors.Add(Message(
+                "governmentReserveToAuctionPercent",
+                "must be between 0 and 1",
+                GovernmentReserveToAuctionPercent));
         }
 
         return errors;

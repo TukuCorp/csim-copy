@@ -78,6 +78,8 @@ public sealed class ParametersRecord
 
     public decimal VolatilityBand { get; set; }
 
+    public decimal GovernmentReserveToAuctionPercent { get; set; }
+
     public decimal OverdraftInterestRate { get; set; }
 }
 

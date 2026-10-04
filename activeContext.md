@@ -585,3 +585,173 @@ EF logs each one); the PostgreSQL schema has not been applied to a live server; 
 unbuilt; the four fidelity envelopes and the bot-calibration item remain; the year-end save holds the
 run gate for about 1.25 s (one event per year); and tradingOpenShareOfYear is still inert.
 
+### Bot calibration - the price path, and why full compliance is blocked (2026-10-04)
+
+Built, bot: src/CarbonSim.Engine/Bots/ComplianceBot.cs and BotSettings.cs. The bot now bids its whole
+position instead of a fraction, spreads that position over the auctions left in the year so no single
+auction is bid up against a slice of supply, and prices the bid at what the marginal tonne of its
+position really costs: it walks the abatement it has left cheapest first, takes the project that
+covers the last tonne, and is capped at the cash penalty. Abatement is re-decided after the first
+auction of the year (at the mid-year trade trigger), so a price that has climbed makes the
+longer-payback projects worth building; and a project's cost is the capital spread over the years of
+the run it will actually run, not its whole service life, which stops a bot building a twelve-year
+project for the one or two years left to play. Normal's bid appetite is 0.9 of its position, Hard's is
+1.0 (Hard also has lower price noise and a stricter offset discount), which keeps the difficulty
+ordering real.
+
+Results, the seeded 242-unit three-year run of scenarios/vietnam-2024.json (Normal): auction averages
+100.00 / 108.62 / 220.51 against the 100 floor and 300 ceiling, so year 1 clears at the floor and year
+3 reaches the ceiling, the Dominican pattern the brief asks for; the same run's vintages average
+100.00 / 108.62 / 220.51, so later vintages price at a premium and the premium grows; offsets trade at
+a 20.8% discount to allowances; year-1 abatement is 1.00% of the cap; and the bot cost of compliance
+sits between -13.34 and +28.66 per tonne with negative outliers. The price-path envelope is the one
+this change closed; the offset discount, vintage premium, year-1 abatement and leaderboard-spread
+envelopes all still hold.
+
+The envelope that does not close is full compliance, and it is not a bot-behaviour gap. Over the three
+years the fleet owes 1,104.0 Mt against 1,035.8 Mt of allowances (932.3 Mt free plus 103.6 Mt
+auctionable), so abatement or offsets must cover the 68 Mt difference. At the year-1 abatement volume
+the other envelope allows (about 1% of the cap, the cheap tier only) and a three-year run, at most
+about 24 Mt of abatement can ever operate, and the offset-share envelope caps offsets at 2-3% of the
+cap, so a structural 34-40 Mt is left uncovered however well the bots trade. The fleet also cannot
+simply buy the shortfall: about 42 Mt of the year 1-2 auctionable volume goes unsold, and the only way
+a bot takes that up is to bank it, which softens the year it banks into and drops the year-2 clearing
+back to the floor so vintage 2 no longer prices above vintage 1 - the vintage-premium envelope.
+Handing the same volume out as offsets instead crowds out the auction demand it is meant to replace
+and breaks the offset-discount envelope. Full compliance and those envelopes cannot all hold on the
+shipped scenario without either a reserve-release mechanism (an engine feature) or a scenario
+rebalance of cap, BAU growth and the abatement menu. The finding stands after repeated attempts: the
+envelopes are mutually exclusive here, so no bot tuning closes it.
+
+Test counts: 393 passing, 4 skipped in the solution - Engine 239 passing + 3 skipped (full compliance,
+the 2-3% offset share and the regulator shock, each with its measured value in the skip reason), Data
+16 passing, Web 138 passing + 1 skipped (the opt-in full load run). The price-path envelope is no
+longer skipped.
+
+Gate: dotnet build CarbonSim.sln -> 0 warnings, 0 errors; dotnet test CarbonSim.sln -> green (393
+passed, 4 skipped).
+
+Files changed: src/CarbonSim.Engine/Bots/ComplianceBot.cs and BotSettings.cs;
+tests/CarbonSim.Engine.Tests/Bots/ComplianceBotTests.cs (the spread bid volume);
+tests/CarbonSim.Engine.Tests/FidelityTests.cs (the price-path envelope un-skipped and passing, and the
+compliance and offset-share skip reasons rewritten with the measurements above).
+
+Open issues: full compliance needs a supply-side fix (reserve release or a scenario rebalance) rather
+than bot tuning; the mid-year abatement pass re-reads the same menu rather than being a separate
+trigger; and the difficulty knob still shows mostly in bid appetite and noise, because the cheap
+abatement tier is worth building at every setting.
+
+### Scenario rebalance for full compliance - blocked, and why (2026-10-04)
+
+Task: rebalance scenarios/vietnam-2024.json so Envelope one (full compliance) can pass alongside the
+envelopes already closed (price path, vintage premium, offset discount, leaderboard spread, year-1
+abatement), aiming too at the 2-3% offset-share envelope, without a reserve-release engine feature.
+Levers allowed: cap trajectory, free allocation share, BAU growth, abatement menu costs/sizes/lead
+times, auction volumes, and the harness offset disbursement. Four rebalances were played on the
+seeded 242-unit run and measured; every one that moved compliance toward zero broke another envelope.
+
+Shipped (kept): auction averages 100.00 / 108.62 / 220.51; year-1 abatement 1.00%; offsets 7.91%;
+leaderboard -13.34 to +28.66; compliance 442 company-years short, 23.8 Mt uncovered. Price path,
+vintage premium, offset discount, year-1 abatement and leaderboard spread all hold; compliance and
+the 2-3% offset share do not.
+
+Attempt 1, BAU growth flattened to 0-0.5%/yr + cheap abatement tier 0.01 to 0.016 + offset
+disbursement cut to 2.8% of emissions: auction 100.00 / 108.27 / 128.80; offsets 2.79% (the offset
+envelope now holds); compliance 689 company-years short, 22.0 Mt. The price path broke - year 3
+cleared below 200 because the fleet is no longer scarce.
+
+Attempt 2, shipped growth but offset disbursement cut to 2.8%: auction 100.00 / 128.21 / 294.68;
+offsets 2.79%; compliance 694 short, 74.3 Mt; leaderboard max 55.96 per tonne, so envelope six (ceiling
+40) broke. The fleet's cost of compliance depends on how many cheap offsets it is given, so the
+offset-share and leaderboard-spread envelopes are mutually exclusive on this scenario.
+
+Attempt 3, shipped growth and offsets but no forward lots: auction 100.00 / 100.00 / 167.78;
+compliance 387 short, 13.9 Mt, the closest of the four; the price path and the vintage premium both
+broke, because removing the forward lots added volume to the year-2 and year-3 auctions and softened
+the years that were meant to be tight.
+
+Attempt 4, shipped everything but the cheap abatement tier raised to 0.018: auction 100.00 / 107.81 /
+191.04; compliance 411 short, 20.9 Mt; the price path broke again, because abating more softens the
+market the price path needs to be tight.
+
+The reason is structural, not a tuning gap. Unsold auction volume is returned to the government
+reserve and never offered again (Market/GovernmentAccount.Return, and AuctionSchedule builds every lot
+once), so any year in which the fleet is not short of that year's auction retires allowances it needs
+later. Summed over the run, with free allocation at 90% of the cap and the bots bidding their own
+position, the fleet complies if and only if BAU_y <= cap_y + offsets_y + abatement_y in every year.
+But the price-path envelope needs year 3 to clear at or above 200, and the vintage-premium envelope
+needs year 2 to clear above year 1, and a year only clears above the floor when its auction is
+over-subscribed - BAU_y > cap_y + offsets_y + abatement_y. The two conditions cannot both hold, in any
+year, whatever the cap trajectory, free share, growth band or abatement menu. The fix is a
+reserve-release mechanism (re-offering unsold volume), which this task explicitly excluded; bot
+banking also circulates the volume but flattens the year it banks into, and on the shipped 3%/yr cap
+decline it cannot keep the year-2 premium either.
+
+Outcome: no scenario change survives, so the scenario and the harness are back exactly as shipped and
+Envelope one is skipped again, with the measurement and the structural reason in the skip text. The
+offset-share skip text now records its conflict with the leaderboard spread. Files changed this task:
+tests/CarbonSim.Engine.Tests/FidelityTests.cs (skip reasons and the two un-skip/measure cycles); the
+scenario, FidelityRun and the engine are untouched. Test counts: 393 passing, 4 skipped; zero build
+warnings; Web and the load smoke tests still pass on the shipped scenario.
+
+Open issue: full compliance needs a reserve-release feature or a bot that banks while keeping the
+year-2 auction tight - neither of which is a scenario lever. Recommend raising the engine change as
+its own task rather than trying to rebalance around it.
+
+### Government reserve to auction - built, and the tuning it did not unlock (2026-10-04)
+
+Built. `Parameters.GovernmentReserveToAuctionPercent` (0-1, default 0 so every existing run is
+unchanged) is the share of the government reserve offered again at auction. The behaviour lives in
+`AuctionSchedule.ReofferReserve` and `Auction.AddLot`: once a year, when a year's last auction
+closes, that share of everything the government still holds - including the volume the auction could
+not sell - is offered in the next year's auctions, oldest vintage first. A vintage already on offer in
+the target auction is topped up rather than added again, because the auction clears one book per
+vintage and a second lot of the same vintage would settle the same bids twice; a carry that arrives
+across a year boundary becomes a lot of its own. Bots now bid only the lots the compliance year can
+actually surrender (so a forward lot is still ignored, and re-offered volume is bid for). The
+parameter round-trips through the scenario file (optional, absent means zero), the snapshot and the
+EF record; migration `20261004145903_GovernmentReserveToAuction` adds the column. The admin setup
+screen shows and edits it next to the free allocation share, with English and Vietnamese strings.
+
+Tests. Nine new: eight engine (`Market/ReserveToAuctionTests`) covering the default doing nothing,
+a half share, the whole reserve, the year-boundary carry, the last auction having nowhere to go,
+conservation across a re-offer, the validation band, the share surviving a snapshot, and a bot
+bidding the carried vintage - plus a bUnit test that the setup page renders the input.
+
+The tuning it was meant to unlock did not work. Every measured variant is in the fidelity run's
+report; the pattern is that the share trades circulation against scarcity, and the envelopes need
+both. With the original scenario and the share at 1.0 the shortfall only falls 23.8 Mt to 21.8 Mt
+(the carry reaches the next year's auctions but the bots' spread bidding does not chase it), the
+year-3 clearing falls from 220.5 to 143.1, and vintage 2 stops pricing above vintage 1 because
+re-offered old-vintage volume trades in later years and lifts the old vintage's average. At 0.5 the
+year-3 clearing is 146.0; at 0.1 it is 167.2 and vintage 1 (135.5) overtakes vintage 2 (105.9). The
+per-auction variant (re-offer at every close) circulates far more - with the scenario rebalanced to
+flat BAU growth, a 2% cheap abatement tier and a 2.5% offset disbursement the shortfall drops to
+3.7 Mt and the offset-share envelope passes at 2.29% - but every auction is then under-subscribed and
+the price path sits on the floor (100.00 / 103.25 / 103.80), and adding a bid buffer took the
+shortfall to 0.38 Mt while breaking the offset discount (-29.4%). The reason is structural: a year
+only clears above the floor when its auction is over-subscribed, and full compliance needs the fleet
+to be able to buy its position, so the two can only both hold if the fleet carries stock across years
+by banking - which it does not do. The shipped scenario therefore leaves the share at 0.0 and the
+compliance and offset-share envelopes stay open, each with its measurement in the skip text.
+
+Why the offset discount read 20.8% in the first report and 15-17% in the second. The discount is
+measured, not set: it is (average allowance price - average offset price) / average allowance price,
+volume-weighted over the whole run and every channel. The bots quote offsets at a fixed haircut below
+the last auction price they saw (15% at Normal, 5% at Hard), so the quote tracks the price path while
+the two averages pool different trade populations: the allowance average is dominated by the auction
+volume spread over years 1-3 (the shipped run averages 156.58 against offsets 123.98, a 20.8%
+discount), and the offset volume is much smaller and clusters where surplus holders sell. When the
+offset volume sits in the low-priced early part of the run the measured discount reads larger than
+the 15% quote. The 20.8% figure is the shipped state and reproduced in this run; the 15-17% figures
+in the second report were read off the intermediate rebalancing variants (15.5% with a larger
+abatement tier, 17.4% with the Normal bot bidding its full position), not the restored state, so that
+report stated the wrong number for the kept run. The range across variants, 8-21%, is the run's trade
+mix moving, not the engine's rule changing.
+
+Gate: dotnet build CarbonSim.sln -> 0 warnings, 0 errors; dotnet test CarbonSim.sln -> green (Engine
+248 passing + 3 skipped, Data 16 passing, Web 139 passing + 1 skipped). Files added:
+Market/ReserveToAuctionTests.cs, the migration pair. Files changed: Parameters, Auction,
+AuctionSchedule, ComplianceBot, ScenarioFile/Loader, SimulationSnapshot/Snapshots, SimulationRecord,
+SimulationMapper, CarbonSimDbContextModelSnapshot, ScenarioDraft, AdminSetup.razor, both resx,
+TestSimulation, FidelityTests skip text, AdminScreensTests, and the scenario's parameter and notes.

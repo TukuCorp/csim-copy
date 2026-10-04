@@ -53,6 +53,9 @@ internal sealed class ParametersFile
     /// <summary>Yearly interest on a negative balance, as a fraction.</summary>
     public decimal? OverdraftInterestRate { get; set; }
 
+    /// <summary>Share of the government reserve offered again at the next auction (absent means zero).</summary>
+    public decimal? GovernmentReserveToAuctionPercent { get; set; }
+
     public List<BausGrowthFile>? BausGrowthBySector { get; set; }
 }
 

@@ -242,6 +242,7 @@ public static class SimulationSnapshots
         otc.Restore(snapshot.Otc);
 
         AuctionSchedule auctions = AuctionSchedule.Restore(
+            simulation,
             [.. snapshot.Auctions.Auctions.Select(auction => Auction.Restore(simulation, auction))]);
 
         SimulationBots? bots = snapshot.Bots is { } fleet
@@ -289,7 +290,8 @@ public static class SimulationSnapshots
             parameters.AuctionDuration,
             parameters.TradingOpenShareOfYear,
             parameters.VolatilityBand,
-            parameters.OverdraftInterestRate);
+            parameters.OverdraftInterestRate,
+            parameters.GovernmentReserveToAuctionPercent);
     }
 
     private static Parameters Rebuild(ParametersSnapshot snapshot)
@@ -319,6 +321,7 @@ public static class SimulationSnapshots
             TradingOpenShareOfYear = snapshot.TradingOpenShareOfYear,
             VolatilityBand = snapshot.VolatilityBand,
             OverdraftInterestRate = snapshot.OverdraftInterestRate,
+            GovernmentReserveToAuctionPercent = snapshot.GovernmentReserveToAuctionPercent,
         };
     }
 

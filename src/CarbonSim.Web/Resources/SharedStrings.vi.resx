@@ -223,6 +223,7 @@
   <data name="Cap" xml:space="preserve"><value>Hạn mức</value></data>
   <data name="AnnualCapReductionRate" xml:space="preserve"><value>Mức giảm hạn mức hằng năm</value></data>
   <data name="FreeAllocationShare" xml:space="preserve"><value>Tỷ lệ phân bổ miễn phí</value></data>
+  <data name="GovernmentReserveToAuctionPercent" xml:space="preserve"><value>Dự trữ chính phủ đấu giá lại (tỷ lệ)</value></data>
   <data name="OffsetUsageLimit" xml:space="preserve"><value>Giới hạn sử dụng tín chỉ bù trừ</value></data>
   <data name="PenaltyPerTonne" xml:space="preserve"><value>Hình phạt mỗi tấn</value></data>
   <data name="PenaltyAllowanceDebit" xml:space="preserve"><value>Hạn ngạch bị trừ do hình phạt</value></data>
@@ -363,5 +364,4 @@
   <data name="DisplayCurrency" xml:space="preserve"><value>Đơn vị tiền hiển thị</value></data>
   <data name="VndPerUsdRate" xml:space="preserve"><value>VND trên 1 USD</value></data>
 </root>
-
 

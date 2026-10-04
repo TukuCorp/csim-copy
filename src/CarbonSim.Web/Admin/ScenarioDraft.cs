@@ -84,6 +84,8 @@ public sealed class DraftParameters
 
     public decimal? OverdraftInterestRate { get; set; }
 
+    public decimal? GovernmentReserveToAuctionPercent { get; set; }
+
     public List<DraftGrowth> BausGrowthBySector { get; set; } = [];
 }
 

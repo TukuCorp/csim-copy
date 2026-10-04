@@ -198,6 +198,10 @@ public sealed class ComplianceBot
 
         if (Due(year, BotTrigger.Trade, elapsed))
         {
+            // The first auctions of the year have cleared by now, so the bot re-reads the
+            // market before it invests: a price that has climbed makes the longer-payback
+            // abatement worth building before the year is out.
+            Abate(simulation, year, actions);
             Trade(simulation, year, markets, actions);
         }
 
@@ -240,8 +244,17 @@ public sealed class ComplianceBot
         {
             foreach (AbatementOption option in unit.AbatementOptions.OrderBy(option => option.NetCostPerTonne))
             {
+                // The project only pays back over the years of the run it will actually be
+                // running, so its cost per tonne is the capital spread over those years, not
+                // over its whole service life. In a short exercise that is what stops a bot
+                // building a long project for the couple of years left to play.
+                int operatingYears = Math.Min(option.LifetimeYears, remainingYears - option.ImplementationYears);
+                decimal costPerTonne = operatingYears < 1
+                    ? decimal.MaxValue
+                    : option.UpfrontCost / (option.AnnualReduction * operatingYears);
+
                 if (simulation.Abatements.HasImplemented(unit, option)
-                    || option.NetCostPerTonne >= reservation
+                    || costPerTonne >= reservation
                     || option.ImplementationYears > remainingYears)
                 {
                     continue;
@@ -276,24 +289,65 @@ public sealed class ComplianceBot
             return;
         }
 
-        decimal wanted = shortfall * _settings.BidVolumeFraction;
+        // Spread the year's need over the auctions that are left, so no single auction is bid
+        // up against a supply that is only a slice of the year's.
+        int sectionsLeft = parameters.AuctionsPerYear - section + 1;
         decimal noise = _random.NextDecimal(-_settings.BidPriceNoise, _settings.BidPriceNoise);
-        decimal price = Clamp(NextMarginalAbatementCost(simulation) is { } cost && cost < _expectedPrice
-            ? cost
-            : _expectedPrice * (1m + noise), parameters.AuctionFloorPrice, parameters.AuctionCeilingPrice);
-        decimal affordable = simulation.Cash.Available(_company) + _company.OverdraftLimit;
-        decimal volume = Math.Min(wanted, affordable / price);
+        decimal price = Clamp(
+            WillingnessToPay(simulation, parameters, shortfall) * (1m + noise),
+            parameters.AuctionFloorPrice,
+            parameters.AuctionCeilingPrice);
+        decimal wanted = shortfall * _settings.BidVolumeFraction / sectionsLeft;
 
+        // An auction can hold more than one lot: the year's own vintage, and volume offered
+        // again after an earlier auction could not sell it. Only lots the compliance year can
+        // actually surrender are bid for - a forward lot is next year's vintage - and the
+        // position is split across them so the bot does not bid for the same tonnes twice.
+        AuctionLot[] usable = [.. auction.Lots.Where(lot => lot.Vintage <= year)];
+
+        if (usable.Length == 0)
+        {
+            return;
+        }
+
+        decimal perLot = wanted / usable.Length;
+
+        foreach (AuctionLot lot in usable)
+        {
+            PlaceBid(simulation, auction, lot, price, perLot, actions, year, "position");
+        }
+    }
+
+    /// <summary>Places one bid if it is worth placing and the company can afford it.</summary>
+    private void PlaceBid(
+        Simulation simulation,
+        Auction auction,
+        AuctionLot lot,
+        decimal price,
+        decimal volume,
+        List<BotAction> actions,
+        int year,
+        string what)
+    {
         if (volume <= 0m)
         {
-            actions.Add(new BotAction(_company.Name, year, BotTrigger.Auction, "could not afford a bid"));
+            return;
+        }
+
+        decimal affordable = simulation.Cash.Available(_company) + _company.OverdraftLimit;
+        // Tonnes are whole in this market, and a whole-tonne bid keeps the price times volume,
+        // and so the cash set aside for it, exact to the cent.
+        decimal bidVolume = Math.Floor(Math.Min(volume, affordable / price));
+
+        if (bidVolume <= 0m)
+        {
             return;
         }
 
         try
         {
-            auction.PlaceBid(_units[0], auction.Lots[0].Vintage, price, volume);
-            actions.Add(new BotAction(_company.Name, year, BotTrigger.Auction, $"bid {volume} at {price}"));
+            auction.PlaceBid(_units[0], lot.Vintage, price, bidVolume);
+            actions.Add(new BotAction(_company.Name, year, BotTrigger.Auction, $"bid {bidVolume} at {price} ({what})"));
         }
         catch (ArgumentException exception)
         {
@@ -414,23 +468,37 @@ public sealed class ComplianceBot
         return held;
     }
 
-    /// <summary>The cheapest abatement this bot has not taken yet, which is what caps its bid.</summary>
-    private decimal? NextMarginalAbatementCost(Simulation simulation)
+    /// <summary>
+    /// The most this bot will pay for a tonne it has to find, which is what the marginal tonne
+    /// of its position costs to cover: walk the abatement it has left cheapest first, and take
+    /// the cost of the project that would take it the last of the way. If even all of it is not
+    /// enough, the tonne is worth the cash penalty and no more. Bidding this way means the fleet
+    /// competes up the marginal abatement cost curve as the cap tightens, rather than sitting at
+    /// the floor.
+    /// </summary>
+    private decimal WillingnessToPay(Simulation simulation, Parameters parameters, decimal shortfall)
     {
-        decimal? cheapest = null;
+        decimal covered = 0m;
 
-        foreach (Unit unit in _units)
+        foreach (AbatementOption option in RemainingAbatement(simulation))
         {
-            foreach (AbatementOption option in unit.AbatementOptions.Where(option => !simulation.Abatements.HasImplemented(unit, option)))
+            covered += option.AnnualReduction;
+
+            if (covered >= shortfall)
             {
-                if (cheapest is null || option.NetCostPerTonne < cheapest)
-                {
-                    cheapest = option.NetCostPerTonne;
-                }
+                return option.NetCostPerTonne;
             }
         }
 
-        return cheapest;
+        return parameters.PenaltyPerTonne;
+    }
+
+    /// <summary>The abatement this bot could still build, cheapest net cost per tonne first.</summary>
+    private IEnumerable<AbatementOption> RemainingAbatement(Simulation simulation)
+    {
+        return _units
+            .SelectMany(unit => unit.AbatementOptions.Where(option => !simulation.Abatements.HasImplemented(unit, option)))
+            .OrderBy(option => option.NetCostPerTonne);
     }
 
     private static decimal Clamp(decimal value, decimal min, decimal max) =>

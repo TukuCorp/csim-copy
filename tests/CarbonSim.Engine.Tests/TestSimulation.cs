@@ -30,7 +30,11 @@ internal static class TestSimulation
     public const decimal CementUnitBaseline = 4_000_000m;
     public const decimal CompanyCapital = 1_000_000_000m;
 
-    public static Parameters Parameters(int years = 3, int auctionsPerYear = 4, TimeSpan? auctionDuration = null)
+    public static Parameters Parameters(
+        int years = 3,
+        int auctionsPerYear = 4,
+        TimeSpan? auctionDuration = null,
+        decimal governmentReserveToAuctionPercent = 0m)
     {
         return new Parameters
         {
@@ -50,6 +54,7 @@ internal static class TestSimulation
             TradingOpenShareOfYear = 0.60m,
             VolatilityBand = 0.10m,
             OverdraftInterestRate = 0.07m,
+            GovernmentReserveToAuctionPercent = governmentReserveToAuctionPercent,
             BausGrowthBySector =
             [
                 new SectorBausGrowth("Power", 0.02m, 0.06m),
@@ -76,7 +81,8 @@ internal static class TestSimulation
         int years = 3,
         TimeSpan? auctionDuration = null,
         decimal? capital = null,
-        decimal? overdraftLimit = null)
+        decimal? overdraftLimit = null,
+        decimal governmentReserveToAuctionPercent = 0m)
     {
         decimal companyCapital = capital ?? CompanyCapital;
         decimal credit = overdraftLimit ?? 0m;
@@ -95,7 +101,12 @@ internal static class TestSimulation
         AddUnit(aiPower, 3, "Song Xanh", PowerUnitBaseline);
         AddUnit(cementCompany, 4, "Kien Giang", CementUnitBaseline);
 
-        TradingSystem system = new(1, "Vietnam ETS", Parameters(years, auctionDuration: auctionDuration), [power, cement], [evn, cementCompany, aiPower]);
+        TradingSystem system = new(
+            1,
+            "Vietnam ETS",
+            Parameters(years, auctionDuration: auctionDuration, governmentReserveToAuctionPercent: governmentReserveToAuctionPercent),
+            [power, cement],
+            [evn, cementCompany, aiPower]);
 
         return Simulation.Create("Test simulation", seed, [system], [human, bot]);
     }
