@@ -5,43 +5,38 @@ using CarbonSim.Engine.Market;
 using CarbonSim.Engine.Market.Exchange;
 using CarbonSim.Engine.Market.Otc;
 using CarbonSim.Engine.Reporting;
+using CarbonSim.Engine.Run;
 using CarbonSim.Engine.Scenarios;
 using CarbonSim.Engine.Snapshot;
 using Microsoft.AspNetCore.SignalR;
 
 namespace CarbonSim.Web.Simulations;
 
-internal sealed record ChatEntry(int Year, string From, string Text);
+/// <summary>
+/// One line in a run's feed. <paramref name="To"/> is the company the line is addressed to, or null
+/// for the room: a sealed bid is the owner's business, so a notice naming one is addressed to its
+/// company and only that company's screen shows it.
+/// </summary>
+internal sealed record ChatEntry(int Year, string From, string Text, string? To = null);
 
-/// <summary>A clock notice ready to go out, with the figures the run had when it came due.</summary>
-internal sealed record NoticeAnnouncement(
-    ClockEventKind Kind,
+/// <summary>One change to the rules of a live run.</summary>
+public sealed record RuleChange(
     int Year,
-    int Sequence,
-    decimal OfferedVolume = 0m,
-    TimeSpan TimeLeft = default,
-    Auction? Auction = null);
-
-/// <summary>One order book as it stood when the run's gate was held.</summary>
-internal sealed record BookAnnouncement(Product Product, decimal? BestBid, decimal? BestOffer, decimal LastTrade);
+    string By,
+    decimal OldFloor,
+    decimal NewFloor,
+    decimal OldCeiling,
+    decimal NewCeiling);
 
 /// <summary>
-/// Everything the next broadcast should say, gathered while the run's gate is held. Gathering
-/// inside the gate is what stops the driver's tick and a player action racing over the same
-/// journal cursor or the same notice queue; sending afterwards keeps network waits out of the lock.
+/// Everything the next broadcast should say, gathered while the run's gate is held. The run module
+/// reports what its own state did - notices, fills, books, state and market - and the host adds the
+/// one thing the engine does not know about, its messaging switch. Gathering inside the gate is what
+/// stops the driver's tick and a player action racing over the same journal cursor or the same notice
+/// queue; sending afterwards keeps network waits out of the lock.
 /// </summary>
-internal sealed class Announcement
+internal sealed record Announcement(RunResult Facts)
 {
-    internal List<NoticeAnnouncement> Notices { get; } = [];
-
-    internal List<MarketTrade> Fills { get; } = [];
-
-    internal List<BookAnnouncement> Books { get; } = [];
-
-    internal (string State, int Year)? State { get; set; }
-
-    internal (string State, int Year, int Auction, bool Open)? Market { get; set; }
-
     /// <summary>The run's messaging switch, when it has moved since it was last announced.</summary>
     internal bool? Messaging { get; set; }
 }
@@ -50,43 +45,35 @@ internal sealed class Announcement
 /// the markets, the bots, the outbound event feed and the chat log.</summary>
 public sealed class HostedRun
 {
-    private readonly Dictionary<Product, BookAnnouncement> _announcedBooks = [];
     private readonly Dictionary<string, object> _shared = new(StringComparer.Ordinal);
 
-    private (string State, int Year)? _announcedState;
-    private (string State, int Year, int Auction, bool Open)? _announcedMarket;
     private bool _announcedMessaging = true;
     private long _revision;
 
-    internal HostedRun(
-        Simulation simulation,
-        SimulationClock clock,
-        Exchange exchange,
-        OtcMarket otc,
-        AuctionSchedule auctions,
-        SimulationBots? bots,
-        string name)
+    internal HostedRun(SimulationRun module, string name)
     {
-        Simulation = simulation;
-        Clock = clock;
-        Exchange = exchange;
-        Otc = otc;
-        Auctions = auctions;
-        Bots = bots;
+        Module = module;
         Name = name;
     }
 
-    public Simulation Simulation { get; }
+    /// <summary>The run module: the engine's own object, and the only thing that plays the run.</summary>
+    public SimulationRun Module { get; }
 
-    public SimulationClock Clock { get; }
+    public Simulation Simulation => Module.Simulation;
 
-    public Exchange Exchange { get; }
+    public SimulationClock Clock => Module.Clock;
 
-    public OtcMarket Otc { get; }
+    public Exchange Exchange => Module.Exchange;
 
-    public AuctionSchedule Auctions { get; }
+    public OtcMarket Otc => Module.Otc;
 
-    public SimulationBots? Bots { get; internal set; }
+    public AuctionSchedule Auctions => Module.Auctions;
+
+    public SimulationBots? Bots
+    {
+        get => Module.Bots;
+        internal set => Module.ReplaceBots(value);
+    }
 
     public string Name { get; }
 
@@ -130,98 +117,34 @@ public sealed class HostedRun
     /// <summary>How many run-wide values this run has had to build; a cache test watches it stall.</summary>
     internal int SharedBuilds { get; private set; }
 
-    /// <summary>Starts a new revision: the run changed, so every cached run-wide value is stale.</summary>
-    private void Invalidate()
+    /// <summary>
+    /// Starts a new revision: the run changed, so every cached run-wide value is stale. Called by the
+    /// one primitive every mutation goes through, so no path can leave a screen reading the old state.
+    /// </summary>
+    internal void Invalidate()
     {
         _revision++;
         _shared.Clear();
     }
 
-    /// <summary>Clock notices not yet broadcast, in event order; cleared auctions ride with their close notice.</summary>
-    public List<ClockEvent> PendingNotices { get; } = [];
-
-    /// <summary>Auctions cleared since the last broadcast, keyed by their close notice; drained by the announce step.</summary>
-    public Dictionary<ClockEvent, Auction> ClearedSinceAnnounced { get; } = [];
-
-    /// <summary>Journal trades handed to the feed so far; the next collection reports what follows.</summary>
-    public long JournalSeen { get; set; }
-
     internal List<ChatEntry> Chat { get; } = [];
 
     /// <summary>
-    /// Drains what the feed owes its watchers and moves the journal cursor on. Called with the
-    /// gate held: the one cursor, advanced once per fill, is the single source of TradeExecuted
-    /// for exchange fills, so the driver's tick and a player action can neither both report a fill
-    /// nor skip one. It describes only exchanges, because the auction and OTC paths report their
-    /// own trades from what they already know.
+    /// Every change an administrator has made to this run's rules, newest last: what moved, by how
+    /// much and who did it, so the trainer can re-announce it and the console can show it.
     /// </summary>
-    internal Announcement CollectAnnouncement()
+    public List<RuleChange> RuleChanges { get; } = [];
+
+    /// <summary>
+    /// The host's side of what the run module just did: the module's own facts, plus the one piece of
+    /// state the engine does not hold - the messaging switch. Called with the gate held, so the
+    /// announcement describes a state that cannot move under it.
+    /// </summary>
+    internal Announcement CollectAnnouncement(RunResult facts)
     {
-        Announcement announcement = new();
+        ArgumentNullException.ThrowIfNull(facts);
 
-        foreach (ClockEvent notice in PendingNotices)
-        {
-            switch (notice.Kind)
-            {
-                case ClockEventKind.AuctionOpened:
-                    announcement.Notices.Add(new NoticeAnnouncement(
-                        notice.Kind,
-                        notice.Year,
-                        notice.Auction,
-                        OfferedVolume: Auctions.ForSection(notice.Year, notice.Auction).OfferedVolume));
-                    break;
-
-                case ClockEventKind.AuctionEndingSoon:
-                    announcement.Notices.Add(new NoticeAnnouncement(
-                        notice.Kind, notice.Year, notice.Auction, TimeLeft: Clock.TimeToAuctionClose));
-                    break;
-
-                case ClockEventKind.AuctionClosed when ClearedSinceAnnounced.TryGetValue(notice, out Auction? cleared):
-                    announcement.Notices.Add(new NoticeAnnouncement(
-                        notice.Kind, notice.Year, notice.Auction, Auction: cleared));
-                    break;
-            }
-        }
-
-        PendingNotices.Clear();
-        ClearedSinceAnnounced.Clear();
-
-        IReadOnlyList<MarketTrade> trades = Simulation.Journal.Trades;
-
-        for (int index = (int)JournalSeen; index < trades.Count; index++)
-        {
-            if (trades[index].Channel == TradeChannel.Exchange)
-            {
-                announcement.Fills.Add(trades[index]);
-            }
-        }
-
-        JournalSeen = trades.Count;
-
-        foreach (Product product in Exchange.Products)
-        {
-            if (ChangedBook(product) is { } changed)
-            {
-                announcement.Books.Add(changed);
-            }
-        }
-
-        (string State, int Year) state = (Simulation.State.ToString(), Simulation.CurrentYear);
-
-        if (_announcedState != state)
-        {
-            _announcedState = state;
-            announcement.State = state;
-        }
-
-        (string State, int Year, int Auction, bool Open) market =
-            (Simulation.State.ToString(), Simulation.CurrentYear, Clock.CurrentAuction, Clock.IsAuctionOpen);
-
-        if (_announcedMarket != market)
-        {
-            _announcedMarket = market;
-            announcement.Market = market;
-        }
+        Announcement announcement = new(facts);
 
         if (_announcedMessaging != MessagingEnabled)
         {
@@ -229,27 +152,7 @@ public sealed class HostedRun
             announcement.Messaging = MessagingEnabled;
         }
 
-        // The run has been read to build this announcement, so this is the one place a change is
-        // certain to have been observed: everything cached for the screens belongs to the old state.
-        Invalidate();
-
         return announcement;
-    }
-
-    /// <summary>The book summary if it has moved since it was last announced, otherwise null.</summary>
-    private BookAnnouncement? ChangedBook(Product product)
-    {
-        OrderBook book = Exchange.Book(product);
-        BookAnnouncement current = new(product, book.BestBid, book.BestOffer, book.LastTradePrice);
-
-        if (_announcedBooks.TryGetValue(product, out BookAnnouncement? announced) && announced == current)
-        {
-            return null;
-        }
-
-        _announcedBooks[product] = current;
-
-        return current;
     }
 }
 
@@ -315,12 +218,8 @@ public sealed class SimulationRegistry
     {
         ArgumentNullException.ThrowIfNull(simulation);
 
-        SimulationClock clock = new(simulation, _time);
-        Exchange exchange = new(simulation);
-        OtcMarket otc = new(simulation);
-        AuctionSchedule auctions = AuctionSchedule.Build(simulation);
         SimulationBots? bots = BuildBots(simulation, automateHumans);
-        HostedRun run = new(simulation, clock, exchange, otc, auctions, bots, simulation.Name);
+        HostedRun run = new(SimulationRun.Create(simulation, _time, bots), simulation.Name);
 
         lock (_runs)
         {
@@ -367,12 +266,13 @@ public sealed class SimulationRegistry
         ArgumentNullException.ThrowIfNull(restored);
 
         HostedRun run = new(
-            restored.Simulation,
-            restored.Clock,
-            restored.Exchange,
-            restored.Otc,
-            restored.Auctions,
-            restored.Bots,
+            SimulationRun.Restore(
+                restored.Simulation,
+                restored.Clock,
+                restored.Exchange,
+                restored.Otc,
+                restored.Auctions,
+                restored.Bots),
             restored.Simulation.Name);
 
         lock (_runs)
@@ -403,18 +303,17 @@ public sealed class SimulationRegistry
     {
         string company = await ResolveCompanyAsync(actor).ConfigureAwait(false);
 
-        await MutateAndAnnounceAsync(simulationId, run =>
+        await ApplyAsync(simulationId, run =>
         {
             Unit unit = run.Simulation.FindUnit(unitId);
             RequireOwner(company, unit);
 
-            Auction auction = run.Auctions.ForSection(run.Simulation.CurrentYear, run.Clock.CurrentAuction);
-            auction.PlaceBid(unit, vintage, price, volume);
+            return run.Module.Bid(unit, vintage, price, volume);
         }).ConfigureAwait(false);
     }
 
-    /// <summary>Places an exchange order and reports the new top of book.</summary>
-    public async Task<long> PlaceOrderAsync(
+    /// <summary>Places an exchange order and reports what became of it.</summary>
+    public async Task<OrderOutcome> PlaceOrderAsync(
         Guid simulationId,
         string actor,
         int unitId,
@@ -428,12 +327,12 @@ public sealed class SimulationRegistry
     {
         string company = await ResolveCompanyAsync(actor).ConfigureAwait(false);
 
-        Order placed = await MutateAndAnnounceAsync(simulationId, run =>
+        RunResult facts = await ApplyAsync(simulationId, run =>
         {
             Unit unit = run.Simulation.FindUnit(unitId);
             RequireOwner(company, unit);
 
-            return run.Exchange.Place(new OrderRequest(
+            return run.Module.PlaceOrder(new OrderRequest(
                 unit,
                 ParseProduct(product),
                 ParseSide(side),
@@ -444,7 +343,7 @@ public sealed class SimulationRegistry
                 ParseFill(fillPolicy)));
         }).ConfigureAwait(false);
 
-        return placed.Id;
+        return OrderOutcome.From(facts);
     }
 
     /// <summary>Cancels an open order and reports the new top of book.</summary>
@@ -452,12 +351,12 @@ public sealed class SimulationRegistry
     {
         string company = await ResolveCompanyAsync(actor).ConfigureAwait(false);
 
-        await MutateAndAnnounceAsync(simulationId, run =>
+        await ApplyAsync(simulationId, run =>
         {
             Unit unit = run.Simulation.FindUnit(unitId);
             RequireOwner(company, unit);
 
-            run.Exchange.Cancel(unit.Company, orderId);
+            return run.Module.CancelOrder(unit.Company, orderId);
         }).ConfigureAwait(false);
     }
 
@@ -473,14 +372,17 @@ public sealed class SimulationRegistry
     {
         string company = await ResolveCompanyAsync(actor).ConfigureAwait(false);
 
-        OtcOffer offer = await MutateAndAnnounceAsync(simulationId, run =>
+        RunResult facts = await ApplyAsync(simulationId, run =>
         {
             Unit seller = run.Simulation.FindUnit(sellerUnitId);
             Unit buyer = run.Simulation.FindUnit(buyerUnitId);
             RequireOwner(company, seller);
 
-            return run.Otc.Send(seller, buyer, ParseProduct(product), price, volume);
+            return run.Module.SendOffer(seller, buyer, ParseProduct(product), price, volume);
         }).ConfigureAwait(false);
+
+        OtcOffer offer = facts.Offer
+            ?? throw new InvalidOperationException("The OTC market did not report the offer it took.");
 
         await _hub.Clients.Group(Group(simulationId)).OtcOfferReceived(
             offer.Id, offer.Seller.Name, offer.Buyer.Name, Describe(offer.Product), offer.Price, offer.Volume).ConfigureAwait(false);
@@ -493,13 +395,16 @@ public sealed class SimulationRegistry
     {
         string company = await ResolveCompanyAsync(actor).ConfigureAwait(false);
 
-        OtcOffer offer = await MutateAndAnnounceAsync(simulationId, run =>
+        RunResult facts = await ApplyAsync(simulationId, run =>
         {
             Unit buyer = run.Simulation.FindUnit(buyerUnitId);
             RequireOwner(company, buyer);
 
-            return accept ? run.Otc.Accept(buyer, offerId) : run.Otc.Reject(buyer, offerId);
+            return run.Module.AnswerOffer(buyer, offerId, accept);
         }).ConfigureAwait(false);
+
+        OtcOffer offer = facts.Offer
+            ?? throw new InvalidOperationException("The OTC market did not report the offer it answered.");
 
         await _hub.Clients.Group(Group(simulationId)).OtcOfferResolved(offer.Id, offer.State.ToString()).ConfigureAwait(false);
 
@@ -516,25 +421,22 @@ public sealed class SimulationRegistry
         ArgumentException.ThrowIfNullOrWhiteSpace(text);
 
         string company = await ResolveCompanyAsync(actor).ConfigureAwait(false);
-        HostedRun run = Run(simulationId);
-        ChatEntry entry;
+        ChatEntry? recorded = null;
 
-        await run.Gate.WaitAsync().ConfigureAwait(false);
-
-        try
+        await ApplyAsync(simulationId, run =>
         {
             if (!run.MessagingEnabled)
             {
                 throw new InvalidOperationException("The administrator has switched messaging off for this run.");
             }
 
-            entry = new ChatEntry(run.Simulation.CurrentYear, company, text.Trim());
-            run.Chat.Add(entry);
-        }
-        finally
-        {
-            run.Gate.Release();
-        }
+            recorded = new ChatEntry(run.Simulation.CurrentYear, company, text.Trim());
+            run.Chat.Add(recorded);
+
+            return run.Module.Inspect();
+        }).ConfigureAwait(false);
+
+        ChatEntry entry = recorded ?? throw new InvalidOperationException("The chat message was not recorded.");
 
         await _hub.Clients.Group(Group(simulationId)).MessageReceived(entry.From, entry.Text, entry.Year).ConfigureAwait(false);
     }
@@ -544,12 +446,12 @@ public sealed class SimulationRegistry
     {
         string group = Group(simulationId);
 
-        if (announcement.State is { } state)
+        if (announcement.Facts.State is { } state)
         {
             await _hub.Clients.Group(group).SimulationStateChanged(state.State, state.Year).ConfigureAwait(false);
         }
 
-        foreach (NoticeAnnouncement notice in announcement.Notices)
+        foreach (RunNotice notice in announcement.Facts.Notices)
         {
             switch (notice.Kind)
             {
@@ -561,13 +463,13 @@ public sealed class SimulationRegistry
                     await _hub.Clients.Group(group).AuctionClosing(notice.Year, notice.Sequence, notice.TimeLeft).ConfigureAwait(false);
                     break;
 
-                case ClockEventKind.AuctionClosed when notice.Auction is { } auction:
+                case ClockEventKind.AuctionClosed when notice.Cleared is { } auction:
                     await AnnounceClearedAsync(group, auction).ConfigureAwait(false);
                     break;
             }
         }
 
-        foreach (MarketTrade fill in announcement.Fills)
+        foreach (MarketTrade fill in announcement.Facts.Fills)
         {
             await _hub.Clients.Group(group).TradeExecuted(
                 fill.Channel.ToString(),
@@ -578,13 +480,13 @@ public sealed class SimulationRegistry
                 fill.Seller?.Name).ConfigureAwait(false);
         }
 
-        foreach (BookAnnouncement book in announcement.Books)
+        foreach (BookChange book in announcement.Facts.Books)
         {
             await _hub.Clients.Group(group).OrderBookChanged(
                 Describe(book.Product), book.BestBid, book.BestOffer, book.LastTrade).ConfigureAwait(false);
         }
 
-        if (announcement.Market is { } market)
+        if (announcement.Facts.Market is { } market)
         {
             await _hub.Clients.Group(group).MarketStateChanged(
                 market.State, market.Year, market.Auction, market.Open).ConfigureAwait(false);
@@ -623,67 +525,49 @@ public sealed class SimulationRegistry
         }
     }
 
-    internal async Task<T> MutateAsync<T>(Guid simulationId, Func<HostedRun, T> mutate)
-    {
-        HostedRun run = Run(simulationId);
-
-        await run.Gate.WaitAsync().ConfigureAwait(false);
-
-        try
-        {
-            return mutate(run);
-        }
-        finally
-        {
-            run.Gate.Release();
-        }
-    }
-
-    internal async Task MutateAsync(Guid simulationId, Action<HostedRun> mutate)
-    {
-        HostedRun run = Run(simulationId);
-
-        await run.Gate.WaitAsync().ConfigureAwait(false);
-
-        try
-        {
-            mutate(run);
-        }
-        finally
-        {
-            run.Gate.Release();
-        }
-    }
-
     /// <summary>
-    /// Changes one run and gathers what changed while the gate is still held, then broadcasts
-    /// after letting go: a player action can neither read the journal while the driver is writing
-    /// it nor hold the lock across a network wait.
+    /// The one way a run changes. It takes the run's gate, runs the operation through the run module,
+    /// collects what the run owes its watchers, invalidates the screens' run-wide cache, saves when the
+    /// caller says this change has to be kept, then lets the gate go and broadcasts what it gathered.
+    /// Every mutation in the host goes through here - the driver's tick, a player's order, an
+    /// administrator's control - so no path can broadcast half a change, leave a cached view stale, or
+    /// skip the save. A read is <see cref="ReadAsync"/>, which never moves the revision.
     /// </summary>
-    internal async Task MutateAndAnnounceAsync(Guid simulationId, Action<HostedRun> mutate)
+    internal async Task<RunResult> ApplyAsync(
+        Guid simulationId,
+        Func<HostedRun, RunResult> operation,
+        Func<HostedRun, Task>? save = null,
+        CancellationToken cancellationToken = default)
     {
-        Announcement announcement = await MutateAsync(simulationId, run =>
-        {
-            mutate(run);
+        ArgumentNullException.ThrowIfNull(operation);
 
-            return run.CollectAnnouncement();
-        }).ConfigureAwait(false);
+        HostedRun run = Run(simulationId);
+        RunResult facts;
+        Announcement announcement;
+
+        await run.Gate.WaitAsync(cancellationToken).ConfigureAwait(false);
+
+        try
+        {
+            facts = operation(run);
+            announcement = run.CollectAnnouncement(facts);
+
+            // The run has changed, so every run-wide value the screens cached belongs to the old state.
+            run.Invalidate();
+
+            if (save is not null)
+            {
+                await save(run).ConfigureAwait(false);
+            }
+        }
+        finally
+        {
+            run.Gate.Release();
+        }
 
         await BroadcastAsync(simulationId, announcement).ConfigureAwait(false);
-    }
 
-    internal async Task<T> MutateAndAnnounceAsync<T>(Guid simulationId, Func<HostedRun, T> mutate)
-    {
-        (T Result, Announcement Announcement) outcome = await MutateAsync(simulationId, run =>
-        {
-            T result = mutate(run);
-
-            return (Result: result, Announcement: run.CollectAnnouncement());
-        }).ConfigureAwait(false);
-
-        await BroadcastAsync(simulationId, outcome.Announcement).ConfigureAwait(false);
-
-        return outcome.Result;
+        return facts;
     }
 
     internal Task AnnounceTradeAsync(
@@ -725,7 +609,7 @@ public sealed class SimulationRegistry
     {
         string company = await ResolveCompanyAsync(actor).ConfigureAwait(false);
 
-        await MutateAndAnnounceAsync(simulationId, run =>
+        await ApplyAsync(simulationId, run =>
         {
             Unit unit = run.Simulation.FindUnit(unitId);
             RequireOwner(company, unit);
@@ -739,6 +623,8 @@ public sealed class SimulationRegistry
             }
 
             run.Simulation.Abatements.Implement(unit, unit.AbatementOptions[optionIndex], run.Simulation.CurrentYear);
+
+            return run.Module.Inspect();
         }).ConfigureAwait(false);
     }
 

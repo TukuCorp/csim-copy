@@ -11,13 +11,13 @@
 else
 {
     <section class="card wide" tabindex="0">
-        <QuickGrid Items="@view.Leaderboard.AsQueryable()" Class="grid">
+        <QuickGrid Items="@view.Leaderboard.AsQueryable()" Class="grid" RowClass="@((LeaderboardRow row) => row.IsMine ? "row-mine" : string.Empty)">
             <TemplateColumn Title="@Strings["Rank"]" Context="row">@row.Rank</TemplateColumn>
             <TemplateColumn Title="@Strings["Company"]" Context="row">@row.Company @(row.IsMine ? "*" : null)</TemplateColumn>
-            <TemplateColumn Title="@Strings["UnitNamePlayer"]" Context="row">@row.Unit (@row.Player@(row.IsAutomated ? " - AI" : null))</TemplateColumn>
+            <TemplateColumn Title="@Strings["UnitNamePlayer"]" Context="row">@row.UnitLabel</TemplateColumn>
             <TemplateColumn Title="@Strings["CostOfCompliance"]" Context="row">@Display.Signed(row.OverallCostOfCompliance)</TemplateColumn>
             <TemplateColumn Title="@Strings["OverallMarginalCostOfCompliance"]" Context="row">@Display.Signed(row.MarginalCostOfCompliance)</TemplateColumn>
-            <TemplateColumn Title="@Strings["FinalLongShortPosition"]" Context="row">@Display.Tonnes(row.FinalPosition)</TemplateColumn>
+            <TemplateColumn Title="@Strings["FinalLongShortPosition"]" Context="row">@Display.Position(row.FinalPosition, Strings)</TemplateColumn>
             <TemplateColumn Title="@Strings["System"]" Context="row">@view.System.Name</TemplateColumn>
         </QuickGrid>
     </section>

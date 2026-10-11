@@ -1,7 +1,7 @@
 {
   "name": "Vietnam ETS Pilot 2024",
   "seed": 20240916,
-  "notes": "Vietnam ETS pilot scenario authored for this project from public documentation only; no content is taken from the CarbonSim application. Parameters follow the ETS parameters slide of the Vietnam trainer deck: cap 355,850,000 t CO2e, 3%/yr cap reduction (the deck states a 15-18% reduction over the term), 90% free allocation, 4 auctions per year, USD 100/300 auction collar, 10% offset limit, banking capped at the compliance obligation, penalty USD 300 plus one allowance, 10% exchange volatility band, and 20-30 minutes per virtual year (this file uses 20). The deck quotes the collar and penalty in US dollars, so the engine internal money unit is the US dollar and the host may display Vietnamese dong instead at a configured rate. Enterprises: the deck says 242 units (about 36 human and 206 AI); this file has 242 units in 242 companies, of which 37 are human and 205 are AI. Term: the deck offers 5-6 years while this file runs 3, so the seeded fidelity run and the Phase 1-4 tests stay short; the term is a trainer setting. Auction window: the deck timeline shows 2:45 windows with 2:15 interims (55% open), while this file opens each auction for 2:15 of a 5:00 section, that is 45% of the year in total open time, which reads the deck 45% of the year as total open time. Sector emission shares follow the covered-emissions split in the ETS Task 9 technical report (power 43%, cement 33%, steel 24%). All company names are original fiction written for this project. AI participants are named AI Sector NN. Unit baseline emissions are placeholders: year-1 business-as-usual totals exactly the cap, split evenly inside each sector, so the fleet starts short by the volume auctioned and the gap widens as the cap falls. Company capital is a placeholder at 500 x the unit baseline emissions, with a credit limit of half that and 7%/yr interest on a negative balance. Unit operating profit is a placeholder at 40 currency units per tonne of baseline emissions. Abatement menus are placeholders, sized as a share of each unit baseline and priced per tonne. Replace these placeholders when the Vietnam instance data or the trainer parameter sheets are available. governmentReserveToAuctionPercent is the share of the government reserve, including volume an auction could not sell, offered again in the next year's auctions; it is 0.0 here because offering any of it again re-supplies the volume the price path depends on leaving unsold, so the price-path and vintage-premium envelopes stop holding (the measurements are in activeContext.md).",
+  "notes": "Vietnam ETS pilot scenario authored for this project from public documentation only; no content is taken from the CarbonSim application. Parameters follow the ETS parameters slide of the Vietnam trainer deck: cap 355,850,000 t CO2e, 3%/yr cap reduction (the deck states a 15-18% reduction over the term), 90% free allocation, 4 auctions per year, USD 100/300 auction collar, 10% offset limit, banking capped at the compliance obligation, penalty USD 300 plus one allowance, 10% exchange volatility band, and 20-30 minutes per virtual year (this file uses 20). The deck quotes the collar and penalty in US dollars, so the engine internal money unit is the US dollar and the host may display Vietnamese dong instead at a configured rate. Enterprises: the deck says 242 units (about 36 human and 206 AI); this file has 242 units in 242 companies, of which 37 are human and 205 are AI. Term: the deck offers 5-6 years while this file runs 3, so the seeded fidelity run and the Phase 1-4 tests stay short; the term is a trainer setting. Auction window: the deck timeline shows 2:45 windows with 2:15 interims (55% open), while this file opens each auction for 2:15 of a 5:00 section, that is 45% of the year in total open time, which reads the deck 45% of the year as total open time. Sector emission shares follow the covered-emissions split in the ETS Task 9 technical report (power 43%, cement 33%, steel 24%). All company names are original fiction written for this project. AI participants are named AI Sector NN. Unit baseline emissions are placeholders: year-1 business-as-usual totals exactly the cap, split evenly inside each sector, so the fleet starts short by the volume auctioned and the gap widens as the cap falls. Company capital is a placeholder at 500 x the unit baseline emissions, with a credit limit of half that and 7%/yr interest on a negative balance; on this fleet that is about 1.28 bn for a 2.55 Mt unit, roughly fifty times a year of compliance cost at the auction floor, so cash is deliberately not the binding constraint and the exercise turns on abatement and trading rather than on financing. Unit operating profit is a placeholder at 40 currency units per tonne of baseline emissions. Abatement menus are placeholders, sized as a share of each unit baseline and priced per tonne; each menu now carries three rungs at about 5, 130 and 240 currency units per tonne over the project service life, so a bot that abates while a project costs less than the tonne it would otherwise buy can work up the ladder as the market tightens. Only the cheap rung is economic at the year-one floor, which is what keeps year-one abatement at about one per cent of the cap. Replace these placeholders when the Vietnam instance data or the trainer parameter sheets are available. governmentReserveToAuctionPercent is the share of the government reserve, including volume an auction could not sell, offered again in the next year's auctions; it is 0.0 here: re-offering the reserve re-supplies the volume the price path depends on leaving unsold, and the later vintages stop pricing above the current one once that volume is sold again in later years. Forward-cover bidding, not the reserve, is what carries supply between years. Allocation factors are a placeholder grandfathering pattern, original fiction written for this project: one unit in ten is weighted at 1.5 and the rest at 0.9444, which leaves the forty or so units on the generous basis holding more allowances than they emit. They sell the surplus on the exchange, which is what gives the market a sell side; with every unit on the same basis the whole fleet is short by the same fraction of its baseline and nothing is ever offered, so a human can only buy at auction. The weights are mean-preserving, so the sector cakes and every cap figure are unchanged, and only the split between companies moves. forwardVintageShare is the share of the next year's auctionable volume that a year's last auction sells early as a forward vintage; it is 0.20 here, the share the fidelity calibration measures, and it is a setting of the run so that the host, the bots and every harness build the same schedule.",
   "parameters": {
     "cap": 355850000,
     "annualCapReductionRate": 0.03,
@@ -19,6 +19,7 @@
     "tradingOpenShareOfYear": 0.45,
     "volatilityBand": 0.1,
     "governmentReserveToAuctionPercent": 0.0,
+    "forwardVintageShare": 0.20,
     "bausGrowthBySector": [
       {
         "sector": "Power",
@@ -56,7 +57,7 @@
           "code": "P2",
           "name": "Waste heat recovery and fuel switch",
           "annualReductionShare": 0.05,
-          "upfrontCostPerTonne": 1800,
+          "upfrontCostPerTonne": 1440,
           "annualNetRevenuePerTonne": -10,
           "implementationYears": 1,
           "lifetimeYears": 12
@@ -65,7 +66,7 @@
           "code": "P3",
           "name": "Biomass co-firing and carbon capture",
           "annualReductionShare": 0.15,
-          "upfrontCostPerTonne": 3600,
+          "upfrontCostPerTonne": 4000,
           "annualNetRevenuePerTonne": -40,
           "implementationYears": 2,
           "lifetimeYears": 20
@@ -80,7 +81,7 @@
           "code": "C1",
           "name": "Kiln thermal efficiency",
           "annualReductionShare": 0.01,
-          "upfrontCostPerTonne": 40,
+          "upfrontCostPerTonne": 24,
           "annualNetRevenuePerTonne": -3,
           "implementationYears": 1,
           "lifetimeYears": 12
@@ -89,7 +90,7 @@
           "code": "C2",
           "name": "Alternative fuels and raw materials",
           "annualReductionShare": 0.08,
-          "upfrontCostPerTonne": 1500,
+          "upfrontCostPerTonne": 1830,
           "annualNetRevenuePerTonne": -8,
           "implementationYears": 1,
           "lifetimeYears": 15
@@ -98,7 +99,7 @@
           "code": "C3",
           "name": "Clinker substitution",
           "annualReductionShare": 0.12,
-          "upfrontCostPerTonne": 2400,
+          "upfrontCostPerTonne": 4900,
           "annualNetRevenuePerTonne": 5,
           "implementationYears": 2,
           "lifetimeYears": 20
@@ -113,7 +114,7 @@
           "code": "S1",
           "name": "Process efficiency and yield",
           "annualReductionShare": 0.01,
-          "upfrontCostPerTonne": 50,
+          "upfrontCostPerTonne": 12,
           "annualNetRevenuePerTonne": -4,
           "implementationYears": 1,
           "lifetimeYears": 12
@@ -122,7 +123,7 @@
           "code": "S2",
           "name": "Electric arc furnace scrap route",
           "annualReductionShare": 0.1,
-          "upfrontCostPerTonne": 2400,
+          "upfrontCostPerTonne": 2200,
           "annualNetRevenuePerTonne": -20,
           "implementationYears": 2,
           "lifetimeYears": 20
@@ -131,7 +132,7 @@
           "code": "S3",
           "name": "Hydrogen direct reduced iron",
           "annualReductionShare": 0.2,
-          "upfrontCostPerTonne": 4800,
+          "upfrontCostPerTonne": 4750,
           "annualNetRevenuePerTonne": -50,
           "implementationYears": 2,
           "lifetimeYears": 25
@@ -149,6 +150,7 @@
         {
           "name": "Công ty Điện lực Bình Minh",
           "baselineEmissions": 2550258,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 102010320
         }
       ],
@@ -163,6 +165,7 @@
         {
           "name": "Công ty Điện lực Hồng Hà",
           "baselineEmissions": 2550258,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 102010320
         }
       ],
@@ -177,6 +180,7 @@
         {
           "name": "Công ty Điện lực Trường Sơn",
           "baselineEmissions": 2550258,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 102010320
         }
       ],
@@ -191,6 +195,7 @@
         {
           "name": "Công ty Điện lực Đông Dương",
           "baselineEmissions": 2550258,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 102010320
         }
       ],
@@ -205,6 +210,7 @@
         {
           "name": "Công ty Điện lực Tân Hưng",
           "baselineEmissions": 2550258,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 102010320
         }
       ],
@@ -219,6 +225,7 @@
         {
           "name": "Công ty Điện lực Kim Long",
           "baselineEmissions": 2550258,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 102010320
         }
       ],
@@ -233,6 +240,7 @@
         {
           "name": "Công ty Điện lực Thăng Long",
           "baselineEmissions": 2550258,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 102010320
         }
       ],
@@ -247,6 +255,7 @@
         {
           "name": "Công ty Điện lực Hải Đăng",
           "baselineEmissions": 2550258,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 102010320
         }
       ],
@@ -261,6 +270,7 @@
         {
           "name": "Công ty Điện lực Phú An",
           "baselineEmissions": 2550258,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 102010320
         }
       ],
@@ -275,6 +285,7 @@
         {
           "name": "Công ty Điện lực Nam Việt",
           "baselineEmissions": 2550258,
+          "allocationFactor": 1.5,
           "normalOperatingProfit": 102010320
         }
       ],
@@ -289,6 +300,7 @@
         {
           "name": "Công ty Điện và Khí đốt Bình Nguyên",
           "baselineEmissions": 2550258,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 102010320
         }
       ],
@@ -303,6 +315,7 @@
         {
           "name": "Công ty Điện và Khí đốt Tân Lộc",
           "baselineEmissions": 2550258,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 102010320
         }
       ],
@@ -317,6 +330,7 @@
         {
           "name": "Công ty Điện và Khí đốt Vân Sơn",
           "baselineEmissions": 2550258,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 102010320
         }
       ],
@@ -331,6 +345,7 @@
         {
           "name": "Công ty Điện và Khí đốt Thái Hòa",
           "baselineEmissions": 2550258,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 102010320
         }
       ],
@@ -345,6 +360,7 @@
         {
           "name": "Công ty Điện và Khí đốt Hùng Vương",
           "baselineEmissions": 2550258,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 102010320
         }
       ],
@@ -359,6 +375,7 @@
         {
           "name": "Công ty Điện và Khí đốt Đông Á",
           "baselineEmissions": 2550258,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 102010320
         }
       ],
@@ -373,6 +390,7 @@
         {
           "name": "Công ty Năng lượng Sao Mai",
           "baselineEmissions": 2550258,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 102010320
         }
       ],
@@ -387,6 +405,7 @@
         {
           "name": "Công ty Năng lượng Ánh Dương",
           "baselineEmissions": 2550258,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 102010320
         }
       ],
@@ -401,6 +420,7 @@
         {
           "name": "Công ty Năng lượng Núi Rồng",
           "baselineEmissions": 2550258,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 102010320
         }
       ],
@@ -415,6 +435,7 @@
         {
           "name": "Công ty Năng lượng Đại Phát",
           "baselineEmissions": 2550258,
+          "allocationFactor": 1.5,
           "normalOperatingProfit": 102010320
         }
       ],
@@ -429,6 +450,7 @@
         {
           "name": "Công ty Năng lượng Tiên Sơn",
           "baselineEmissions": 2550258,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 102010320
         }
       ],
@@ -443,6 +465,7 @@
         {
           "name": "Công ty Năng lượng Hưng Thịnh",
           "baselineEmissions": 2550258,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 102010320
         }
       ],
@@ -457,6 +480,7 @@
         {
           "name": "Nhà máy Nhiệt điện Sông Xanh",
           "baselineEmissions": 2550258,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 102010320
         }
       ],
@@ -471,6 +495,7 @@
         {
           "name": "Nhà máy Nhiệt điện Đồng Xuân",
           "baselineEmissions": 2550258,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 102010320
         }
       ],
@@ -485,6 +510,7 @@
         {
           "name": "Nhà máy Nhiệt điện Cẩm Phú",
           "baselineEmissions": 2550258,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 102010320
         }
       ],
@@ -499,6 +525,7 @@
         {
           "name": "Nhà máy Nhiệt điện Yên Khánh",
           "baselineEmissions": 2550258,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 102010320
         }
       ],
@@ -513,6 +540,7 @@
         {
           "name": "Nhà máy Nhiệt điện Vĩnh An",
           "baselineEmissions": 2550258,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 102010320
         }
       ],
@@ -527,6 +555,7 @@
         {
           "name": "Nhà máy Nhiệt điện Trung Hà",
           "baselineEmissions": 2550258,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 102010320
         }
       ],
@@ -541,6 +570,7 @@
         {
           "name": "Nhà máy Nhiệt điện Lạc Hồng",
           "baselineEmissions": 2550258,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 102010320
         }
       ],
@@ -555,6 +585,7 @@
         {
           "name": "Nhà máy Nhiệt điện Nam Cường",
           "baselineEmissions": 2550258,
+          "allocationFactor": 1.5,
           "normalOperatingProfit": 102010320
         }
       ],
@@ -569,6 +600,7 @@
         {
           "name": "Nhà máy Nhiệt điện Tân Phú",
           "baselineEmissions": 2550258,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 102010320
         }
       ],
@@ -583,6 +615,7 @@
         {
           "name": "Nhà máy Nhiệt điện Hải Yến",
           "baselineEmissions": 2550258,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 102010320
         }
       ],
@@ -597,6 +630,7 @@
         {
           "name": "Nhà máy Nhiệt điện Phú Khang",
           "baselineEmissions": 2550258,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 102010320
         }
       ],
@@ -611,6 +645,7 @@
         {
           "name": "Nhà máy Nhiệt điện Tân Thịnh",
           "baselineEmissions": 2550258,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 102010320
         }
       ],
@@ -625,6 +660,7 @@
         {
           "name": "Nhà máy Nhiệt điện Mai Trang",
           "baselineEmissions": 2550258,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 102010320
         }
       ],
@@ -639,6 +675,7 @@
         {
           "name": "AI Power 01",
           "baselineEmissions": 2550258,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 102010320
         }
       ],
@@ -653,6 +690,7 @@
         {
           "name": "AI Power 02",
           "baselineEmissions": 2550258,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 102010320
         }
       ],
@@ -667,6 +705,7 @@
         {
           "name": "AI Power 03",
           "baselineEmissions": 2550258,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 102010320
         }
       ],
@@ -681,6 +720,7 @@
         {
           "name": "AI Power 04",
           "baselineEmissions": 2550258,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 102010320
         }
       ],
@@ -695,6 +735,7 @@
         {
           "name": "AI Power 05",
           "baselineEmissions": 2550258,
+          "allocationFactor": 1.5,
           "normalOperatingProfit": 102010320
         }
       ],
@@ -709,6 +750,7 @@
         {
           "name": "AI Power 06",
           "baselineEmissions": 2550258,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 102010320
         }
       ],
@@ -723,6 +765,7 @@
         {
           "name": "AI Power 07",
           "baselineEmissions": 2550258,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 102010320
         }
       ],
@@ -737,6 +780,7 @@
         {
           "name": "AI Power 08",
           "baselineEmissions": 2550258,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 102010320
         }
       ],
@@ -751,6 +795,7 @@
         {
           "name": "AI Power 09",
           "baselineEmissions": 2550258,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 102010320
         }
       ],
@@ -765,6 +810,7 @@
         {
           "name": "AI Power 10",
           "baselineEmissions": 2550258,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 102010320
         }
       ],
@@ -779,6 +825,7 @@
         {
           "name": "AI Power 11",
           "baselineEmissions": 2550258,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 102010320
         }
       ],
@@ -793,6 +840,7 @@
         {
           "name": "AI Power 12",
           "baselineEmissions": 2550258,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 102010320
         }
       ],
@@ -807,6 +855,7 @@
         {
           "name": "AI Power 13",
           "baselineEmissions": 2550258,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 102010320
         }
       ],
@@ -821,6 +870,7 @@
         {
           "name": "AI Power 14",
           "baselineEmissions": 2550258,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 102010320
         }
       ],
@@ -835,6 +885,7 @@
         {
           "name": "AI Power 15",
           "baselineEmissions": 2550258,
+          "allocationFactor": 1.5,
           "normalOperatingProfit": 102010320
         }
       ],
@@ -849,6 +900,7 @@
         {
           "name": "AI Power 16",
           "baselineEmissions": 2550258,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 102010320
         }
       ],
@@ -863,6 +915,7 @@
         {
           "name": "AI Power 17",
           "baselineEmissions": 2550258,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 102010320
         }
       ],
@@ -877,6 +930,7 @@
         {
           "name": "AI Power 18",
           "baselineEmissions": 2550258,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 102010320
         }
       ],
@@ -891,6 +945,7 @@
         {
           "name": "AI Power 19",
           "baselineEmissions": 2550258,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 102010320
         }
       ],
@@ -905,6 +960,7 @@
         {
           "name": "AI Power 20",
           "baselineEmissions": 2550258,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 102010320
         }
       ],
@@ -919,6 +975,7 @@
         {
           "name": "AI Power 21",
           "baselineEmissions": 2550258,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 102010320
         }
       ],
@@ -933,6 +990,7 @@
         {
           "name": "AI Power 22",
           "baselineEmissions": 2550258,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 102010320
         }
       ],
@@ -947,6 +1005,7 @@
         {
           "name": "AI Power 23",
           "baselineEmissions": 2550258,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 102010320
         }
       ],
@@ -961,6 +1020,7 @@
         {
           "name": "AI Power 24",
           "baselineEmissions": 2550258,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 102010320
         }
       ],
@@ -975,6 +1035,7 @@
         {
           "name": "AI Power 25",
           "baselineEmissions": 2550278,
+          "allocationFactor": 1.5,
           "normalOperatingProfit": 102011120
         }
       ],
@@ -989,6 +1050,7 @@
         {
           "name": "Công ty Xi măng Đá Trắng",
           "baselineEmissions": 1304783,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 52191320
         }
       ],
@@ -1003,6 +1065,7 @@
         {
           "name": "AI Cement 01",
           "baselineEmissions": 1304783,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 52191320
         }
       ],
@@ -1017,6 +1080,7 @@
         {
           "name": "AI Cement 02",
           "baselineEmissions": 1304783,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 52191320
         }
       ],
@@ -1031,6 +1095,7 @@
         {
           "name": "AI Cement 03",
           "baselineEmissions": 1304783,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 52191320
         }
       ],
@@ -1045,6 +1110,7 @@
         {
           "name": "AI Cement 04",
           "baselineEmissions": 1304783,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 52191320
         }
       ],
@@ -1059,6 +1125,7 @@
         {
           "name": "AI Cement 05",
           "baselineEmissions": 1304783,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 52191320
         }
       ],
@@ -1073,6 +1140,7 @@
         {
           "name": "AI Cement 06",
           "baselineEmissions": 1304783,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 52191320
         }
       ],
@@ -1087,6 +1155,7 @@
         {
           "name": "AI Cement 07",
           "baselineEmissions": 1304783,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 52191320
         }
       ],
@@ -1101,6 +1170,7 @@
         {
           "name": "AI Cement 08",
           "baselineEmissions": 1304783,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 52191320
         }
       ],
@@ -1115,6 +1185,7 @@
         {
           "name": "AI Cement 09",
           "baselineEmissions": 1304783,
+          "allocationFactor": 1.5,
           "normalOperatingProfit": 52191320
         }
       ],
@@ -1129,6 +1200,7 @@
         {
           "name": "AI Cement 10",
           "baselineEmissions": 1304783,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 52191320
         }
       ],
@@ -1143,6 +1215,7 @@
         {
           "name": "AI Cement 11",
           "baselineEmissions": 1304783,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 52191320
         }
       ],
@@ -1157,6 +1230,7 @@
         {
           "name": "AI Cement 12",
           "baselineEmissions": 1304783,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 52191320
         }
       ],
@@ -1171,6 +1245,7 @@
         {
           "name": "AI Cement 13",
           "baselineEmissions": 1304783,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 52191320
         }
       ],
@@ -1185,6 +1260,7 @@
         {
           "name": "AI Cement 14",
           "baselineEmissions": 1304783,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 52191320
         }
       ],
@@ -1199,6 +1275,7 @@
         {
           "name": "AI Cement 15",
           "baselineEmissions": 1304783,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 52191320
         }
       ],
@@ -1213,6 +1290,7 @@
         {
           "name": "AI Cement 16",
           "baselineEmissions": 1304783,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 52191320
         }
       ],
@@ -1227,6 +1305,7 @@
         {
           "name": "AI Cement 17",
           "baselineEmissions": 1304783,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 52191320
         }
       ],
@@ -1241,6 +1320,7 @@
         {
           "name": "AI Cement 18",
           "baselineEmissions": 1304783,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 52191320
         }
       ],
@@ -1255,6 +1335,7 @@
         {
           "name": "AI Cement 19",
           "baselineEmissions": 1304783,
+          "allocationFactor": 1.5,
           "normalOperatingProfit": 52191320
         }
       ],
@@ -1269,6 +1350,7 @@
         {
           "name": "AI Cement 20",
           "baselineEmissions": 1304783,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 52191320
         }
       ],
@@ -1283,6 +1365,7 @@
         {
           "name": "AI Cement 21",
           "baselineEmissions": 1304783,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 52191320
         }
       ],
@@ -1297,6 +1380,7 @@
         {
           "name": "AI Cement 22",
           "baselineEmissions": 1304783,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 52191320
         }
       ],
@@ -1311,6 +1395,7 @@
         {
           "name": "AI Cement 23",
           "baselineEmissions": 1304783,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 52191320
         }
       ],
@@ -1325,6 +1410,7 @@
         {
           "name": "AI Cement 24",
           "baselineEmissions": 1304783,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 52191320
         }
       ],
@@ -1339,6 +1425,7 @@
         {
           "name": "AI Cement 25",
           "baselineEmissions": 1304783,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 52191320
         }
       ],
@@ -1353,6 +1440,7 @@
         {
           "name": "AI Cement 26",
           "baselineEmissions": 1304783,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 52191320
         }
       ],
@@ -1367,6 +1455,7 @@
         {
           "name": "AI Cement 27",
           "baselineEmissions": 1304783,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 52191320
         }
       ],
@@ -1381,6 +1470,7 @@
         {
           "name": "AI Cement 28",
           "baselineEmissions": 1304783,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 52191320
         }
       ],
@@ -1395,6 +1485,7 @@
         {
           "name": "AI Cement 29",
           "baselineEmissions": 1304783,
+          "allocationFactor": 1.5,
           "normalOperatingProfit": 52191320
         }
       ],
@@ -1409,6 +1500,7 @@
         {
           "name": "AI Cement 30",
           "baselineEmissions": 1304783,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 52191320
         }
       ],
@@ -1423,6 +1515,7 @@
         {
           "name": "AI Cement 31",
           "baselineEmissions": 1304783,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 52191320
         }
       ],
@@ -1437,6 +1530,7 @@
         {
           "name": "AI Cement 32",
           "baselineEmissions": 1304783,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 52191320
         }
       ],
@@ -1451,6 +1545,7 @@
         {
           "name": "AI Cement 33",
           "baselineEmissions": 1304783,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 52191320
         }
       ],
@@ -1465,6 +1560,7 @@
         {
           "name": "AI Cement 34",
           "baselineEmissions": 1304783,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 52191320
         }
       ],
@@ -1479,6 +1575,7 @@
         {
           "name": "AI Cement 35",
           "baselineEmissions": 1304783,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 52191320
         }
       ],
@@ -1493,6 +1590,7 @@
         {
           "name": "AI Cement 36",
           "baselineEmissions": 1304783,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 52191320
         }
       ],
@@ -1507,6 +1605,7 @@
         {
           "name": "AI Cement 37",
           "baselineEmissions": 1304783,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 52191320
         }
       ],
@@ -1521,6 +1620,7 @@
         {
           "name": "AI Cement 38",
           "baselineEmissions": 1304783,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 52191320
         }
       ],
@@ -1535,6 +1635,7 @@
         {
           "name": "AI Cement 39",
           "baselineEmissions": 1304783,
+          "allocationFactor": 1.5,
           "normalOperatingProfit": 52191320
         }
       ],
@@ -1549,6 +1650,7 @@
         {
           "name": "AI Cement 40",
           "baselineEmissions": 1304783,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 52191320
         }
       ],
@@ -1563,6 +1665,7 @@
         {
           "name": "AI Cement 41",
           "baselineEmissions": 1304783,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 52191320
         }
       ],
@@ -1577,6 +1680,7 @@
         {
           "name": "AI Cement 42",
           "baselineEmissions": 1304783,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 52191320
         }
       ],
@@ -1591,6 +1695,7 @@
         {
           "name": "AI Cement 43",
           "baselineEmissions": 1304783,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 52191320
         }
       ],
@@ -1605,6 +1710,7 @@
         {
           "name": "AI Cement 44",
           "baselineEmissions": 1304783,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 52191320
         }
       ],
@@ -1619,6 +1725,7 @@
         {
           "name": "AI Cement 45",
           "baselineEmissions": 1304783,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 52191320
         }
       ],
@@ -1633,6 +1740,7 @@
         {
           "name": "AI Cement 46",
           "baselineEmissions": 1304783,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 52191320
         }
       ],
@@ -1647,6 +1755,7 @@
         {
           "name": "AI Cement 47",
           "baselineEmissions": 1304783,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 52191320
         }
       ],
@@ -1661,6 +1770,7 @@
         {
           "name": "AI Cement 48",
           "baselineEmissions": 1304783,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 52191320
         }
       ],
@@ -1675,6 +1785,7 @@
         {
           "name": "AI Cement 49",
           "baselineEmissions": 1304783,
+          "allocationFactor": 1.5,
           "normalOperatingProfit": 52191320
         }
       ],
@@ -1689,6 +1800,7 @@
         {
           "name": "AI Cement 50",
           "baselineEmissions": 1304783,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 52191320
         }
       ],
@@ -1703,6 +1815,7 @@
         {
           "name": "AI Cement 51",
           "baselineEmissions": 1304783,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 52191320
         }
       ],
@@ -1717,6 +1830,7 @@
         {
           "name": "AI Cement 52",
           "baselineEmissions": 1304783,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 52191320
         }
       ],
@@ -1731,6 +1845,7 @@
         {
           "name": "AI Cement 53",
           "baselineEmissions": 1304783,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 52191320
         }
       ],
@@ -1745,6 +1860,7 @@
         {
           "name": "AI Cement 54",
           "baselineEmissions": 1304783,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 52191320
         }
       ],
@@ -1759,6 +1875,7 @@
         {
           "name": "AI Cement 55",
           "baselineEmissions": 1304783,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 52191320
         }
       ],
@@ -1773,6 +1890,7 @@
         {
           "name": "AI Cement 56",
           "baselineEmissions": 1304783,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 52191320
         }
       ],
@@ -1787,6 +1905,7 @@
         {
           "name": "AI Cement 57",
           "baselineEmissions": 1304783,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 52191320
         }
       ],
@@ -1801,6 +1920,7 @@
         {
           "name": "AI Cement 58",
           "baselineEmissions": 1304783,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 52191320
         }
       ],
@@ -1815,6 +1935,7 @@
         {
           "name": "AI Cement 59",
           "baselineEmissions": 1304783,
+          "allocationFactor": 1.5,
           "normalOperatingProfit": 52191320
         }
       ],
@@ -1829,6 +1950,7 @@
         {
           "name": "AI Cement 60",
           "baselineEmissions": 1304783,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 52191320
         }
       ],
@@ -1843,6 +1965,7 @@
         {
           "name": "AI Cement 61",
           "baselineEmissions": 1304783,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 52191320
         }
       ],
@@ -1857,6 +1980,7 @@
         {
           "name": "AI Cement 62",
           "baselineEmissions": 1304783,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 52191320
         }
       ],
@@ -1871,6 +1995,7 @@
         {
           "name": "AI Cement 63",
           "baselineEmissions": 1304783,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 52191320
         }
       ],
@@ -1885,6 +2010,7 @@
         {
           "name": "AI Cement 64",
           "baselineEmissions": 1304783,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 52191320
         }
       ],
@@ -1899,6 +2025,7 @@
         {
           "name": "AI Cement 65",
           "baselineEmissions": 1304783,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 52191320
         }
       ],
@@ -1913,6 +2040,7 @@
         {
           "name": "AI Cement 66",
           "baselineEmissions": 1304783,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 52191320
         }
       ],
@@ -1927,6 +2055,7 @@
         {
           "name": "AI Cement 67",
           "baselineEmissions": 1304783,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 52191320
         }
       ],
@@ -1941,6 +2070,7 @@
         {
           "name": "AI Cement 68",
           "baselineEmissions": 1304783,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 52191320
         }
       ],
@@ -1955,6 +2085,7 @@
         {
           "name": "AI Cement 69",
           "baselineEmissions": 1304783,
+          "allocationFactor": 1.5,
           "normalOperatingProfit": 52191320
         }
       ],
@@ -1969,6 +2100,7 @@
         {
           "name": "AI Cement 70",
           "baselineEmissions": 1304783,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 52191320
         }
       ],
@@ -1983,6 +2115,7 @@
         {
           "name": "AI Cement 71",
           "baselineEmissions": 1304783,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 52191320
         }
       ],
@@ -1997,6 +2130,7 @@
         {
           "name": "AI Cement 72",
           "baselineEmissions": 1304783,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 52191320
         }
       ],
@@ -2011,6 +2145,7 @@
         {
           "name": "AI Cement 73",
           "baselineEmissions": 1304783,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 52191320
         }
       ],
@@ -2025,6 +2160,7 @@
         {
           "name": "AI Cement 74",
           "baselineEmissions": 1304783,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 52191320
         }
       ],
@@ -2039,6 +2175,7 @@
         {
           "name": "AI Cement 75",
           "baselineEmissions": 1304783,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 52191320
         }
       ],
@@ -2053,6 +2190,7 @@
         {
           "name": "AI Cement 76",
           "baselineEmissions": 1304783,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 52191320
         }
       ],
@@ -2067,6 +2205,7 @@
         {
           "name": "AI Cement 77",
           "baselineEmissions": 1304783,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 52191320
         }
       ],
@@ -2081,6 +2220,7 @@
         {
           "name": "AI Cement 78",
           "baselineEmissions": 1304783,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 52191320
         }
       ],
@@ -2095,6 +2235,7 @@
         {
           "name": "AI Cement 79",
           "baselineEmissions": 1304783,
+          "allocationFactor": 1.5,
           "normalOperatingProfit": 52191320
         }
       ],
@@ -2109,6 +2250,7 @@
         {
           "name": "AI Cement 80",
           "baselineEmissions": 1304783,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 52191320
         }
       ],
@@ -2123,6 +2265,7 @@
         {
           "name": "AI Cement 81",
           "baselineEmissions": 1304783,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 52191320
         }
       ],
@@ -2137,6 +2280,7 @@
         {
           "name": "AI Cement 82",
           "baselineEmissions": 1304783,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 52191320
         }
       ],
@@ -2151,6 +2295,7 @@
         {
           "name": "AI Cement 83",
           "baselineEmissions": 1304783,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 52191320
         }
       ],
@@ -2165,6 +2310,7 @@
         {
           "name": "AI Cement 84",
           "baselineEmissions": 1304783,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 52191320
         }
       ],
@@ -2179,6 +2325,7 @@
         {
           "name": "AI Cement 85",
           "baselineEmissions": 1304783,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 52191320
         }
       ],
@@ -2193,6 +2340,7 @@
         {
           "name": "AI Cement 86",
           "baselineEmissions": 1304783,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 52191320
         }
       ],
@@ -2207,6 +2355,7 @@
         {
           "name": "AI Cement 87",
           "baselineEmissions": 1304783,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 52191320
         }
       ],
@@ -2221,6 +2370,7 @@
         {
           "name": "AI Cement 88",
           "baselineEmissions": 1304783,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 52191320
         }
       ],
@@ -2235,6 +2385,7 @@
         {
           "name": "AI Cement 89",
           "baselineEmissions": 1304813,
+          "allocationFactor": 1.5,
           "normalOperatingProfit": 52192520
         }
       ],
@@ -2249,6 +2400,7 @@
         {
           "name": "Công ty Thép Trường An",
           "baselineEmissions": 928304,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 37132160
         }
       ],
@@ -2263,6 +2415,7 @@
         {
           "name": "AI Steel 01",
           "baselineEmissions": 928304,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 37132160
         }
       ],
@@ -2277,6 +2430,7 @@
         {
           "name": "AI Steel 02",
           "baselineEmissions": 928304,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 37132160
         }
       ],
@@ -2291,6 +2445,7 @@
         {
           "name": "AI Steel 03",
           "baselineEmissions": 928304,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 37132160
         }
       ],
@@ -2305,6 +2460,7 @@
         {
           "name": "AI Steel 04",
           "baselineEmissions": 928304,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 37132160
         }
       ],
@@ -2319,6 +2475,7 @@
         {
           "name": "AI Steel 05",
           "baselineEmissions": 928304,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 37132160
         }
       ],
@@ -2333,6 +2490,7 @@
         {
           "name": "AI Steel 06",
           "baselineEmissions": 928304,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 37132160
         }
       ],
@@ -2347,6 +2505,7 @@
         {
           "name": "AI Steel 07",
           "baselineEmissions": 928304,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 37132160
         }
       ],
@@ -2361,6 +2520,7 @@
         {
           "name": "AI Steel 08",
           "baselineEmissions": 928304,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 37132160
         }
       ],
@@ -2375,6 +2535,7 @@
         {
           "name": "AI Steel 09",
           "baselineEmissions": 928304,
+          "allocationFactor": 1.5,
           "normalOperatingProfit": 37132160
         }
       ],
@@ -2389,6 +2550,7 @@
         {
           "name": "AI Steel 10",
           "baselineEmissions": 928304,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 37132160
         }
       ],
@@ -2403,6 +2565,7 @@
         {
           "name": "AI Steel 11",
           "baselineEmissions": 928304,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 37132160
         }
       ],
@@ -2417,6 +2580,7 @@
         {
           "name": "AI Steel 12",
           "baselineEmissions": 928304,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 37132160
         }
       ],
@@ -2431,6 +2595,7 @@
         {
           "name": "AI Steel 13",
           "baselineEmissions": 928304,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 37132160
         }
       ],
@@ -2445,6 +2610,7 @@
         {
           "name": "AI Steel 14",
           "baselineEmissions": 928304,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 37132160
         }
       ],
@@ -2459,6 +2625,7 @@
         {
           "name": "AI Steel 15",
           "baselineEmissions": 928304,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 37132160
         }
       ],
@@ -2473,6 +2640,7 @@
         {
           "name": "AI Steel 16",
           "baselineEmissions": 928304,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 37132160
         }
       ],
@@ -2487,6 +2655,7 @@
         {
           "name": "AI Steel 17",
           "baselineEmissions": 928304,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 37132160
         }
       ],
@@ -2501,6 +2670,7 @@
         {
           "name": "AI Steel 18",
           "baselineEmissions": 928304,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 37132160
         }
       ],
@@ -2515,6 +2685,7 @@
         {
           "name": "AI Steel 19",
           "baselineEmissions": 928304,
+          "allocationFactor": 1.5,
           "normalOperatingProfit": 37132160
         }
       ],
@@ -2529,6 +2700,7 @@
         {
           "name": "AI Steel 20",
           "baselineEmissions": 928304,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 37132160
         }
       ],
@@ -2543,6 +2715,7 @@
         {
           "name": "AI Steel 21",
           "baselineEmissions": 928304,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 37132160
         }
       ],
@@ -2557,6 +2730,7 @@
         {
           "name": "AI Steel 22",
           "baselineEmissions": 928304,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 37132160
         }
       ],
@@ -2571,6 +2745,7 @@
         {
           "name": "AI Steel 23",
           "baselineEmissions": 928304,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 37132160
         }
       ],
@@ -2585,6 +2760,7 @@
         {
           "name": "AI Steel 24",
           "baselineEmissions": 928304,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 37132160
         }
       ],
@@ -2599,6 +2775,7 @@
         {
           "name": "AI Steel 25",
           "baselineEmissions": 928304,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 37132160
         }
       ],
@@ -2613,6 +2790,7 @@
         {
           "name": "AI Steel 26",
           "baselineEmissions": 928304,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 37132160
         }
       ],
@@ -2627,6 +2805,7 @@
         {
           "name": "AI Steel 27",
           "baselineEmissions": 928304,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 37132160
         }
       ],
@@ -2641,6 +2820,7 @@
         {
           "name": "AI Steel 28",
           "baselineEmissions": 928304,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 37132160
         }
       ],
@@ -2655,6 +2835,7 @@
         {
           "name": "AI Steel 29",
           "baselineEmissions": 928304,
+          "allocationFactor": 1.5,
           "normalOperatingProfit": 37132160
         }
       ],
@@ -2669,6 +2850,7 @@
         {
           "name": "AI Steel 30",
           "baselineEmissions": 928304,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 37132160
         }
       ],
@@ -2683,6 +2865,7 @@
         {
           "name": "AI Steel 31",
           "baselineEmissions": 928304,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 37132160
         }
       ],
@@ -2697,6 +2880,7 @@
         {
           "name": "AI Steel 32",
           "baselineEmissions": 928304,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 37132160
         }
       ],
@@ -2711,6 +2895,7 @@
         {
           "name": "AI Steel 33",
           "baselineEmissions": 928304,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 37132160
         }
       ],
@@ -2725,6 +2910,7 @@
         {
           "name": "AI Steel 34",
           "baselineEmissions": 928304,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 37132160
         }
       ],
@@ -2739,6 +2925,7 @@
         {
           "name": "AI Steel 35",
           "baselineEmissions": 928304,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 37132160
         }
       ],
@@ -2753,6 +2940,7 @@
         {
           "name": "AI Steel 36",
           "baselineEmissions": 928304,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 37132160
         }
       ],
@@ -2767,6 +2955,7 @@
         {
           "name": "AI Steel 37",
           "baselineEmissions": 928304,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 37132160
         }
       ],
@@ -2781,6 +2970,7 @@
         {
           "name": "AI Steel 38",
           "baselineEmissions": 928304,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 37132160
         }
       ],
@@ -2795,6 +2985,7 @@
         {
           "name": "AI Steel 39",
           "baselineEmissions": 928304,
+          "allocationFactor": 1.5,
           "normalOperatingProfit": 37132160
         }
       ],
@@ -2809,6 +3000,7 @@
         {
           "name": "AI Steel 40",
           "baselineEmissions": 928304,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 37132160
         }
       ],
@@ -2823,6 +3015,7 @@
         {
           "name": "AI Steel 41",
           "baselineEmissions": 928304,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 37132160
         }
       ],
@@ -2837,6 +3030,7 @@
         {
           "name": "AI Steel 42",
           "baselineEmissions": 928304,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 37132160
         }
       ],
@@ -2851,6 +3045,7 @@
         {
           "name": "AI Steel 43",
           "baselineEmissions": 928304,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 37132160
         }
       ],
@@ -2865,6 +3060,7 @@
         {
           "name": "AI Steel 44",
           "baselineEmissions": 928304,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 37132160
         }
       ],
@@ -2879,6 +3075,7 @@
         {
           "name": "AI Steel 45",
           "baselineEmissions": 928304,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 37132160
         }
       ],
@@ -2893,6 +3090,7 @@
         {
           "name": "AI Steel 46",
           "baselineEmissions": 928304,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 37132160
         }
       ],
@@ -2907,6 +3105,7 @@
         {
           "name": "AI Steel 47",
           "baselineEmissions": 928304,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 37132160
         }
       ],
@@ -2921,6 +3120,7 @@
         {
           "name": "AI Steel 48",
           "baselineEmissions": 928304,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 37132160
         }
       ],
@@ -2935,6 +3135,7 @@
         {
           "name": "AI Steel 49",
           "baselineEmissions": 928304,
+          "allocationFactor": 1.5,
           "normalOperatingProfit": 37132160
         }
       ],
@@ -2949,6 +3150,7 @@
         {
           "name": "AI Steel 50",
           "baselineEmissions": 928304,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 37132160
         }
       ],
@@ -2963,6 +3165,7 @@
         {
           "name": "AI Steel 51",
           "baselineEmissions": 928304,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 37132160
         }
       ],
@@ -2977,6 +3180,7 @@
         {
           "name": "AI Steel 52",
           "baselineEmissions": 928304,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 37132160
         }
       ],
@@ -2991,6 +3195,7 @@
         {
           "name": "AI Steel 53",
           "baselineEmissions": 928304,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 37132160
         }
       ],
@@ -3005,6 +3210,7 @@
         {
           "name": "AI Steel 54",
           "baselineEmissions": 928304,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 37132160
         }
       ],
@@ -3019,6 +3225,7 @@
         {
           "name": "AI Steel 55",
           "baselineEmissions": 928304,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 37132160
         }
       ],
@@ -3033,6 +3240,7 @@
         {
           "name": "AI Steel 56",
           "baselineEmissions": 928304,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 37132160
         }
       ],
@@ -3047,6 +3255,7 @@
         {
           "name": "AI Steel 57",
           "baselineEmissions": 928304,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 37132160
         }
       ],
@@ -3061,6 +3270,7 @@
         {
           "name": "AI Steel 58",
           "baselineEmissions": 928304,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 37132160
         }
       ],
@@ -3075,6 +3285,7 @@
         {
           "name": "AI Steel 59",
           "baselineEmissions": 928304,
+          "allocationFactor": 1.5,
           "normalOperatingProfit": 37132160
         }
       ],
@@ -3089,6 +3300,7 @@
         {
           "name": "AI Steel 60",
           "baselineEmissions": 928304,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 37132160
         }
       ],
@@ -3103,6 +3315,7 @@
         {
           "name": "AI Steel 61",
           "baselineEmissions": 928304,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 37132160
         }
       ],
@@ -3117,6 +3330,7 @@
         {
           "name": "AI Steel 62",
           "baselineEmissions": 928304,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 37132160
         }
       ],
@@ -3131,6 +3345,7 @@
         {
           "name": "AI Steel 63",
           "baselineEmissions": 928304,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 37132160
         }
       ],
@@ -3145,6 +3360,7 @@
         {
           "name": "AI Steel 64",
           "baselineEmissions": 928304,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 37132160
         }
       ],
@@ -3159,6 +3375,7 @@
         {
           "name": "AI Steel 65",
           "baselineEmissions": 928304,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 37132160
         }
       ],
@@ -3173,6 +3390,7 @@
         {
           "name": "AI Steel 66",
           "baselineEmissions": 928304,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 37132160
         }
       ],
@@ -3187,6 +3405,7 @@
         {
           "name": "AI Steel 67",
           "baselineEmissions": 928304,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 37132160
         }
       ],
@@ -3201,6 +3420,7 @@
         {
           "name": "AI Steel 68",
           "baselineEmissions": 928304,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 37132160
         }
       ],
@@ -3215,6 +3435,7 @@
         {
           "name": "AI Steel 69",
           "baselineEmissions": 928304,
+          "allocationFactor": 1.5,
           "normalOperatingProfit": 37132160
         }
       ],
@@ -3229,6 +3450,7 @@
         {
           "name": "AI Steel 70",
           "baselineEmissions": 928304,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 37132160
         }
       ],
@@ -3243,6 +3465,7 @@
         {
           "name": "AI Steel 71",
           "baselineEmissions": 928304,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 37132160
         }
       ],
@@ -3257,6 +3480,7 @@
         {
           "name": "AI Steel 72",
           "baselineEmissions": 928304,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 37132160
         }
       ],
@@ -3271,6 +3495,7 @@
         {
           "name": "AI Steel 73",
           "baselineEmissions": 928304,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 37132160
         }
       ],
@@ -3285,6 +3510,7 @@
         {
           "name": "AI Steel 74",
           "baselineEmissions": 928304,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 37132160
         }
       ],
@@ -3299,6 +3525,7 @@
         {
           "name": "AI Steel 75",
           "baselineEmissions": 928304,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 37132160
         }
       ],
@@ -3313,6 +3540,7 @@
         {
           "name": "AI Steel 76",
           "baselineEmissions": 928304,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 37132160
         }
       ],
@@ -3327,6 +3555,7 @@
         {
           "name": "AI Steel 77",
           "baselineEmissions": 928304,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 37132160
         }
       ],
@@ -3341,6 +3570,7 @@
         {
           "name": "AI Steel 78",
           "baselineEmissions": 928304,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 37132160
         }
       ],
@@ -3355,6 +3585,7 @@
         {
           "name": "AI Steel 79",
           "baselineEmissions": 928304,
+          "allocationFactor": 1.5,
           "normalOperatingProfit": 37132160
         }
       ],
@@ -3369,6 +3600,7 @@
         {
           "name": "AI Steel 80",
           "baselineEmissions": 928304,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 37132160
         }
       ],
@@ -3383,6 +3615,7 @@
         {
           "name": "AI Steel 81",
           "baselineEmissions": 928304,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 37132160
         }
       ],
@@ -3397,6 +3630,7 @@
         {
           "name": "AI Steel 82",
           "baselineEmissions": 928304,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 37132160
         }
       ],
@@ -3411,6 +3645,7 @@
         {
           "name": "AI Steel 83",
           "baselineEmissions": 928304,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 37132160
         }
       ],
@@ -3425,6 +3660,7 @@
         {
           "name": "AI Steel 84",
           "baselineEmissions": 928304,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 37132160
         }
       ],
@@ -3439,6 +3675,7 @@
         {
           "name": "AI Steel 85",
           "baselineEmissions": 928304,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 37132160
         }
       ],
@@ -3453,6 +3690,7 @@
         {
           "name": "AI Steel 86",
           "baselineEmissions": 928304,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 37132160
         }
       ],
@@ -3467,6 +3705,7 @@
         {
           "name": "AI Steel 87",
           "baselineEmissions": 928304,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 37132160
         }
       ],
@@ -3481,6 +3720,7 @@
         {
           "name": "AI Steel 88",
           "baselineEmissions": 928304,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 37132160
         }
       ],
@@ -3495,6 +3735,7 @@
         {
           "name": "AI Steel 89",
           "baselineEmissions": 928304,
+          "allocationFactor": 1.5,
           "normalOperatingProfit": 37132160
         }
       ],
@@ -3509,6 +3750,7 @@
         {
           "name": "AI Steel 90",
           "baselineEmissions": 928304,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 37132160
         }
       ],
@@ -3523,6 +3765,7 @@
         {
           "name": "AI Steel 91",
           "baselineEmissions": 928336,
+          "allocationFactor": 0.9444,
           "normalOperatingProfit": 37133440
         }
       ],

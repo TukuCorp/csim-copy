@@ -33,9 +33,13 @@ public sealed record BotSettings(
     {
         return difficulty switch
         {
-            BotDifficulty.Easy => new BotSettings(difficulty, 0.70m, 0.10m, 0.50m, 0.25m, 0.90m),
-            BotDifficulty.Hard => new BotSettings(difficulty, 1.00m, 0.02m, 1.00m, 0.05m, 1.05m),
-            _ => new BotSettings(difficulty, 0.85m, 0.05m, 0.90m, 0.15m, 1.00m),
+            BotDifficulty.Easy => new BotSettings(difficulty, 0.70m, 0.10m, 0.70m, 0.25m, 0.90m),
+            // A sharp bot does not pay over the odds: bidding above the price it expects lifts the
+            // price everyone clears at, which costs it more than the volume it wins is worth.
+            BotDifficulty.Hard => new BotSettings(difficulty, 1.15m, 0.02m, 1.00m, 0.05m, 1.00m),
+            // A bot abates whenever a project costs less than the tonne it would otherwise buy, so a
+            // project priced just under the market is built rather than a dearer allowance bought.
+            _ => new BotSettings(difficulty, 1.05m, 0.05m, 0.90m, 0.15m, 1.00m),
         };
     }
 }

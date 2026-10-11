@@ -11,6 +11,7 @@ namespace CarbonSim.Web.Tests.Components;
 /// keyboard reachability, live regions and the charts' text alternatives - with a machine check on
 /// every screen a player or trainer opens.
 /// </summary>
+[Collection(PlaywrightCollection.Name)]
 public sealed class PlaywrightAccessibilityTests : IClassFixture<PlaywrightHostFixture>
 {
     private static readonly string AxePath = Path.Combine(AppContext.BaseDirectory, "Compliance", "axe.min.js");

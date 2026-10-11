@@ -72,7 +72,7 @@ public sealed class CompanyFinance
     {
         RequireYear(year);
 
-        Parameters parameters = _simulation.TradingSystems.Single().Parameters;
+        Parameters parameters = _simulation.Rules;
 
         foreach (Company company in _simulation.Companies)
         {

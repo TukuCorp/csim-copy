@@ -45,6 +45,12 @@ public sealed class PlaywrightHostFixture : IAsyncLifetime
 
     public const string AdminPassword = "playwright-admin-2026";
 
+    /// <summary>The exercise the demo seeder puts on the shelf, by the name the scenario carries.</summary>
+    public const string SeededRunName = "Vietnam ETS Pilot 2024";
+
+    /// <summary>How the console writes the state of an exercise that has not begun.</summary>
+    private const string WaitingState = "Waiting to start";
+
     private readonly string _database = Path.Combine(
         Path.GetTempPath(),
         "carbonsim-playwright",
@@ -188,6 +194,57 @@ public sealed class PlaywrightHostFixture : IAsyncLifetime
 
         await page.GotoAsync(BaseUrl + "/admin").ConfigureAwait(false);
         await page.WaitForSelectorAsync("#admin-create-run, nav.nav", new PageWaitForSelectorOptions { Timeout = 30000 }).ConfigureAwait(false);
+    }
+
+    /// <summary>Opens the seeded exercise from the console's list of runs, signed in as the trainer.</summary>
+    public async Task OpenSeededRunAsync(IPage page)
+    {
+        ArgumentNullException.ThrowIfNull(page);
+
+        // The list renders before the circuit is listening; a click issued in between is dropped.
+        await page.WaitUntilInteractiveAsync().ConfigureAwait(false);
+        // A walk in another test of the same class builds a second exercise from the same scenario,
+        // so the name can appear twice: the seeded one is the row still waiting for its first year.
+        ILocator rows = page.Locator("tr", new PageLocatorOptions { HasTextString = SeededRunName });
+        ILocator waiting = rows.Filter(new LocatorFilterOptions { HasTextString = WaitingState });
+        ILocator row = await waiting.CountAsync().ConfigureAwait(false) > 0 ? waiting.First : rows.First;
+
+        await row.Locator("button").First.ClickAsync().ConfigureAwait(false);
+        await page.WaitForURLAsync("**/admin/run/**").ConfigureAwait(false);
+        await page.WaitForSelectorAsync("main h1").ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Begins the seeded exercise's first year the way a trainer does. The demo run is seeded
+    /// waiting for its first year, so a walk that needs a live year starts one here.
+    /// </summary>
+    public async Task StartSeededYearAsync()
+    {
+        IBrowser browser = Browser ?? throw new InvalidOperationException("Chromium was not launched.");
+        IBrowserContext context = await browser.NewContextAsync().ConfigureAwait(false);
+        IPage page = await context.NewPageAsync().ConfigureAwait(false);
+
+        try
+        {
+            await AdminSignInAsync(page).ConfigureAwait(false);
+            await OpenSeededRunAsync(page).ConfigureAwait(false);
+
+            // The console's controls arrive with the interactive render; waiting for either of them
+            // first is what stops an unrendered page reading as "somebody already started it".
+            await page.WaitForSelectorAsync("#admin-begin-year, #admin-pause").ConfigureAwait(false);
+
+            // Idempotent: two tests in one class share this host, so the year may already be running.
+            if (await page.Locator("#admin-begin-year").CountAsync().ConfigureAwait(false) > 0)
+            {
+                await page.ClickAsync("#admin-begin-year").ConfigureAwait(false);
+            }
+
+            await page.WaitForSelectorAsync("#admin-pause").ConfigureAwait(false);
+        }
+        finally
+        {
+            await context.CloseAsync().ConfigureAwait(false);
+        }
     }
 
     private async Task WaitForHostAsync()

@@ -28,7 +28,7 @@ public sealed class ShellTests : ScreenTestContext
         layout.Markup.Should().Contain("Simulation progress");
         layout.Markup.Should().Contain("Section progress");
         layout.Markup.Should().Contain("Allowance auction");
-        layout.FindAll("nav a").Should().HaveCount(11);
+        layout.FindAll("nav.nav a").Should().HaveCount(11);
     }
 
     [Fact]
@@ -40,7 +40,19 @@ public sealed class ShellTests : ScreenTestContext
             .Add(component => component.Body, (RenderFragment)(builder => builder.AddMarkupContent(0, "<p>plain</p>"))));
 
         layout.Markup.Should().Contain("plain");
-        layout.FindAll("nav").Should().BeEmpty();
+        layout.FindAll("nav.nav").Should().BeEmpty();
+    }
+
+    [Fact]
+    public void The_plain_layout_carries_the_language_switch()
+    {
+        Navigate("/");
+
+        IRenderedComponent<MainLayout> layout = RenderComponent<MainLayout>(parameters =>
+            parameters.Add(component => component.Body, (RenderFragment)(builder => builder.AddMarkupContent(0, "<p>plain</p>"))));
+
+        layout.FindAll(".lang a").Should().HaveCount(2, "the waiting screen offers English and Tiếng Việt");
+        layout.Find("a[lang='vi']").TextContent.Should().Contain("Tiếng Việt");
     }
 
     [Fact]

@@ -1,5 +1,6 @@
 using CarbonSim.Engine.Domain;
 using CarbonSim.Engine.Market;
+using CarbonSim.Engine.Run;
 using CarbonSim.Web.Simulations;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
@@ -33,10 +34,10 @@ public sealed class ActorResolutionTests : IClassFixture<SimulationTestHost>
         Unit seller = simulation.FindUnit(1);
         simulation.Ledger.Grant(seller.Company, Product.Allowance(1), 1_000m);
 
-        long order = await runs.PlaceOrderAsync(id, delta.Actor, 1, "Vintage 1", "Sell", "Limit", 100m, 110m);
+        OrderOutcome order = await runs.PlaceOrderAsync(id, delta.Actor, 1, "Vintage 1", "Sell", "Limit", 100m, 110m);
 
-        order.Should().BeGreaterThan(0);
-        runs.Run(id).Exchange.Book(Product.Allowance(1)).OpenOrders.Should().ContainSingle(sell => sell.Id == order);
+        order.OrderId.Should().BeGreaterThan(0);
+        runs.Run(id).Exchange.Book(Product.Allowance(1)).OpenOrders.Should().ContainSingle(sell => sell.Id == order.OrderId);
     }
 
     [Fact]

@@ -5,8 +5,36 @@
 <PageTitle>@Strings["AppTitle"]</PageTitle>
 
 <div class="waiting">
-    <h1>@Strings["WaitingForSimulationToStart"]</h1>
-    <p class="muted"><a href="/sign-in">@Strings["SignIn"]</a></p>
+    @* The heading says what the screen is: while an exercise is waiting for its first year there
+       is nothing to open, and once one is under way the room came here to get into it. *@
+    @if (WaitingForStart)
+    {
+        <h1>@Strings["WaitingForSimulationToStart"]</h1>
+    }
+    else
+    {
+        <h1>@Strings["SimulationInProgress"]</h1>
+    }
+
+    @if (Door.AccountName is { } accountName)
+    {
+        <p class="signed-in muted small">
+            <span>@Strings["SignedInAs", accountName]</span>
+            @if (Door.IsAdministrator)
+            {
+                <a class="button" href="/admin">@Strings["AdminConsole"]</a>
+            }
+            else if (Door.RunId is { } mine)
+            {
+                <a class="button" href="@RunRoute.Screen(mine, "dashboard")">@Strings["OpenSimulation"]</a>
+            }
+            <a href="/sign-out">@Strings["SignOut"]</a>
+        </p>
+    }
+    else
+    {
+        <p class="muted"><a href="/sign-in">@Strings["SignIn"]</a></p>
+    }
 
     @if (_runs.Count == 0)
     {
@@ -31,8 +59,9 @@
                     <div><dt>@Strings["FreeAllocationShare"]</dt><dd>@Display.Percent(run.FreeAllocationShare)</dd></div>
                     <div><dt>@Strings["OffsetUsageLimit"]</dt><dd>@Display.Percent(run.OffsetUsageLimit)</dd></div>
                     <div><dt>@Strings["Companies"]</dt><dd>@run.Companies</dd></div>
+                    <div><dt>@Strings["HumanCompanies"]</dt><dd>@run.HumanCompanies</dd></div>
+                    <div><dt>@Strings["AiCompanies"]</dt><dd>@(run.Companies - run.HumanCompanies)</dd></div>
                     <div><dt>@Strings["Units"]</dt><dd>@run.Units</dd></div>
-                    <div><dt>@Strings["People"]</dt><dd>@run.HumanCompanies</dd></div>
                 </dl>
                 <a class="button" href="@RunRoute.Screen(run.Id, "dashboard")">@Strings["OpenSimulation"]</a>
             </section>
@@ -42,9 +71,14 @@
 
 @code {
     private IReadOnlyList<RunSummary> _runs = [];
+    private FrontDoorView Door { get; set; } = FrontDoorView.Guest;
+
+    /// <summary>True while every exercise on offer is still waiting for its first year.</summary>
+    private bool WaitingForStart => _runs.All(run => run.State == "Pending");
 
     protected override async Task OnInitializedAsync()
     {
         _runs = await Session.RunsAsync();
+        Door = await Session.FrontDoorAsync();
     }
 }

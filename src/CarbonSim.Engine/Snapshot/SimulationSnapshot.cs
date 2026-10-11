@@ -44,7 +44,7 @@ public sealed record SimulationSnapshot(
 
 /// <summary>
 /// The trading system the run is played under. A simulation runs one system today: the
-/// allocation plan, the clock and the bots all read <c>TradingSystems.Single()</c>, so the
+/// allocation plan, the clock and the bots all read the run's rules, so the
 /// sectors and companies it covers are simply <see cref="SimulationSnapshot.Sectors"/> and
 /// <see cref="SimulationSnapshot.Companies"/>.
 /// </summary>
@@ -69,7 +69,8 @@ public sealed record ParametersSnapshot(
     decimal TradingOpenShareOfYear,
     decimal VolatilityBand,
     decimal OverdraftInterestRate,
-    decimal GovernmentReserveToAuctionPercent);
+    decimal GovernmentReserveToAuctionPercent,
+    decimal ForwardVintageShare);
 
 /// <summary>The growth band a sector's business-as-usual emissions were drawn from.</summary>
 public sealed record SectorBausGrowthSnapshot(string Sector, decimal MinAnnualRate, decimal MaxAnnualRate);

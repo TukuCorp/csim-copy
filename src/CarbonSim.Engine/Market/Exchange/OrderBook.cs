@@ -32,7 +32,6 @@ internal sealed class OrderIds
 public sealed class OrderBook
 {
     private readonly Simulation _simulation;
-    private readonly Parameters _parameters;
     private readonly OrderIds _ids;
     private readonly List<Order> _resting = [];
     private readonly List<Trade> _trades = [];
@@ -40,7 +39,6 @@ public sealed class OrderBook
     internal OrderBook(Simulation simulation, Product product, decimal referencePrice, OrderIds ids)
     {
         _simulation = simulation;
-        _parameters = simulation.TradingSystems.Single().Parameters;
         _ids = ids;
         Product = product;
         ReferencePrice = referencePrice;
@@ -52,10 +50,99 @@ public sealed class OrderBook
     /// <summary>The price the band was anchored to before anything traded (the auction floor).</summary>
     public decimal ReferencePrice { get; }
 
-    public decimal VolatilityBand => _parameters.VolatilityBand;
+    public decimal VolatilityBand => _simulation.Rules.VolatilityBand;
 
     /// <summary>The price of the last trade, or the reference price while nothing has traded.</summary>
     public decimal LastTradePrice { get; private set; }
+
+    /// <summary>
+    /// Moves the price the volatility band is anchored on. A regulator who raises the floor has
+    /// moved where a tonne may trade, so the band every order is checked against follows it;
+    /// without this an exchange anchored on yesterday's floor refuses any quote at the new one.
+    /// </summary>
+    public void Reanchor(decimal referencePrice)
+    {
+        if (referencePrice <= 0m)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(referencePrice),
+                referencePrice,
+                "A book cannot be anchored on a price of zero or less.");
+        }
+
+        LastTradePrice = referencePrice;
+    }
+
+    /// <summary>
+    /// Brings the book back inside the collar the run now trades under: every order resting outside
+    /// it is cancelled and its escrow released, and what is left is matched against itself.
+    /// </summary>
+    /// <remarks>
+    /// Without this a rule change leaves a crossed book - the offers written under the old floor
+    /// standing while the new bids are written above them - and nothing matches, because an order
+    /// only ever met what was on the book the moment it arrived. The owner of an order that cannot
+    /// stand is told by the book change the screens already read, and the run's message feed names
+    /// how many were released.
+    /// </remarks>
+    public void FollowRules(decimal floor, decimal ceiling)
+    {
+        Reanchor(floor);
+
+        Order[] outside =
+        [
+            .. _resting
+                .Where(order => order.Kind != OrderKind.StopLoss
+                    && order.Price is { } price
+                    && (price < BandFloor || price > Math.Min(BandCeiling, ceiling) || price < floor))
+                .OrderBy(order => order.Id),
+        ];
+
+        foreach (Order order in outside)
+        {
+            Cancel(order.Company, order.Id);
+            ReleasedOutsideTheRules++;
+        }
+
+        Cross();
+    }
+
+    /// <summary>How many orders the last change of the rules took off this book.</summary>
+    public int ReleasedOutsideTheRules { get; private set; }
+
+    /// <summary>
+    /// Matches what is left on the book against itself. Two orders can both be valid and still be
+    /// crossed after a shock moved where they may stand; this is what stops a bid above an offer
+    /// surviving one.
+    /// </summary>
+    public void Cross()
+    {
+        while (true)
+        {
+            Order? bid = _resting
+                .Where(order => order.Side == OrderSide.Buy && order.Kind != OrderKind.StopLoss)
+                .OrderByDescending(order => order.Price ?? 0m)
+                .ThenBy(order => order.Id)
+                .FirstOrDefault();
+            Order? ask = _resting
+                .Where(order => order.Side == OrderSide.Sell && order.Kind != OrderKind.StopLoss)
+                .OrderBy(order => order.Price ?? 0m)
+                .ThenBy(order => order.Id)
+                .FirstOrDefault();
+
+            if (bid?.Price is not { } bidPrice || ask?.Price is not { } askPrice || bidPrice < askPrice)
+            {
+                return;
+            }
+
+            Execute(bid, ask, askPrice, Math.Min(bid.Remaining, ask.Remaining));
+
+            if (bid.Remaining <= 0m)
+            {
+                _resting.Remove(bid);
+                ReleaseUnusedCash(bid);
+            }
+        }
+    }
 
     public bool HasTraded => _trades.Count > 0;
 
@@ -64,6 +151,30 @@ public sealed class OrderBook
     public decimal BandFloor => LastTradePrice * (1m - VolatilityBand);
 
     public decimal BandCeiling => LastTradePrice * (1m + VolatilityBand);
+
+    /// <summary>
+    /// Brings a wanted price inside the band, to a whole cent the book will accept. Clamping to
+    /// the band is not enough on its own: the band edges are a share of the last trade, so they
+    /// carry more than two decimals (a floor of 81.8235), and rounding a price that sat just
+    /// inside them to the cent can push it a fraction of a cent back outside. So a rounded price
+    /// below the floor is taken up to the first whole cent at or above it, and one above the
+    /// ceiling down to the last whole cent at or below it: whatever comes back, Validate takes it.
+    /// </summary>
+    public decimal FitToBand(decimal price)
+    {
+        decimal rounded = Math.Round(Math.Clamp(price, BandFloor, BandCeiling), 2, MidpointRounding.AwayFromZero);
+
+        if (rounded < BandFloor)
+        {
+            rounded = Math.Ceiling(BandFloor * 100m) / 100m;
+        }
+        else if (rounded > BandCeiling)
+        {
+            rounded = Math.Floor(BandCeiling * 100m) / 100m;
+        }
+
+        return rounded;
+    }
 
     public decimal? BestBid => _resting.Where(order => order.Side == OrderSide.Buy).Select(order => order.Price).Max();
 

@@ -35,7 +35,7 @@ else
 
         <label>
             @Strings["Message"]
-            <textarea rows="3" @bind="_text" disabled="@(!view.MessagingEnabled)"></textarea>
+            <textarea id="message-text" rows="3" @bind="_text" disabled="@(!view.MessagingEnabled)"></textarea>
         </label>
         <button class="button" disabled="@(string.IsNullOrWhiteSpace(_text) || !view.MessagingEnabled)" @onclick="SendAsync">@Strings["Send"]</button>
     </section>

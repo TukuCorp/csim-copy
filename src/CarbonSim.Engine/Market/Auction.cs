@@ -16,7 +16,6 @@ namespace CarbonSim.Engine.Market;
 public sealed class Auction
 {
     private readonly Simulation _simulation;
-    private readonly Parameters _parameters;
     private readonly List<AuctionBid> _bids = [];
     private readonly List<AuctionResult> _results = [];
     private readonly List<AuctionLot> _lots = [];
@@ -42,7 +41,6 @@ public sealed class Auction
         }
 
         _simulation = simulation;
-        _parameters = simulation.TradingSystems.Single().Parameters;
         Year = year;
         Sequence = sequence;
         _lots.AddRange(lots);
@@ -110,14 +108,14 @@ public sealed class Auction
                 nameof(vintage));
         }
 
-        if (price < _parameters.AuctionFloorPrice)
+        if (price < _simulation.Rules.AuctionFloorPrice)
         {
-            throw new ArgumentOutOfRangeException(nameof(price), price, $"A bid cannot be below the price floor of {_parameters.AuctionFloorPrice}.");
+            throw new ArgumentOutOfRangeException(nameof(price), price, $"A bid cannot be below the price floor of {_simulation.Rules.AuctionFloorPrice}.");
         }
 
-        if (price > _parameters.AuctionCeilingPrice)
+        if (price > _simulation.Rules.AuctionCeilingPrice)
         {
-            throw new ArgumentOutOfRangeException(nameof(price), price, $"A bid cannot be above the price ceiling of {_parameters.AuctionCeilingPrice}.");
+            throw new ArgumentOutOfRangeException(nameof(price), price, $"A bid cannot be above the price ceiling of {_simulation.Rules.AuctionCeilingPrice}.");
         }
 
         if (volume <= 0m)
@@ -137,6 +135,34 @@ public sealed class Auction
     }
 
     /// <summary>
+    /// Takes every bid the collar as it now stands cannot hold off the book and gives its money back,
+    /// returning them so the run can say whose they were. A collar that moves puts a resting bid
+    /// outside the band exactly as it does a resting order on the exchange, and a bid that cannot be
+    /// held cannot be cleared either.
+    /// </summary>
+    public IReadOnlyList<AuctionBid> ReleaseOutsideTheCollar()
+    {
+        if (IsCleared)
+        {
+            return [];
+        }
+
+        List<AuctionBid> released =
+        [
+            .. _bids.Where(bid =>
+                bid.Price < _simulation.Rules.AuctionFloorPrice || bid.Price > _simulation.Rules.AuctionCeilingPrice),
+        ];
+
+        foreach (AuctionBid bid in released)
+        {
+            _bids.Remove(bid);
+            _simulation.Cash.ReleaseEscrow(bid.Unit.Company, bid.Price * bid.Volume);
+        }
+
+        return released;
+    }
+
+    /// <summary>
     /// Clears every vintage in the auction, settles the served bids against the ledger and the
     /// government account, and returns what happened. Unsold volume goes back to the reserve.
     /// </summary>
@@ -145,6 +171,20 @@ public sealed class Auction
         if (IsCleared)
         {
             throw new InvalidOperationException($"Auction {Sequence} of year {Year} has already been cleared.");
+        }
+
+        // The collar can move while an auction is open, and a bid outside it is released the moment it
+        // does. Reaching here with one still resting means that release was skipped, and settling it
+        // would fail deep in the cash ledger instead of saying what actually went wrong.
+        AuctionBid? outside = _bids.FirstOrDefault(bid =>
+            bid.Price < _simulation.Rules.AuctionFloorPrice || bid.Price > _simulation.Rules.AuctionCeilingPrice);
+
+        if (outside is not null)
+        {
+            throw new InvalidOperationException(
+                $"Bid {outside.Id} for {outside.Volume} t at {outside.Price} on '{outside.Unit.Name}' is outside the "
+                    + $"collar ({_simulation.Rules.AuctionFloorPrice} to {_simulation.Rules.AuctionCeilingPrice}). A bid "
+                    + "outside the collar is released when the collar moves, so this auction should not still be holding one.");
         }
 
         IsCleared = true;
@@ -207,7 +247,7 @@ public sealed class Auction
         List<AuctionAward> awards = [];
         List<AuctionBid> rejected = [];
         decimal remaining = lot.Volume;
-        decimal marginalPrice = _parameters.AuctionFloorPrice;
+        decimal marginalPrice = _simulation.Rules.AuctionFloorPrice;
 
         foreach (AuctionBid bid in ranked)
         {
@@ -225,7 +265,7 @@ public sealed class Auction
 
         decimal? clearingPrice = awards.Count == 0
             ? null
-            : remaining > 0m ? _parameters.AuctionFloorPrice : marginalPrice;
+            : remaining > 0m ? _simulation.Rules.AuctionFloorPrice : marginalPrice;
 
         if (clearingPrice is { } price)
         {

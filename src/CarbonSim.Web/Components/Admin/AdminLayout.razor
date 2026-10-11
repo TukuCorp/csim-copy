@@ -11,6 +11,7 @@
     <div class="plain" data-interactive="@(RendererInfo.IsInteractive ? "true" : null)">
         <h1>@Strings["AdminConsole"]</h1>
         <p class="notice notice-error">@Strings["AdminAccessDenied"]</p>
+        <p><a class="button" href="/sign-in">@Strings["SignIn"]</a></p>
     </div>
 }
 else
@@ -25,6 +26,7 @@ else
                 </div>
                 <div class="topbar-tools">
                     <span class="muted small">@Context.Snapshot.AccountName</span>
+                    <LanguageSwitch />
                     <a class="button ghost" href="/">@Strings["Dashboard"]</a>
                     <a class="button" href="/sign-out">@Strings["SignOut"]</a>
                 </div>

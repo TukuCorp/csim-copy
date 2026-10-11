@@ -33,13 +33,12 @@ public static class Scoring
         ArgumentNullException.ThrowIfNull(simulation);
         ArgumentNullException.ThrowIfNull(company);
 
-        decimal emissions = new CompliancePosition(simulation).EmissionsFor(company, year);
+        // The one module that answers where a company stands: its emissions here, its settlement below.
+        Standing standing = new(simulation);
+        decimal emissions = standing.Emissions(company, year);
         decimal cost = -simulation.Cash.MovementsFor(company, year, CostCategories);
-        decimal penalties = simulation.Compliance.Results
-            .Where(result => ReferenceEquals(result.Company, company) && result.Year == year)
-            .Sum(result => result.PenaltyCash);
-        CompanyCompliance? reconciliation = simulation.Compliance.Results
-            .FirstOrDefault(result => ReferenceEquals(result.Company, company) && result.Year == year);
+        CompanyCompliance? reconciliation = simulation.Compliance.For(company, year);
+        decimal penalties = reconciliation?.PenaltyCash ?? 0m;
 
         return new CompanyScore(
             company,
@@ -90,10 +89,10 @@ public static class Scoring
     }
 
     /// <summary>
-    /// What a company is left holding at the end of the run: its instruments, less anything it
-    /// never managed to cover. Positive means it finished long, negative means short.
+    /// What a company is left holding: its instruments, less anything it never managed to cover.
+    /// Positive means it finished long, negative means short.
     /// </summary>
-    public static decimal FinalPosition(Simulation simulation, Company company)
+    public static decimal Holdings(Simulation simulation, Company company)
     {
         ArgumentNullException.ThrowIfNull(simulation);
         ArgumentNullException.ThrowIfNull(company);
@@ -110,6 +109,30 @@ public static class Scoring
             .Sum(result => result.Shortfall);
 
         return held - uncovered;
+    }
+
+    /// <summary>
+    /// The position the leaderboard shows: where the company stands in the year the run is
+    /// playing, against that year's forecast emissions - the same figure the player's own position
+    /// panel reads. Once that year has been reconciled the obligation is settled, and what the
+    /// company was left holding, less anything it could not cover, is the position it finished in.
+    /// Signed the way every other position is: positive is short, negative is long.
+    /// </summary>
+    public static decimal FinalLongShortPosition(Simulation simulation, Company company)
+    {
+        ArgumentNullException.ThrowIfNull(simulation);
+        ArgumentNullException.ThrowIfNull(company);
+
+        int year = Math.Max(1, Math.Min(simulation.CurrentYear, simulation.Allocation.Years.Count));
+        bool settled = simulation.Compliance.Results
+            .Any(result => ReferenceEquals(result.Company, company) && result.Year == year);
+
+        // The live year asks Standing, which counts an escrowed allowance as the company's. The settled
+        // year keeps the left-holding rule for now: that is a different question (what it finished
+        // holding, not the settled shortfall) and moving it is a decision, not a refactor.
+        return settled
+            ? -Holdings(simulation, company)
+            : -new Standing(simulation).Position(company, year);
     }
 }
 
@@ -166,15 +189,16 @@ public static class Leaderboard
                 company,
                 score.CostOfCompliance,
                 score.MarginalCostOfCompliance,
-                Scoring.FinalPosition(simulation, company),
+                Scoring.FinalLongShortPosition(simulation, company),
                 company.Owner.Kind == PlayerKind.Ai));
         }
 
+        // Level on cost per tonne, the company that was left holding more ranks first.
         List<LeaderboardEntry> ranked =
         [
             .. entries
                 .OrderBy(entry => entry.OverallMarginalCostOfCompliance)
-                .ThenByDescending(entry => entry.FinalPosition)
+                .ThenByDescending(entry => Scoring.Holdings(simulation, entry.Company))
                 .ThenBy(entry => entry.Company.Id)
                 .Select((entry, index) => entry with { Rank = index + 1 }),
         ];

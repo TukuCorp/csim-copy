@@ -9,6 +9,7 @@ using CarbonSim.Engine.Market;
 using CarbonSim.Engine.Market.Exchange;
 using CarbonSim.Engine.Market.Otc;
 using CarbonSim.Engine.Reporting;
+using CarbonSim.Engine.Run;
 using CarbonSim.Web.Simulations;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.Extensions.DependencyInjection;
@@ -25,6 +26,7 @@ public sealed class PlayerSession : IPlayerSession
 {
     private const int RecentTradeCount = 10;
     private const int HistoryCount = 25;
+    private const int BookLevels = 5;
 
     private readonly SimulationRegistry _runs;
     private readonly IServiceScopeFactory _scopes;
@@ -62,6 +64,50 @@ public sealed class PlayerSession : IPlayerSession
         return (await CurrentAccountAsync().ConfigureAwait(false))?.Id.ToString(CultureInfo.InvariantCulture);
     }
 
+    public async Task<FrontDoorView> FrontDoorAsync(CancellationToken cancellationToken = default)
+    {
+        PlayerAccount? account = await CurrentAccountAsync().ConfigureAwait(false);
+
+        if (account is null)
+        {
+            return FrontDoorView.Guest;
+        }
+
+        if (account.Role == AccountRole.Administrator)
+        {
+            // A trainer has no company, so their screens are the console rather than a run's.
+            return new FrontDoorView(account.DisplayName, null, IsAdministrator: true, null);
+        }
+
+        return new FrontDoorView(
+            account.DisplayName,
+            account.CompanyName,
+            IsAdministrator: false,
+            await MyRunAsync(account.CompanyName).ConfigureAwait(false));
+    }
+
+    /// <summary>The run the signed-in company plays in, or null when the host holds no such run.</summary>
+    private async Task<Guid?> MyRunAsync(string? company)
+    {
+        if (company is not { Length: > 0 })
+        {
+            return null;
+        }
+
+        foreach (Guid id in _runs.Ids)
+        {
+            if (_runs.Contains(id) && await _runs.ReadAsync(id, run => PlaysHere(run, company)).ConfigureAwait(false))
+            {
+                return id;
+            }
+        }
+
+        return null;
+    }
+
+    private static bool PlaysHere(HostedRun run, string company) =>
+        run.Simulation.Companies.Any(candidate => string.Equals(candidate.Name, company, StringComparison.Ordinal));
+
     public async Task<PlayerView?> ForPlayerAsync(Guid simulationId, CancellationToken cancellationToken = default)
     {
         PlayerAccount? account = await CurrentAccountAsync().ConfigureAwait(false);
@@ -77,7 +123,7 @@ public sealed class PlayerSession : IPlayerSession
     public Task PlaceBidAsync(Guid simulationId, int unitId, int vintage, decimal price, decimal volume, CancellationToken cancellationToken = default) =>
         ActAsync(actor => _runs.BidAtAuctionAsync(simulationId, actor, unitId, vintage, price, volume));
 
-    public Task PlaceOrderAsync(
+    public async Task<OrderOutcome> PlaceOrderAsync(
         Guid simulationId,
         int unitId,
         string product,
@@ -87,8 +133,31 @@ public sealed class PlayerSession : IPlayerSession
         decimal? price,
         decimal? stopPrice,
         string fillPolicy,
-        CancellationToken cancellationToken = default) =>
-        ActAsync(actor => _runs.PlaceOrderAsync(simulationId, actor, unitId, product, side, kind, volume, price, stopPrice, fillPolicy));
+        CancellationToken cancellationToken = default)
+    {
+        string actor = await CurrentActorAsync().ConfigureAwait(false)
+            ?? throw new InvalidOperationException("Sign in before acting in a simulation.");
+
+        try
+        {
+            return await _runs.PlaceOrderAsync(simulationId, actor, unitId, product, side, kind, volume, price, stopPrice, fillPolicy).ConfigureAwait(false);
+        }
+        catch (TradeRefusedException refused)
+        {
+            // A shut window, named so the screen can say it in the reader's language.
+            return OrderOutcome.Refused(OrderRefusal.Of(refused.Refusal, refused.Message));
+        }
+        catch (ArgumentException exception)
+        {
+            // An order the book would not take: a price outside the band, a volume of nothing.
+            return OrderOutcome.Refused(OrderRefusal.Of(exception.Message));
+        }
+        catch (InvalidOperationException exception)
+        {
+            // The escrow the market could not set aside, in the engine's own words.
+            return OrderOutcome.Refused(OrderRefusal.Of(exception.Message));
+        }
+    }
 
     public Task CancelOrderAsync(Guid simulationId, int unitId, long orderId, CancellationToken cancellationToken = default) =>
         ActAsync(actor => _runs.CancelOrderAsync(simulationId, actor, unitId, orderId));
@@ -132,13 +201,13 @@ public sealed class PlayerSession : IPlayerSession
     private static RunSummary Summarise(HostedRun run)
     {
         Simulation simulation = run.Simulation;
-        Parameters parameters = simulation.TradingSystems.Single().Parameters;
+        Parameters parameters = simulation.Rules;
 
         return new RunSummary(
             simulation.Id,
             simulation.Name,
             simulation.State.ToString(),
-            simulation.CurrentYear,
+            RunViews.YearOf(simulation),
             parameters.Years,
             simulation.Companies.Count,
             simulation.Companies.Count(company => company.Owner.Kind == PlayerKind.Human),
@@ -164,10 +233,14 @@ public sealed class PlayerSession : IPlayerSession
             return null;
         }
 
-        Parameters parameters = simulation.TradingSystems.Single().Parameters;
-        int year = simulation.CurrentYear;
-        bool started = year >= 1;
-        CompliancePosition position = new(simulation);
+        Parameters parameters = simulation.Rules;
+        int played = simulation.CurrentYear;
+        int year = Math.Max(1, played);
+        bool started = played >= 1;
+        // A year that has been closed has nothing left to count down; the screens show the
+        // settlement instead of a countdown to an auction that is not coming.
+        bool yearOver = simulation.State is SimulationState.YearEnded or SimulationState.GameEnded;
+        Standing standing = new(simulation);
         List<ProductView> tradable =
         [
             .. Enumerable.Range(1, parameters.Years).Select(ProductView.Allowance),
@@ -185,9 +258,9 @@ public sealed class PlayerSession : IPlayerSession
             parameters.AuctionsPerYear,
             run.Clock.IsAuctionOpen,
             run.Clock.State == SimulationState.Running,
-            run.Clock.TimeLeftInYear,
-            run.Clock.TimeToAuctionOpen,
-            run.Clock.TimeToAuctionClose,
+            yearOver ? TimeSpan.Zero : run.Clock.TimeLeftInYear,
+            yearOver ? TimeSpan.Zero : run.Clock.TimeToAuctionOpen,
+            yearOver ? TimeSpan.Zero : run.Clock.TimeToAuctionClose,
             account.DisplayName,
             company.Name,
             company.Sector.Name,
@@ -195,8 +268,8 @@ public sealed class PlayerSession : IPlayerSession
             company.Owner.Kind == PlayerKind.Ai,
             BuildFinance(simulation, company, year, started),
             BuildCompliance(simulation, company, year, started),
-            BuildPosition(simulation, position, company, year, started),
-            BuildUnits(simulation, position, company, year, started),
+            BuildPosition(simulation, standing, company, year, started),
+            BuildUnits(simulation, standing, company, year, started),
             BuildAbatements(simulation, company, year),
             BuildAuctions(simulation, run, company),
             started ? BuildAuction(run.Auctions.ForSection(year, run.Clock.CurrentAuction), company) : null,
@@ -211,7 +284,12 @@ public sealed class PlayerSession : IPlayerSession
             BuildMyTrades(run, company),
             BuildLeaderboard(run, company),
             BuildSystemInfo(run, parameters, year, started),
-            [.. run.Chat.TakeLast(50).Select(entry => new ChatLine(entry.Year, entry.From, entry.Text))],
+            // The room reads the room's lines; a line addressed to one company is that company's, which
+            // is what keeps a sealed bid out of everybody else's feed.
+            [.. run.Chat
+                .Where(entry => entry.To is null || string.Equals(entry.To, company.Name, StringComparison.Ordinal))
+                .TakeLast(50)
+                .Select(entry => new ChatLine(entry.Year, entry.From, entry.Text))],
             run.MessagingEnabled);
     }
 
@@ -260,21 +338,47 @@ public sealed class PlayerSession : IPlayerSession
 
     private static PositionView BuildPosition(
         Simulation simulation,
-        CompliancePosition position,
+        Standing standing,
         Company company,
         int year,
         bool started)
     {
         decimal free = started ? simulation.Allocation.FreeAllocationFor(company, year) : 0m;
-        decimal emissions = started ? position.EmissionsFor(company, year) : 0m;
+        decimal emissions = started ? standing.Emissions(company, year) : 0m;
         decimal reduction = started ? simulation.Abatements.ReductionsFor(company, year) : 0m;
+        decimal held = started ? standing.Held(company, year) : 0m;
+        CompanyCompliance? settled = started ? simulation.Compliance.For(company, year) : null;
 
-        return new PositionView(free, emissions, reduction, emissions - free, position.OverallShortfallFor(company));
+        // Once the year has been reconciled there is no position left to be in: the obligation was
+        // met or was not, and what the company holds is what it carried forward. Showing a fresh
+        // forecast gap against the instruments that survived the settlement read as a new
+        // shortfall of everything it had just surrendered.
+        if (settled is not null)
+        {
+            return new PositionView(
+                free,
+                held,
+                settled.Obligation,
+                reduction,
+                settled.Shortfall,
+                Settled: true);
+        }
+
+        // The shortfall is the one module's answer, never negative: held above emissions is a long
+        // position, and a light one is what the year still owes. A screen that subtracted them the
+        // other way up would report a long company as though it had a negative obligation.
+        return new PositionView(
+            free,
+            held,
+            emissions,
+            reduction,
+            standing.Shortfall(company, year),
+            Settled: false);
     }
 
     private static List<UnitView> BuildUnits(
         Simulation simulation,
-        CompliancePosition position,
+        Standing standing,
         Company company,
         int year,
         bool started)
@@ -311,7 +415,7 @@ public sealed class PlayerSession : IPlayerSession
                 unit.Sector.Name,
                 unit.BaselineEmissions,
                 started ? simulation.Allocation.FreeAllocationFor(unit, year) : 0m,
-                started ? position.EmissionsFor(unit, year) : unit.BaselineEmissions,
+                started ? standing.Emissions(unit, year) : unit.BaselineEmissions,
                 started ? simulation.Abatements.ReductionsFor(unit, year) : 0m,
                 unit.NormalOperatingProfit,
                 started && simulation.Abatements.IsShutDown(unit, year),
@@ -422,18 +526,40 @@ public sealed class PlayerSession : IPlayerSession
         IReadOnlyList<ProductView> tradable)
     {
         List<ProductBookView> books = [];
-        decimal floor = simulation.TradingSystems.Single().Parameters.AuctionFloorPrice;
+        decimal floor = simulation.Rules.AuctionFloorPrice;
 
         foreach (ProductView view in tradable)
         {
             Product product = ToProduct(view);
             OrderBook? book = run.Exchange.Products.Contains(product) ? run.Exchange.Book(product) : null;
+            (decimal bandFloor, decimal bandCeiling) = run.Exchange.BandFor(product);
 
             // The top of the book, the tape and the candles are the same for every player, so each
-            // is built once per change; only a player's own resting orders are cut per player.
-            IReadOnlyList<OrderView> openOrders = run.Shared(
-                $"book-open:{view.Key}",
-                () => (IReadOnlyList<OrderView>)[.. (book?.OpenOrders ?? []).Take(12).Select(ToView)]);
+            // is built once per change; only a player's own resting orders are cut per player. The
+            // levels add every order at a price together: a book is read by price, not by order, and
+            // the earlier take of the first twelve orders hid the selling side of a busy book
+            // entirely.
+            BookLevelsView levels = run.Shared(
+                $"book-levels:{view.Key}",
+                () => new BookLevelsView(
+                    Bids: (IReadOnlyList<BookLevelView>)
+                    [
+                        .. (book?.OpenOrders ?? [])
+                            .Where(order => order.Side == OrderSide.Buy && order.Price is not null)
+                            .GroupBy(order => order.Price!.Value)
+                            .OrderByDescending(level => level.Key)
+                            .Take(BookLevels)
+                            .Select(level => new BookLevelView(level.Key, level.Sum(order => order.Volume - order.FilledVolume))),
+                    ],
+                    Asks: (IReadOnlyList<BookLevelView>)
+                    [
+                        .. (book?.OpenOrders ?? [])
+                            .Where(order => order.Side == OrderSide.Sell && order.Price is not null)
+                            .GroupBy(order => order.Price!.Value)
+                            .OrderBy(level => level.Key)
+                            .Take(BookLevels)
+                            .Select(level => new BookLevelView(level.Key, level.Sum(order => order.Volume - order.FilledVolume))),
+                    ]));
 
             List<OrderView> myOrders =
             [
@@ -457,9 +583,10 @@ public sealed class PlayerSession : IPlayerSession
                 book?.BestBid,
                 book?.BestOffer,
                 book?.LastTradePrice ?? floor,
-                book?.BandFloor ?? floor * (1m - simulation.TradingSystems.Single().Parameters.VolatilityBand),
-                book?.BandCeiling ?? floor * (1m + simulation.TradingSystems.Single().Parameters.VolatilityBand),
-                openOrders,
+                bandFloor,
+                bandCeiling,
+                levels.Bids,
+                levels.Asks,
                 myOrders,
                 recent,
                 run.Shared($"book-yearprices:{view.Key}", () => YearPrices(simulation, product))));
@@ -518,15 +645,24 @@ public sealed class PlayerSession : IPlayerSession
     private static IReadOnlyList<CounterpartyView> BuildCounterparties(HostedRun run, Company company)
     {
         // The roster of other units is the same for everyone, so it is sorted once per change and
-        // each player only filters out their own company from it.
+        // each player only filters out their own company from it. The companies a person plays
+        // come first and the bots after them by sector, so a trainer looking for a counterparty
+        // finds the other humans before the machines.
         IReadOnlyList<CounterpartyView> all = run.Shared(
             "counterparties",
             () => (IReadOnlyList<CounterpartyView>)
             [
                 .. run.Simulation.Units
-                    .OrderBy(unit => unit.Company.Name, StringComparer.Ordinal)
+                    .OrderByDescending(unit => unit.Company.Owner.Kind == PlayerKind.Human)
+                    .ThenBy(unit => unit.Company.Sector.Name, StringComparer.CurrentCulture)
+                    .ThenBy(unit => unit.Company.Name, StringComparer.CurrentCulture)
                     .ThenBy(unit => unit.Id)
-                    .Select(unit => new CounterpartyView(unit.Id, unit.Name, unit.Company.Name, unit.Sector.Name)),
+                    .Select(unit => new CounterpartyView(
+                        unit.Id,
+                        unit.Name,
+                        unit.Company.Name,
+                        unit.Sector.Name,
+                        unit.Company.Owner.Kind == PlayerKind.Ai)),
             ]);
 
         return [.. all.Where(candidate => !string.Equals(candidate.CompanyName, company.Name, StringComparison.Ordinal))];
@@ -620,8 +756,8 @@ public sealed class PlayerSession : IPlayerSession
         bool started)
     {
         SystemReport? report = started ? SystemReport.For(simulation, year) : null;
-        SystemTotalsView thisYear = report is null ? EmptyTotals() : ToTotals(simulation, report.ThisYear, year);
-        SystemTotalsView toDate = report is null ? EmptyTotals() : ToTotals(simulation, report.ToDate, 0, toDate: true);
+        SystemTotals thisYear = report?.ThisYear ?? SystemTotals.Empty;
+        SystemTotals toDate = report?.ToDate ?? SystemTotals.Empty;
 
         List<SectorView> sectors =
         [
@@ -636,16 +772,10 @@ public sealed class PlayerSession : IPlayerSession
                     : 0m)),
         ];
 
-        List<HoldingView> reserve =
-        [
-            .. Enumerable.Range(1, parameters.Years).Select(vintage => new HoldingView(
-                ProductView.Allowance(vintage),
-                simulation.Government.Held(vintage),
-                simulation.Government.Issued(vintage))),
-        ];
+        List<HoldingView> reserve = RunViews.Reserve(simulation);
 
         return new SystemInfoView(
-            simulation.TradingSystems.Single().Name,
+            simulation.TradingSystem.Name,
             parameters.Cap,
             parameters.AnnualCapReductionRate,
             parameters.FreeAllocationShare,
@@ -661,48 +791,13 @@ public sealed class PlayerSession : IPlayerSession
             parameters.TradingOpenShareOfYear,
             parameters.VolatilityBand,
             parameters.OverdraftInterestRate,
+            parameters.GovernmentReserveToAuctionPercent,
+            parameters.ForwardVintageShare,
             sectors,
             thisYear,
             toDate,
             simulation.Government.Revenue,
             reserve);
-    }
-
-    private static SystemTotalsView ToTotals(Simulation simulation, SystemTotals totals, int year, bool toDate = false)
-    {
-        int through = toDate ? simulation.Allocation.Years.Max() : year;
-        decimal cap = through >= 1 ? simulation.Allocation.Years.Where(candidate => candidate <= through).Sum(simulation.Allocation.CapForYear) : 0m;
-        decimal free = through >= 1 ? simulation.Allocation.Years.Where(candidate => candidate <= through).Sum(simulation.Allocation.FreeAllocationForYear) : 0m;
-
-        return new SystemTotalsView(
-            totals.ForecastEmissions,
-            totals.AllowancesSurrendered,
-            totals.OffsetsSurrendered,
-            totals.Banked,
-            totals.Forfeited,
-            totals.AllowancesSold,
-            totals.AllowancesBought,
-            totals.OffsetsSold,
-            totals.OffsetsBought,
-            totals.AuctionVolume,
-            totals.AuctionRevenue,
-            totals.AverageAllowancePrice,
-            totals.AverageOffsetPrice,
-            totals.AbatementsImplemented,
-            totals.AbatementTonnes,
-            totals.EmissionsReduced,
-            totals.PenaltyCount,
-            totals.PenaltyValue,
-            totals.FineValue,
-            cap,
-            free,
-            cap - free);
-    }
-
-    private static SystemTotalsView EmptyTotals()
-    {
-        return new SystemTotalsView(
-            0m, 0m, 0m, 0m, 0m, 0m, 0m, 0m, 0m, 0m, 0m, 0m, 0m, 0, 0m, 0m, 0, 0m, 0m, 0m, 0m, 0m);
     }
 
     private static OrderView ToView(Order order) => new(

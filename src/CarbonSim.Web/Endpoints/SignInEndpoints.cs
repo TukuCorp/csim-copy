@@ -53,6 +53,12 @@ internal static class SignInEndpoints
             .Append("<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />")
             .Append("<title>").Append(Encode(strings["SignInTitle"])).Append("</title>")
             .Append("<link rel=\"stylesheet\" href=\"/app.css\" /></head><body><div class=\"plain\">")
+            .Append("<nav class=\"lang\" aria-label=\"").Append(Encode(strings["Language"])).Append("\">")
+            .Append("<a href=\"/culture/set?culture=en&amp;redirect=%2Fsign-in\" lang=\"en\" hreflang=\"en\">")
+            .Append(Encode(strings["English"])).Append("</a>")
+            .Append("<span aria-hidden=\"true\">|</span>")
+            .Append("<a href=\"/culture/set?culture=vi&amp;redirect=%2Fsign-in\" lang=\"vi\" hreflang=\"vi\">")
+            .Append(Encode(strings["Vietnamese"])).Append("</a></nav>")
             .Append("<h1>").Append(Encode(strings["AppTitle"])).Append("</h1>");
 
         if (!string.IsNullOrWhiteSpace(error))

@@ -22,7 +22,7 @@ else
             {
                 <label>
                     @Strings["UnitName"]
-                    <select @bind="_unitId">
+                    <select id="bid-unit" @bind="_unitId">
                         @foreach (UnitView unit in view.Units)
                         {
                             <option value="@unit.Id">@unit.Name</option>
@@ -31,7 +31,7 @@ else
                 </label>
                 <label>
                     @Strings["Vintage"]
-                    <select @bind="_vintage">
+                    <select id="bid-vintage" @bind="_vintage">
                         @foreach (int vintage in Vintages(auction))
                         {
                             <option value="@vintage">@Strings["Vintage"] @vintage</option>
@@ -76,23 +76,32 @@ else
             <p class="small">@Strings["AllowancesToBeAuctionedThisYear"]: @Display.Tonnes(view.AllowancesToBeAuctionedThisYear)</p>
         </section>
 
-        @if (view.CurrentAuction is { IsCleared: true } ended)
+        @if (view.LastClearedAuction is { } ended)
         {
-            @* A polite live region: when the auction clears, its result is announced rather than
-               waiting for the player to notice the section appear. *@
+            @* A polite live region: when an auction clears, its result is announced and stays on
+               the screen while the next section runs, rather than being replaced the moment the
+               clock moves on. *@
             <section class="card wide" tabindex="0" role="status" aria-live="polite">
                 <h2>@Strings["AuctionHasEnded"]</h2>
+                <p class="muted small">@Strings["Year_X", ended.Year] &middot; @Strings["Auction_X", ended.Sequence]</p>
                 @if (ended.MyAwards.Count == 0)
                 {
                     <p class="muted">@Strings["NoRows"]</p>
                 }
                 else
                 {
-                    <QuickGrid Items="@ended.MyAwards.AsQueryable()" Class="grid">
+                    <dl class="metrics">
+                        <div><dt>@Strings["ClearedAt"]</dt><dd>@Display.Price(ended.ClearingPrice)</dd></div>
+                        <div><dt>@Strings["MyWon"]</dt><dd>@Display.Tonnes(ended.MyBids.Sum(bid => bid.Awarded))</dd></div>
+                        <div><dt>@Strings["MyPaid"]</dt><dd>@Display.Money(ended.MyBids.Sum(bid => bid.Cost))</dd></div>
+                    </dl>
+
+                    <QuickGrid Items="@ended.MyBids.AsQueryable()" Class="grid">
                         <TemplateColumn Title="@Strings["Vintage"]" Context="row">@row.Vintage</TemplateColumn>
-                        <TemplateColumn Title="@Strings["Won"]" Context="row">@Display.Tonnes(row.Volume)</TemplateColumn>
-                        <TemplateColumn Title="@Strings["Price"]" Context="row">@Display.Price(row.Price)</TemplateColumn>
-                        <TemplateColumn Title="@Strings["Paid"]" Context="row">@Display.Money(row.Cost)</TemplateColumn>
+                        <TemplateColumn Title="@Strings["YouBid"]" Context="row">@Display.Tonnes(row.Volume)</TemplateColumn>
+                        <TemplateColumn Title="@Strings["UnitBidPrice"]" Context="row">@Display.Price(row.Price)</TemplateColumn>
+                        <TemplateColumn Title="@Strings["MyWon"]" Context="row">@Display.Tonnes(row.Awarded)</TemplateColumn>
+                        <TemplateColumn Title="@Strings["MyPaid"]" Context="row">@Display.Money(row.Cost)</TemplateColumn>
                     </QuickGrid>
                 }
             </section>
@@ -108,6 +117,8 @@ else
                 <TemplateColumn Title="@Strings["ClearedAt"]" Context="row">@Display.Price(row.ClearingPrice)</TemplateColumn>
                 <TemplateColumn Title="@Strings["TotalAwarded"]" Context="row">@Display.Tonnes(row.VolumeSold)</TemplateColumn>
                 <TemplateColumn Title="@Strings["YouBid"]" Context="row">@Display.Tonnes(row.MyBids.Sum(bid => bid.Volume))</TemplateColumn>
+                <TemplateColumn Title="@Strings["MyWon"]" Context="row">@Display.Tonnes(row.MyBids.Sum(bid => bid.Awarded))</TemplateColumn>
+                <TemplateColumn Title="@Strings["MyPaid"]" Context="row">@Display.Money(row.MyBids.Sum(bid => bid.Cost))</TemplateColumn>
             </QuickGrid>
         </section>
     </div>

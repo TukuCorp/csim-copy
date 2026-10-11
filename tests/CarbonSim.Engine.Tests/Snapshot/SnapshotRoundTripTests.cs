@@ -6,6 +6,7 @@ using CarbonSim.Engine.Market;
 using CarbonSim.Engine.Market.Exchange;
 using CarbonSim.Engine.Market.Otc;
 using CarbonSim.Engine.Reporting;
+using CarbonSim.Engine.Run;
 using CarbonSim.Engine.Scenarios;
 using CarbonSim.Engine.Snapshot;
 using FluentAssertions;
@@ -345,7 +346,7 @@ public sealed class SnapshotRoundTripTests
                 run.Clock.IsAuctionOpen,
                 run.Clock.TimeToAuctionOpen,
                 run.Clock.TimeToAuctionClose,
-                run.Clock.AuctionsInYear == run.Simulation.TradingSystems.Single().Parameters.AuctionsPerYear),
+                run.Clock.AuctionsInYear == run.Simulation.Rules.AuctionsPerYear),
         ];
     }
 
@@ -517,29 +518,26 @@ public sealed class SnapshotRoundTripTests
         private const decimal OtcVolume = 100m;
 
         private readonly TestTimeProvider _time;
-        private readonly BotMarkets _markets;
-        private readonly CompliancePosition _position;
+        private readonly Standing _standing;
 
         /// <summary>Starts a fresh run of the shipped scenario, with the wall clock where the caller wants it.</summary>
         public Run(TimeSpan wallClockOffset = default)
         {
             _time = new TestTimeProvider();
             _time.Advance(wallClockOffset);
-            Simulation = ScenarioLoader.LoadFile(Path.Combine("scenarios", "vietnam-2024.json"));
-            Clock = new SimulationClock(Simulation, _time);
+            Simulation simulation = ScenarioLoader.LoadFile(Path.Combine("scenarios", "vietnam-2024.json"));
 
             // The published exercises ran the whole fleet this way: every enterprise automated.
-            foreach (Unit unit in Simulation.Units)
+            foreach (Unit unit in simulation.Units)
             {
                 unit.AutoTrade = true;
             }
 
-            Bots = SimulationBots.Create(Simulation, BotSettings.For(BotDifficulty.Normal));
-            Auctions = AuctionSchedule.Build(Simulation, forwardVintageShare: 0.20m);
-            Exchange = new Exchange(Simulation);
-            Otc = new OtcMarket(Simulation);
-            _markets = new BotMarkets(Exchange, Otc, Auctions);
-            _position = new CompliancePosition(Simulation);
+            SimulationBots bots = SimulationBots.Create(simulation, BotSettings.For(BotDifficulty.Normal));
+
+            // The run module plays this run, so the tick and the year close below are the host's own.
+            Module = SimulationRun.Create(simulation, _time, bots);
+            _standing = new Standing(simulation);
         }
 
         /// <summary>Reloads a captured run, against a wall clock put back where the original's was.</summary>
@@ -550,28 +548,31 @@ public sealed class SnapshotRoundTripTests
 
             RestoredSimulation restored = SimulationSnapshots.Restore(snapshot, _time);
 
-            Simulation = restored.Simulation;
-            Clock = restored.Clock;
-            Exchange = restored.Exchange;
-            Otc = restored.Otc;
-            Auctions = restored.Auctions;
-            Bots = restored.Bots;
-            _markets = new BotMarkets(Exchange, Otc, Auctions);
-            _position = new CompliancePosition(Simulation);
+            Module = SimulationRun.Restore(
+                restored.Simulation,
+                restored.Clock,
+                restored.Exchange,
+                restored.Otc,
+                restored.Auctions,
+                restored.Bots);
+
+            _standing = new Standing(restored.Simulation);
             WallClock = wallClockOffset;
         }
 
-        public Simulation Simulation { get; private set; }
+        public SimulationRun Module { get; }
 
-        public SimulationClock Clock { get; private set; }
+        public Simulation Simulation => Module.Simulation;
 
-        public Exchange Exchange { get; private set; }
+        public SimulationClock Clock => Module.Clock;
 
-        public OtcMarket Otc { get; private set; }
+        public Exchange Exchange => Module.Exchange;
 
-        public AuctionSchedule Auctions { get; private set; }
+        public OtcMarket Otc => Module.Otc;
 
-        public SimulationBots? Bots { get; private set; }
+        public AuctionSchedule Auctions => Module.Auctions;
+
+        public SimulationBots? Bots => Module.Bots;
 
         /// <summary>How much wall time this run has advanced, so a restored run can line up with it.</summary>
         public TimeSpan WallClock { get; private set; }
@@ -587,7 +588,7 @@ public sealed class SnapshotRoundTripTests
 
             foreach (Company company in Simulation.Companies)
             {
-                decimal emissions = _position.EmissionsFor(company, year);
+                decimal emissions = _standing.Emissions(company, year);
                 decimal volume = emissions * 0.03m;
 
                 if (company.Id % 5 == 0)
@@ -605,13 +606,15 @@ public sealed class SnapshotRoundTripTests
         /// <summary>Closes the year: every company reconciled, then the cash books closed.</summary>
         public void FinishYear(int year)
         {
-            while (Clock.State != SimulationState.YearEnded)
+            while (Clock.State is SimulationState.Running or SimulationState.PausedAfterAuction)
             {
                 Tick();
             }
 
-            Simulation.Compliance.Reconcile(year);
-            Simulation.Finance.CloseYear(year);
+            // The module's year close: it ends the clock, clears the auction still open, reconciles the
+            // year and closes the books - the same order the host's End Year control uses.
+            Clock.CurrentYear.Should().Be(year, "a run closes the year it is playing");
+            Module.EndYear();
         }
 
         /// <summary>One tick of the clock and whatever became due with it.</summary>
@@ -620,20 +623,7 @@ public sealed class SnapshotRoundTripTests
             _time.Advance(Step);
             WallClock += Step;
 
-            foreach (ClockEvent closed in Clock.Advance().Where(@event => @event.Kind == ClockEventKind.AuctionClosed))
-            {
-                Auctions.ForSection(closed.Year, closed.Auction).Clear();
-            }
-
-            if (Bots is { } bots)
-            {
-                bots.Act(Simulation, Clock, _markets);
-            }
-
-            if (Clock.State == SimulationState.TradingHalted)
-            {
-                Clock.EndYear();
-            }
+            Module.Advance();
         }
 
         /// <summary>Stands in for the administrator's abatement and enforcement actions.</summary>

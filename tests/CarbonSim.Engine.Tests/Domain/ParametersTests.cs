@@ -26,6 +26,7 @@ public sealed class ParametersTests
         { "bausGrowthBySector", parameters => parameters with { BausGrowthBySector = [] } },
         { "bausGrowthBySector", parameters => parameters with { BausGrowthBySector = [new SectorBausGrowth("Power", 0.06m, 0.02m)] } },
         { "bausGrowthBySector", parameters => parameters with { BausGrowthBySector = [new SectorBausGrowth("Power", -2m, 0.02m)] } },
+        { "forwardVintageShare", parameters => parameters with { ForwardVintageShare = 1.5m } },
     };
 
     [Fact]

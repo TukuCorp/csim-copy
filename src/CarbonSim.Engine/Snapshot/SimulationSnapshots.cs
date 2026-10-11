@@ -56,7 +56,7 @@ public static class SimulationSnapshots
         ArgumentNullException.ThrowIfNull(otc);
         ArgumentNullException.ThrowIfNull(auctions);
 
-        TradingSystem system = simulation.TradingSystems.Single();
+        TradingSystem system = simulation.TradingSystem;
 
         return new SimulationSnapshot(
             simulation.Id,
@@ -291,7 +291,8 @@ public static class SimulationSnapshots
             parameters.TradingOpenShareOfYear,
             parameters.VolatilityBand,
             parameters.OverdraftInterestRate,
-            parameters.GovernmentReserveToAuctionPercent);
+            parameters.GovernmentReserveToAuctionPercent,
+            parameters.ForwardVintageShare);
     }
 
     private static Parameters Rebuild(ParametersSnapshot snapshot)
@@ -322,6 +323,7 @@ public static class SimulationSnapshots
             VolatilityBand = snapshot.VolatilityBand,
             OverdraftInterestRate = snapshot.OverdraftInterestRate,
             GovernmentReserveToAuctionPercent = snapshot.GovernmentReserveToAuctionPercent,
+            ForwardVintageShare = snapshot.ForwardVintageShare,
         };
     }
 

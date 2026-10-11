@@ -71,6 +71,7 @@ public sealed class OtcMarket
     /// <summary>Sends an offer to a named unit, setting the offered instruments aside.</summary>
     public OtcOffer Send(Unit seller, Unit buyer, Product product, decimal price, decimal volume)
     {
+        TradingWindow.RequireTrading(_simulation);
         RequireUnit(seller, nameof(seller), out Company sellerCompany);
         RequireUnit(buyer, nameof(buyer), out _);
 
@@ -100,6 +101,8 @@ public sealed class OtcMarket
     /// <summary>The named buyer takes the offer: instruments and money change hands.</summary>
     public OtcOffer Accept(Unit buyer, long offerId)
     {
+        TradingWindow.RequireTrading(_simulation);
+
         OtcOffer offer = Answer(buyer, offerId);
 
         _simulation.Cash.Withdraw(

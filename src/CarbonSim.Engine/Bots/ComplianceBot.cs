@@ -24,6 +24,12 @@ namespace CarbonSim.Engine.Bots;
 /// </remarks>
 public sealed class ComplianceBot
 {
+    /// <summary>
+    /// How wide a bot quotes around the price it expects: it bids this much below and offers this
+    /// much above, so the book has two sides to it instead of a queue of orders all at one price.
+    /// </summary>
+    private const decimal QuoteSpread = 0.04m;
+
     private readonly Company _company;
     private readonly List<Unit> _units;
     private readonly BotSettings _settings;
@@ -32,6 +38,13 @@ public sealed class ComplianceBot
     private readonly HashSet<(int Year, BotTrigger Trigger)> _done = [];
     private readonly HashSet<(int Year, int Section)> _bidIn = [];
     private decimal _expectedPrice;
+    private int _seenRevision;
+
+    /// <summary>
+    /// This bot's own rung on the ladder, spread across the band by company so two hundred bots do
+    /// not all quote the same two prices into a market that is meant to be read as a book.
+    /// </summary>
+    private decimal QuoteRung => (((_company.Id * 7) % 11) - 5) / 100m;
 
     internal ComplianceBot(
         Company company,
@@ -49,7 +62,12 @@ public sealed class ComplianceBot
             {
                 // Fixed fractions of the year with a little jitter, drawn in one deterministic order.
                 [BotTrigger.Abatement] = random.NextDecimal(0.01m, 0.04m),
-                [BotTrigger.Trade] = random.NextDecimal(0.40m, 0.60m),
+                // Early enough that the fleet's orders are in the book inside the first auction
+                // cycle: a room watching the exchange in the first minutes of a year has to see a
+                // market, and a bot that waits until halfway through has nothing left to trade with.
+                [BotTrigger.Trade] = random.NextDecimal(0.05m, 0.15m),
+                // And a second pass late in the year, when a bot stops quoting and starts dealing.
+                [BotTrigger.TradeAgain] = random.NextDecimal(0.60m, 0.80m),
             })
     {
     }
@@ -184,6 +202,20 @@ public sealed class ComplianceBot
         int year = clock.CurrentYear;
         decimal elapsed = (decimal)clock.ElapsedInYear.TotalMinutes / (decimal)clock.YearLength.TotalMinutes;
 
+        // A change to the rules is news every bot has to act on: one that hears it re-opens the
+        // passes it has already used this year and takes the new collar into its price on the spot,
+        // so a floor or ceiling moved by the regulator reaches the book inside the same month.
+        if (simulation.RulesRevision != _seenRevision)
+        {
+            _seenRevision = simulation.RulesRevision;
+            _done.Remove((year, BotTrigger.Trade));
+            _done.Remove((year, BotTrigger.TradeAgain));
+
+            Parameters shocked = simulation.Rules;
+
+            _expectedPrice = Math.Clamp(_expectedPrice, shocked.AuctionFloorPrice, shocked.AuctionCeilingPrice);
+        }
+
         LearnPrices(simulation, year);
 
         if (Due(year, BotTrigger.Abatement, elapsed))
@@ -202,7 +234,12 @@ public sealed class ComplianceBot
             // market before it invests: a price that has climbed makes the longer-payback
             // abatement worth building before the year is out.
             Abate(simulation, year, actions);
-            Trade(simulation, year, markets, actions);
+            Quote(simulation, year, markets, actions);
+        }
+
+        if (Due(year, BotTrigger.TradeAgain, elapsed))
+        {
+            Settle(simulation, year, markets, actions);
         }
 
         return actions;
@@ -225,6 +262,10 @@ public sealed class ComplianceBot
             .Where(trade => trade.Channel != TradeChannel.Auction)
             .LastOrDefault();
 
+        // The last clearing of any kind, not a blend: an expected price pulled towards the day's
+        // auction clearing makes every bot hold out for a higher price, and a fleet that holds out
+        // ends the year short. The late pass is where the two venues are brought together, because
+        // that is where a bot that still needs tonnes pays the price it can see.
         if (lastAuction is not null)
         {
             _expectedPrice = lastAuction.Price;
@@ -233,6 +274,11 @@ public sealed class ComplianceBot
         {
             _expectedPrice = lastTrade.Price;
         }
+
+        // The collar is the regulator's word on where a tonne may trade, so it bounds the estimate.
+        Parameters parameters = simulation.Rules;
+
+        _expectedPrice = Math.Clamp(_expectedPrice, parameters.AuctionFloorPrice, parameters.AuctionCeilingPrice);
     }
 
     private void Abate(Simulation simulation, int year, List<BotAction> actions)
@@ -244,14 +290,13 @@ public sealed class ComplianceBot
         {
             foreach (AbatementOption option in unit.AbatementOptions.OrderBy(option => option.NetCostPerTonne))
             {
-                // The project only pays back over the years of the run it will actually be
-                // running, so its cost per tonne is the capital spread over those years, not
-                // over its whole service life. In a short exercise that is what stops a bot
-                // building a long project for the couple of years left to play.
-                int operatingYears = Math.Min(option.LifetimeYears, remainingYears - option.ImplementationYears);
-                decimal costPerTonne = operatingYears < 1
-                    ? decimal.MaxValue
-                    : option.UpfrontCost / (option.AnnualReduction * operatingYears);
+                // What a tonne costs the company by this route: the project's own cost per tonne
+                // over its service life, which is the figure the scenario prices the menu with.
+                // Amortising it over only the years left in the run instead is what stopped every
+                // bot from ever touching the mid-priced half of its menu: a project that was worth
+                // building at 180 a tonne looked like 900 when two years were left to play, so the
+                // fleet paid 240 at auction and accepted penalties rather than abate.
+                decimal costPerTonne = option.NetCostPerTonne;
 
                 if (simulation.Abatements.HasImplemented(unit, option)
                     || costPerTonne >= reservation
@@ -280,7 +325,7 @@ public sealed class ComplianceBot
 
     private void Bid(Simulation simulation, int year, int section, BotMarkets markets, List<BotAction> actions)
     {
-        Parameters parameters = simulation.TradingSystems.Single().Parameters;
+        Parameters parameters = simulation.Rules;
         Auction auction = markets.Schedule.ForSection(year, section);
         decimal shortfall = Shortfall(simulation, year);
 
@@ -299,23 +344,18 @@ public sealed class ComplianceBot
             parameters.AuctionCeilingPrice);
         decimal wanted = shortfall * _settings.BidVolumeFraction / sectionsLeft;
 
-        // An auction can hold more than one lot: the year's own vintage, and volume offered
-        // again after an earlier auction could not sell it. Only lots the compliance year can
-        // actually surrender are bid for - a forward lot is next year's vintage - and the
-        // position is split across them so the bot does not bid for the same tonnes twice.
-        AuctionLot[] usable = [.. auction.Lots.Where(lot => lot.Vintage <= year)];
+        // An auction can hold more than one lot: the year's own vintage, volume offered again after
+        // an earlier auction could not sell it, and forward vintages. The position is split across
+        // the lots the compliance year can actually surrender, so a bot never bids for the same
+        // tonnes twice.
+        AuctionLot[] current = [.. auction.Lots.Where(lot => lot.Vintage <= year)];
+        AuctionLot[] forward = [.. auction.Lots.Where(lot => lot.Vintage > year)];
 
-        if (usable.Length == 0)
+        foreach (AuctionLot lot in current)
         {
-            return;
+            PlaceBid(simulation, auction, lot, price, wanted / current.Length, actions, year, "position");
         }
 
-        decimal perLot = wanted / usable.Length;
-
-        foreach (AuctionLot lot in usable)
-        {
-            PlaceBid(simulation, auction, lot, price, perLot, actions, year, "position");
-        }
     }
 
     /// <summary>Places one bid if it is worth placing and the company can afford it.</summary>
@@ -359,18 +399,35 @@ public sealed class ComplianceBot
         }
     }
 
-    private void Trade(Simulation simulation, int year, BotMarkets markets, List<BotAction> actions)
+    /// <summary>
+    /// Puts the bot's quotes on the exchange: it bids below the price it expects and offers above
+    /// it, so the book carries both sides, and it offers any offset it cannot use at what an
+    /// offset is worth to it. Nothing here has to trade today: the late pass re-quotes.
+    /// </summary>
+    private void Quote(Simulation simulation, int year, BotMarkets markets, List<BotAction> actions)
     {
-        Parameters parameters = simulation.TradingSystems.Single().Parameters;
+        Parameters parameters = simulation.Rules;
         decimal shortfall = Shortfall(simulation, year);
         decimal offsetValue = _expectedPrice * (1m - _settings.OffsetDiscount);
-        decimal offsetLimit = simulation.Allocation.BausEmissionsFor(_company, year) * parameters.OffsetUsageLimit;
+        decimal pricingOffsetEstimate = simulation.Allocation.BausEmissionsFor(_company, year) * parameters.OffsetUsageLimit;
         decimal offsetsHeld = simulation.Ledger.Held(_company, Product.Offset);
+        decimal bid = _expectedPrice * _settings.ReservationPriceFactor * (1m - QuoteSpread + QuoteRung);
+        decimal ask = _expectedPrice * _settings.ReservationPriceFactor * (1m + QuoteSpread + QuoteRung);
 
-        // Surplus offsets are worth more sold than kept, because only a share of them can be used.
-        if (offsetsHeld > offsetLimit)
+        // A quarter of any unusable offset is offered now and the rest later in the year, so the
+        // surplus dribbles out across the year rather than all of it landing at one price. The
+        // rest is not offered twice: an offer escrows the offsets it names, so the later pass can
+        // only reach what is still available.
+        if (offsetsHeld > pricingOffsetEstimate)
         {
-            Sell(markets, Product.Offset, offsetsHeld - offsetLimit, offsetValue, actions, year, "surplus offsets");
+            Sell(
+                markets,
+                Product.Offset,
+                (offsetsHeld - pricingOffsetEstimate) / 4m,
+                offsetValue,
+                actions,
+                year,
+                "surplus offsets");
         }
 
         if (shortfall <= 0m)
@@ -382,26 +439,109 @@ public sealed class ComplianceBot
 
             if (surplus > 0m)
             {
-                Sell(markets, Product.Allowance(year), surplus, _expectedPrice * _settings.ReservationPriceFactor, actions, year, "surplus allowances");
+                Sell(markets, Product.Allowance(year), surplus, ask, actions, year, "surplus allowances");
             }
 
             return;
         }
 
-        decimal offsetsWanted = Math.Min(shortfall, offsetLimit - offsetsHeld);
+        decimal offsetsWanted = Math.Min(shortfall, pricingOffsetEstimate - offsetsHeld);
 
         if (offsetsWanted > 0m)
         {
             Buy(markets, Product.Offset, offsetsWanted, offsetValue, actions, year, "offsets");
         }
 
-        Buy(markets, Product.Allowance(year), shortfall - offsetsWanted, _expectedPrice * _settings.ReservationPriceFactor, actions, year, "allowances");
+        Buy(markets, Product.Allowance(year), shortfall - offsetsWanted, bid, actions, year, "allowances");
+    }
+
+    /// <summary>
+    /// Late in the year the bot stops waiting for its own price: it takes its resting quotes off
+    /// the book and re-quotes at prices that trade - a short bot up to what the tonne is worth to
+    /// it, a long one at the best bid it can see. This is what turns a book of two-sided quotes
+    /// into trades; without it every buyer waits for every seller and nothing ever changes hands.
+    /// </summary>
+    private void Settle(Simulation simulation, int year, BotMarkets markets, List<BotAction> actions)
+    {
+        Parameters parameters = simulation.Rules;
+        Product allowance = Product.Allowance(year);
+        decimal shortfall = Shortfall(simulation, year);
+        decimal offsetsHeld = simulation.Ledger.Held(_company, Product.Offset);
+        decimal pricingOffsetEstimate = simulation.Allocation.BausEmissionsFor(_company, year) * parameters.OffsetUsageLimit;
+
+        if (shortfall <= 0m)
+        {
+            // Long: the tonnes it cannot bank are worth nothing after the year end, so where a buyer
+            // has shown a bid it meets it. Where none has, the offer it made early in the year stays
+            // exactly where it is: pulling it would leave the market with nothing to buy at all.
+            decimal bankable = Math.Round(
+                simulation.Allocation.BausEmissionsFor(_company, year) * parameters.BankingLimit,
+                0,
+                MidpointRounding.AwayFromZero);
+            decimal surplus = HeldAllowances(simulation, year) - bankable;
+            OrderBook book = markets.Exchange.Book(allowance);
+
+            if (surplus > 0m && book.BestBid is { } bestBid)
+            {
+                CancelQuotes(markets, allowance, actions, year);
+                Sell(markets, allowance, surplus, bestBid, actions, year, "what it cannot bank");
+            }
+
+            // Surplus offsets are worth more sold than kept, because only a share of them can be
+            // used, and they go at the discount the bot itself puts on an offset - the price
+            // another company with room under its own limit is willing to pay.
+            if (offsetsHeld > pricingOffsetEstimate)
+            {
+                Sell(
+                    markets,
+                    Product.Offset,
+                    offsetsHeld - pricingOffsetEstimate,
+                    _expectedPrice * (1m - _settings.OffsetDiscount),
+                    actions,
+                    year,
+                    "surplus offsets");
+            }
+
+            return;
+        }
+
+        // Short: the quote it made early in the year was deliberately below the market, so it comes
+        // off the book and the bot pays up for what it still needs, up to what a tonne is worth to
+        // the last of its position and never above the collar.
+        CancelQuotes(markets, allowance, actions, year);
+
+        decimal offsetsWanted = Math.Min(shortfall, Math.Max(0m, pricingOffsetEstimate - offsetsHeld));
+
+        if (offsetsWanted > 0m)
+        {
+            Buy(markets, Product.Offset, offsetsWanted, _expectedPrice * (1m - _settings.OffsetDiscount), actions, year, "offsets");
+        }
+
+        decimal limit = Math.Min(WillingnessToPay(simulation, parameters, shortfall), parameters.AuctionCeilingPrice);
+
+        Buy(markets, allowance, shortfall - offsetsWanted, limit, actions, year, "the rest of its position");
+    }
+
+    /// <summary>Takes this company's own resting orders for a product off the book.</summary>
+    private void CancelQuotes(BotMarkets markets, Product product, List<BotAction> actions, int year)
+    {
+        foreach (Order order in markets.Exchange.Book(product).OpenOrders.Where(order => ReferenceEquals(order.Company, _company)).ToList())
+        {
+            try
+            {
+                markets.Exchange.Cancel(_company, order.Id);
+            }
+            catch (InvalidOperationException exception)
+            {
+                actions.Add(new BotAction(_company.Name, year, BotTrigger.TradeAgain, $"could not pull order {order.Id}: {exception.Message}"));
+            }
+        }
     }
 
     private void Buy(BotMarkets markets, Product product, decimal volume, decimal limitPrice, List<BotAction> actions, int year, string what)
     {
         OrderBook book = markets.Exchange.Book(product);
-        decimal price = Clamp(limitPrice, book.BandFloor, book.BandCeiling);
+        decimal price = book.FitToBand(limitPrice);
         decimal affordable = markets.Exchange.CashOf(_company) / price;
         decimal wanted = Math.Min(volume, affordable);
 
@@ -420,12 +560,19 @@ public sealed class ComplianceBot
         {
             actions.Add(new BotAction(_company.Name, year, BotTrigger.Trade, $"could not buy {what}: {exception.Message}"));
         }
+        catch (ArgumentException exception)
+        {
+            // FitToBand already lands the price on a whole cent inside the band, so a refusal here
+            // is not the rounding slip past an edge that used to sit under this catch; the book
+            // turned the order down for some other reason. The bot notes it and moves on.
+            actions.Add(new BotAction(_company.Name, year, BotTrigger.Trade, $"could not buy {what}: {exception.Message}"));
+        }
     }
 
     private void Sell(BotMarkets markets, Product product, decimal volume, decimal limitPrice, List<BotAction> actions, int year, string what)
     {
         OrderBook book = markets.Exchange.Book(product);
-        decimal price = Clamp(limitPrice, book.BandFloor, book.BandCeiling);
+        decimal price = book.FitToBand(limitPrice);
         decimal wanted = Math.Min(volume, markets.Exchange.HoldingsOf(_company, product));
 
         if (wanted <= 0m)
@@ -442,30 +589,21 @@ public sealed class ComplianceBot
         {
             actions.Add(new BotAction(_company.Name, year, BotTrigger.Trade, $"could not sell {what}: {exception.Message}"));
         }
+        catch (ArgumentException exception)
+        {
+            actions.Add(new BotAction(_company.Name, year, BotTrigger.Trade, $"could not sell {what}: {exception.Message}"));
+        }
     }
 
     /// <summary>What the company still has to find this year, after what it already holds.</summary>
     public decimal Shortfall(Simulation simulation, int year)
     {
-        decimal emissions = new CompliancePosition(simulation).EmissionsFor(_company, year);
-        decimal offsets = Math.Min(
-            simulation.Ledger.Available(_company, Product.Offset),
-            Math.Round(emissions * simulation.TradingSystems.Single().Parameters.OffsetUsageLimit, 0, MidpointRounding.AwayFromZero));
-        decimal shortfall = emissions - offsets - HeldAllowances(simulation, year);
-
-        return shortfall < 0m ? 0m : shortfall;
+        return new Standing(simulation).Shortfall(_company, year);
     }
 
     private decimal HeldAllowances(Simulation simulation, int year)
     {
-        decimal held = 0m;
-
-        for (int vintage = 0; vintage <= year; vintage++)
-        {
-            held += simulation.Ledger.Held(_company, Product.Allowance(vintage));
-        }
-
-        return held;
+        return new Standing(simulation).HeldAllowances(_company, year);
     }
 
     /// <summary>

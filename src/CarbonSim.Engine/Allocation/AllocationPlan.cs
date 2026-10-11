@@ -28,7 +28,7 @@ public sealed class AllocationPlan
     {
         ArgumentNullException.ThrowIfNull(simulation);
 
-        Parameters parameters = simulation.TradingSystems.Single().Parameters;
+        Parameters parameters = simulation.Rules;
         Years = [.. Enumerable.Range(1, parameters.Years)];
 
         _caps = new decimal[parameters.Years];
@@ -70,9 +70,12 @@ public sealed class AllocationPlan
             {
                 Sector sector = yearSectors[index];
                 Unit[] units = [.. simulation.Units.Where(unit => ReferenceEquals(unit.Sector, sector))];
-                decimal sectorBaseline = units.Sum(unit => unit.BaselineEmissions);
-                decimal[] unitCakes = units.Length > 0 && sectorBaseline > 0m
-                    ? Split(sectorCakes[index], [.. units.Select(unit => unit.BaselineEmissions / sectorBaseline)])
+                // A unit's share of its sector's cake is weighted by its baseline and its
+                // allocation factor, so units on a generous historic basis come out long and the
+                // rest short while the sector's total is what it always was.
+                decimal sectorWeight = units.Sum(unit => unit.BaselineEmissions * unit.AllocationFactor);
+                decimal[] unitCakes = units.Length > 0 && sectorWeight > 0m
+                    ? Split(sectorCakes[index], [.. units.Select(unit => unit.BaselineEmissions * unit.AllocationFactor / sectorWeight)])
                     : new decimal[units.Length];
 
                 for (int unitIndex = 0; unitIndex < units.Length; unitIndex++)

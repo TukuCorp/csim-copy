@@ -3,12 +3,14 @@
 @inject NavigationManager Navigation
 @inject PlayerContext Context
 @inject PlayerViewOptions ViewOptions
+@inject IStringLocalizer<SharedStrings> Strings
 
 @* data-interactive is true only in the interactive render, never in the prerendered HTML, so a
    client can tell when the circuit is listening before it types or clicks. See RendererInfo. *@
 @if (Context.Snapshot.SimulationId is null)
 {
     <div class="plain" data-interactive="@(RendererInfo.IsInteractive ? "true" : null)">
+        <LanguageSwitch />
         @Body
     </div>
 }
@@ -18,6 +20,22 @@ else
     <CascadingValue Value="Context.Snapshot" IsFixed="false">
         <div class="app" data-interactive="@(RendererInfo.IsInteractive ? "true" : null)">
             <TopBar />
+            @* Whatever the last control did: a bid or an order is confirmed here, and a refusal is
+               reported here rather than disappearing into the log. *@
+            @if (Context.Snapshot.Error is { } error)
+            {
+                <p class="notice notice-error" role="alert">
+                    <span>@error</span>
+                    <button class="button ghost small-button" @onclick="Context.ClearNotice">@Strings["Dismiss"]</button>
+                </p>
+            }
+            else if (Context.Snapshot.Status is { } status)
+            {
+                <p class="notice notice-status" role="status">
+                    <span>@status</span>
+                    <button class="button ghost small-button" @onclick="Context.ClearNotice">@Strings["Dismiss"]</button>
+                </p>
+            }
             <ProgressStrip />
             <div class="shell">
                 <NavMenu />

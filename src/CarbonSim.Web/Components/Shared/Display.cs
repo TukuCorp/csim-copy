@@ -1,4 +1,6 @@
 using System.Globalization;
+using CarbonSim.Engine.Market;
+using CarbonSim.Engine.Run;
 using CarbonSim.Web.Player;
 using CarbonSim.Web.Resources;
 using Microsoft.Extensions.Localization;
@@ -69,10 +71,59 @@ public static class Display
     public static string Position(decimal shortfall, IStringLocalizer<SharedStrings> strings) =>
         shortfall > 0m ? $"{strings["Short"]} {Tonnes(shortfall)}" : $"{strings["Long"]} {Tonnes(-shortfall)}";
 
+    /// <summary>A shut trading window, named in the reader's language.</summary>
+    public static string Refusal(TradeRefusal refusal, IStringLocalizer<SharedStrings> strings) =>
+        strings[refusal == TradeRefusal.AuctionClosed ? "AuctionIsClosed" : "TradingIsHalted"];
+
+    /// <summary>
+    /// Why the market refused an order: the reader's own words for a shut window, and the market's
+    /// message for everything else it turned down.
+    /// </summary>
+    public static string Refusal(OrderRefusal refusal, IStringLocalizer<SharedStrings> strings)
+    {
+        ArgumentNullException.ThrowIfNull(refusal);
+
+        return refusal.Window is { } window ? Refusal(window, strings) : refusal.Message;
+    }
+
+    /// <summary>
+    /// The position a screen reads. Once the year has been settled there is no position left to be
+    /// in: the company either covered its obligation or was short when the year closed.
+    /// </summary>
+    public static string Position(PositionView position, IStringLocalizer<SharedStrings> strings)
+    {
+        ArgumentNullException.ThrowIfNull(position);
+
+        return position.Settled && position.Shortfall <= 0m
+            ? strings["Compliant"]
+            : Position(-position.Position, strings);
+    }
+
     public static string State(IStringLocalizer<SharedStrings> strings, string state) => strings[$"State_{state}"];
 
     public static string Product(ProductView product, IStringLocalizer<SharedStrings> strings) =>
         product.IsOffset ? strings["Offset"] : $"{strings["Vintage"]} {product.Vintage}";
+
+    /// <summary>
+    /// How a list names a unit: its own name once, the owner only where it says something the
+    /// unit's name does not - a scenario usually names a one-unit company after the company
+    /// itself - and a bot marked the way the leaderboard marks it.
+    /// </summary>
+    public static string Unit(string unit, string? owner, bool automated) =>
+        $"{Named(unit, owner)}{Mark(automated)}";
+
+    /// <summary>The same unit, company first, for a picker the trainer reads company by company.</summary>
+    public static string CompanyUnit(string company, string unit, bool automated) =>
+        string.Equals(company, unit, StringComparison.Ordinal)
+            ? $"{company}{Mark(automated)}"
+            : $"{company} - {unit}{Mark(automated)}";
+
+    private static string Named(string unit, string? owner) =>
+        string.IsNullOrWhiteSpace(owner) || string.Equals(unit, owner, StringComparison.Ordinal)
+            ? unit
+            : $"{unit} ({owner})";
+
+    private static string Mark(bool automated) => automated ? " (AI)" : string.Empty;
 
     private sealed class CurrencyScope(CurrencyDisplay? previous) : IDisposable
     {

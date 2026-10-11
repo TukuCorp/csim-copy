@@ -36,7 +36,7 @@ public sealed class SimulationBots
         ArgumentNullException.ThrowIfNull(simulation);
 
         settings ??= BotSettings.For(BotDifficulty.Normal);
-        decimal referencePrice = simulation.TradingSystems.Single().Parameters.AuctionFloorPrice;
+        decimal referencePrice = simulation.Rules.AuctionFloorPrice;
         List<ComplianceBot> bots = [];
 
         foreach (Company company in simulation.Companies)

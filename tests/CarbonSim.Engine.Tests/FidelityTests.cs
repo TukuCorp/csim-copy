@@ -18,6 +18,47 @@ public sealed class FidelityTests
 
     private static FidelityMeasurements Measured => NormalRun.Value;
 
+    /// <summary>
+    /// The calibration grid QA asked for: the three offsets supplies that bracket the compliance
+    /// against price-path trade-off, measured with the shipped bot settings and the re-authored
+    /// menus. It writes calibration-grid.md beside the fidelity report so the trade-off is on the
+    /// record with the numbers rather than in a claim.
+    /// </summary>
+    [Fact]
+    public void The_calibration_grid_is_measured()
+    {
+        (decimal Uniform, decimal Lumpy, string Name)[] points =
+        [
+            (0.01m, 0.20m, "1% + 20% every 5th"),
+            (0.03m, 0.25m, "3% + 25% every 5th"),
+            (0.06m, 0.30m, "6% + 30% every 5th"),
+        ];
+        List<string> rows = [];
+
+        foreach ((decimal uniform, decimal lumpy, string name) in points)
+        {
+            FidelityMeasurements run = FidelityRun.Play(
+                BotDifficulty.Normal,
+                tick: null,
+                offsetShareOfEmissions: uniform,
+                lumpyOffsetShare: lumpy);
+
+            rows.Add(
+                $"| {name} | {run.AuctionAveragePriceByYear[0]:N2} / {run.AuctionAveragePriceByYear[1]:N2} / {run.AuctionAveragePriceByYear[2]:N2} "
+                    + $"| {run.CompliantCompanies} of {run.Companies * run.Years} | {run.PenaltyCountByYear[1]} / {run.PenaltyCountByYear[2]} "
+                    + $"| {run.BotMarginalCostMin:N2} to {run.BotMarginalCostMax:N2} | {run.OffsetDiscountPercent:N1}% |");
+        }
+
+        File.WriteAllText(
+            "calibration-grid.md",
+            "# Calibration grid" + Environment.NewLine + Environment.NewLine
+                + "| Offsets granted | Year-1 / 2 / 3 auction average | Compliant company-years | Years 2-3 units penalised | Bot cost range | Offset discount |"
+                + Environment.NewLine + "|---|---|---|---|---|---|" + Environment.NewLine
+                + string.Join(Environment.NewLine, rows) + Environment.NewLine);
+
+        rows.Should().HaveCount(3);
+    }
+
     [Fact]
     public void The_run_is_recorded()
     {
@@ -101,9 +142,75 @@ public sealed class FidelityTests
         Measured.BotMarginalCostMin.Should().BeLessThan(0m, "the brief expects a few negative outliers");
     }
 
-    [Fact(Skip = "measured: prices did not move at all (0.0%) because there is no way yet to shock the collar or the cap mid-run; end-of-year modifications arrive with the Phase 4 admin console.")]
-    public void Envelope_seven_regulator_shocks_move_prices_within_one_virtual_month()
+    // The shock envelope lives in ComplianceBotTests: it needs a live book to watch, not a full
+    // three-year run, and it is measured there against the same one-virtual-month limit.
+
+    /// <summary>
+    /// The golden of the calibrated run: every published number for Normal and Hard, and the
+    /// fingerprint of each difficulty's bot log. Round A of the architecture pass captured it
+    /// before it touched anything, so a later round cannot move the run by accident. Re-baselining
+    /// is deliberate: set CARBONSIM_UPDATE_GOLDEN=1, run this test, read the diff, and say in the
+    /// notes why the numbers moved.
+    /// </summary>
+    [Fact]
+    public void The_seeded_run_still_matches_the_golden()
     {
-        true.Should().BeFalse("the shock mechanism does not exist yet");
+        string path = GoldenPath();
+        string measured = GoldenText();
+
+        if (Environment.GetEnvironmentVariable("CARBONSIM_UPDATE_GOLDEN") is { Length: > 0 })
+        {
+            File.WriteAllText(path, measured);
+        }
+
+        File.Exists(path).Should().BeTrue($"the golden is checked in beside the suite ({path})");
+        Read(path).Should().Be(
+            measured.TrimEnd(),
+            "the calibrated run moved: read the diff, and re-baseline it deliberately if that is the intent");
     }
+
+    /// <summary>The golden's own text, from the same two seeded runs the envelopes are measured on.</summary>
+    private static string GoldenText() =>
+        string.Join(
+            "\n",
+            "# Fidelity golden - the seeded run of the shipped scenario",
+            string.Empty,
+            "Kept by The_seeded_run_still_matches_the_golden. It covers every number the envelopes",
+            "are read from and the fingerprint of each difficulty's bot log, so a change to the seeded",
+            "draw shows up as a change here even when every envelope still holds.",
+            string.Empty,
+            "## Normal difficulty",
+            string.Empty,
+            NormalRun.Value.ToMarkdown().TrimEnd(),
+            string.Empty,
+            "## Hard difficulty",
+            string.Empty,
+            HardRun.Value.ToMarkdown().TrimEnd(),
+            string.Empty)
+        // The report is written with AppendLine, which is CRLF on Windows; the golden is one file
+        // however the checkout put the line endings in it, so it is written with LF.
+        .Replace("\r\n", "\n", StringComparison.Ordinal);
+
+    /// <summary>The golden in the source tree rather than the build output, so it is a checked-in file.</summary>
+    private static string GoldenPath()
+    {
+        DirectoryInfo? directory = new(AppContext.BaseDirectory);
+
+        while (directory is not null && !File.Exists(Path.Combine(directory.FullName, "CarbonSim.sln")))
+        {
+            directory = directory.Parent;
+        }
+
+        string root = directory?.FullName
+            ?? throw new InvalidOperationException("The solution root was not found above the test output.");
+        string folder = Path.Combine(root, "tests", "CarbonSim.Engine.Tests", "Golden");
+
+        Directory.CreateDirectory(folder);
+
+        return Path.Combine(folder, "fidelity-golden.md");
+    }
+
+    /// <summary>The golden as written, whichever line ending the checkout put in it.</summary>
+    private static string Read(string path) =>
+        File.ReadAllText(path).Replace("\r\n", "\n", StringComparison.Ordinal).TrimEnd();
 }

@@ -1,0 +1,53 @@
+T7 COMPLETE - the architecture pass is written up. Docs only; no code touched.
+
+TASK: (1) activeContext.md new architecture-pass section, (2) lessons.md new lessons, (3) update
+docs/handover.md's architecture description and add a module map. No commits.
+
+(1) activeContext.md - new section "## Review - architecture pass (2026-10-11)", 75 lines, appended
+after the round A section (which sits after the QA loop section). It records: the review and its seven
+candidates (reports/arch/architecture-review-2026-10-11.html); what was done by id - candidate 1 the run
+module (Engine/Run/SimulationRun.cs, every verb returning a RunResult; Web's one gate/collect/broadcast
+primitive ApplyAsync, which MutationPrimitiveTests guards), candidate 3 the Rules accessor
+(Simulation.Rules, the collar the only runtime rule change), candidate 2 Standing (CompliancePosition
+deleted; Scoring, ComplianceRegister, SystemReport, ComplianceBot, PlayerSession, AdminSession and the
+tests all on it), candidate 4 FitToBand (golden re-baselined once: 768 of the Normal run's 4,998 bot
+actions a cent different, count unchanged, every envelope holds), candidate 5 partly (the SystemTotals
+mirror and the two ToTotals mappers deleted, shared RunViews, typed OrderOutcome); the two defects the
+review verified and round A fixed (forwardVintageShare host-vs-harness, and no trading-window refusals);
+the three bugs found during the pass (a bid stranded below a raised floor, the released-bid notice
+leaking a sealed bid, the long/short label inverted after the Standing change); what is not done and why
+(candidate 6 seeded-draw risk, candidate 7 low urgency, the string parsing stays in SimulationRegistry,
+the admin half of the resting-order test); the final gate counts; and the re-baselined golden hashes
+(Normal b72aab2f... 4,998 actions, Hard 2ca1ec10... 4,972). It points at lessons.md for the process
+lesson.
+
+(2) lessons.md - three new lessons, 47 lines (now lessons 1-10):
+  #8 A sign convention change needs a test on both sides of the sign. What happened: the Standing change
+     moved the view's position figure and the test it shipped covered only a LONG company, so every
+     SHORT company read "Long" until a live check caught it. Rule: test both sides of the sign plus the
+     zero/settled case, and check the screen live.
+  #9 A refactor that changes a definition must list the screen numbers it moves. What happened: Standing
+     redefined "held" to count escrow, moving numbers a player reads, and the pass did not list them
+     screen by screen or look live. Rule: enumerate every screen figure that changes with a before and
+     after, and check the screens live, not only the suites.
+  #10 Never report green, or that a test bites, without running the suite after the last edit. What
+     happened: three reports in this pass quoted a run taken before the last edit. Rule: run the suite
+     and re-run the bite proof after the final edit and quote that run.
+
+(3) docs/handover.md - the architecture sections now read the current shape: +20 lines and three rows
+    updated. Section 2 gains a four-line prose sentence (Simulation holds state; the run module owns the
+    order of operations; the host holds the one gate and broadcasts from the typed result; screens read a
+    copy) and a 10-line module map from Engine to Web/Components. Section 3's mechanic table now names
+    the run module (Run/SimulationRun.cs, RunFacts.cs), the Rules accessor (Simulation.Rules), Standing
+    (the CompliancePosition row is replaced - the file is deleted), OrderOutcome, FitToBand (added to the
+    Exchange row) and RunViews, and the SimulationRegistry row names the ApplyAsync primitive.
+
+No code was touched, so the suites still describe the tree as it stands and were not re-run: build 0
+warnings 0 errors; Engine 281 passing + 2 skipped, Data 16 passing, Web 196 passing + 1 skipped; the
+golden is byte-identical to the re-baselined one. :5003 is still serving (GET / -> HTTP 200, PID 14820).
+
+STATE: three markdown files changed (activeContext.md 1223 -> 1298 lines; lessons.md 145 -> 192 lines;
+docs/handover.md +20 lines and three rows). No commits made.
+
+NEXT: none - the handover queue is complete.
+

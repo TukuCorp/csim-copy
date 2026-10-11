@@ -1,3 +1,8 @@
+using CarbonSim.Engine.Market;
+using CarbonSim.Web.Components.Shared;
+using CarbonSim.Web.Resources;
+using Microsoft.Extensions.Localization;
+
 namespace CarbonSim.Web.Player;
 
 /// <summary>What the shell and the page inside it both render from: the latest snapshot and any refusal.</summary>
@@ -12,10 +17,12 @@ public sealed record PlayerScreenSnapshot(Guid? SimulationId, PlayerView? View, 
 public sealed class PlayerContext
 {
     private readonly IPlayerSession _session;
+    private readonly IStringLocalizer<SharedStrings> _strings;
 
-    public PlayerContext(IPlayerSession session)
+    public PlayerContext(IPlayerSession session, IStringLocalizer<SharedStrings> strings)
     {
         _session = session ?? throw new ArgumentNullException(nameof(session));
+        _strings = strings ?? throw new ArgumentNullException(nameof(strings));
     }
 
     public PlayerScreenSnapshot Snapshot { get; private set; } = new(null, null, null, null);
@@ -49,18 +56,35 @@ public sealed class PlayerContext
     }
 
     /// <summary>Runs a player action and reloads, reporting a refusal instead of throwing at the UI.</summary>
-    public async Task ActAsync(Func<IPlayerSession, Task> action, string? status = null)
+    public Task ActAsync(Func<IPlayerSession, Task> action, string? status = null) =>
+        ActAsync<object?>(async session =>
+        {
+            await action(session).ConfigureAwait(false);
+            return null;
+        }, status);
+
+    /// <summary>
+    /// The same, for an action that reports what it did: the outcome comes back to the caller when
+    /// nothing was refused, and null when a refusal was written to the snapshot instead.
+    /// </summary>
+    public async Task<T?> ActAsync<T>(Func<IPlayerSession, Task<T>> action, string? status = null)
     {
         if (Snapshot.SimulationId is not { } simulationId)
         {
-            return;
+            return default;
         }
 
         string? error = null;
+        T? result = default;
 
         try
         {
-            await action(_session).ConfigureAwait(false);
+            result = await action(_session).ConfigureAwait(false);
+        }
+        catch (TradeRefusedException refused)
+        {
+            // The engine refuses in its own words; the screen says it in the reader's language.
+            error = Display.Refusal(refused.Refusal, _strings);
         }
         catch (Exception exception)
         {
@@ -69,6 +93,8 @@ public sealed class PlayerContext
 
         PlayerView? view = await _session.ForPlayerAsync(simulationId).ConfigureAwait(false);
         Update(new PlayerScreenSnapshot(simulationId, view, error, error is null ? status : null));
+
+        return error is null ? result : default;
     }
 
     /// <summary>Dismisses whatever the last action reported.</summary>

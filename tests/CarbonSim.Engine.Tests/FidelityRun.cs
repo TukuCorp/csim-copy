@@ -8,9 +8,25 @@ using CarbonSim.Engine.Market;
 using CarbonSim.Engine.Market.Exchange;
 using CarbonSim.Engine.Market.Otc;
 using CarbonSim.Engine.Reporting;
+using CarbonSim.Engine.Run;
 using CarbonSim.Engine.Scenarios;
 
 namespace CarbonSim.Engine.Tests;
+
+/// <summary>What one year of the run had to cover and everything it had to cover it with.</summary>
+internal sealed record YearSupply(
+    int Year,
+    decimal Obligation,
+    decimal FreeAllocation,
+    decimal AuctionOffered,
+    decimal AuctionBid,
+    decimal AuctionSold,
+    decimal ExchangeTraded,
+    decimal OffsetsGranted,
+    decimal OffsetsSurrendered,
+    decimal Abatement,
+    decimal Banked,
+    decimal Shortfall);
 
 /// <summary>What a seeded run of the shipped scenario produced.</summary>
 internal sealed record FidelityMeasurements(
@@ -37,7 +53,20 @@ internal sealed record FidelityMeasurements(
     int CompliantCompanies,
     int Companies,
     decimal BotMarginalCostMin,
-    decimal BotMarginalCostMax)
+    decimal BotMarginalCostMax,
+    decimal[] ExchangeAveragePriceByYear,
+    decimal[] ExchangeVolumeByYear,
+    int[] ExchangeFillsByYear,
+    int[] RestingBidOrdersByYear,
+    int[] RestingAskOrdersByYear,
+    decimal[] RestingVolumeByYear,
+    int[] PenaltyCountByYear,
+    decimal[] PenaltyValueByYear,
+    int LongCompaniesYearOne,
+    int ShortCompaniesYearOne,
+    IReadOnlyList<YearSupply> Supply,
+    string ActionDigest,
+    int ActionCount)
 {
     public string ToMarkdown()
     {
@@ -54,6 +83,32 @@ internal sealed record FidelityMeasurements(
         text.AppendLine(CultureInfo.InvariantCulture, $"- Penalties: {PenaltyCount} worth {PenaltyValue:N0}; market shortfall {TotalShortfall:N0} t");
         text.AppendLine(CultureInfo.InvariantCulture, $"- Compliant company-years: {CompliantCompanies} of {Companies * Years}");
         text.AppendLine(CultureInfo.InvariantCulture, $"- Bot cost of compliance per tonne: {BotMarginalCostMin:N2} to {BotMarginalCostMax:N2}");
+        text.AppendLine(CultureInfo.InvariantCulture, $"- BotAction log: {ActionCount:N0} actions, sha256 {ActionDigest}");
+
+        text.AppendLine();
+        text.AppendLine("| Year | Resting bids | Resting asks | Resting volume | Exchange fills | Exchange volume | Exchange average price | Auction average price | Units penalised | Penalty value |");
+        text.AppendLine("|---|---|---|---|---|---|---|---|---|---|");
+
+        for (int index = 0; index < Years; index++)
+        {
+            text.AppendLine(
+                CultureInfo.InvariantCulture,
+                $"| {index + 1} | {RestingBidOrdersByYear[index]} | {RestingAskOrdersByYear[index]} | {RestingVolumeByYear[index]:N0} | {ExchangeFillsByYear[index]} | {ExchangeVolumeByYear[index]:N0} | {ExchangeAveragePriceByYear[index]:N2} | {AuctionAveragePriceByYear[index]:N2} | {PenaltyCountByYear[index]} | {PenaltyValueByYear[index]:N0} |");
+        }
+
+        text.AppendLine();
+        text.AppendLine(CultureInfo.InvariantCulture, $"- Companies allocated above their need in year 1: {LongCompaniesYearOne}; below it: {ShortCompaniesYearOne}");
+
+        text.AppendLine();
+        text.AppendLine("| Year | Obligation | Free allocation | Auction offered | Auction bid | Auction sold | Exchange traded | Offsets granted | Offsets surrendered | Abatement | Banked | Shortfall |");
+        text.AppendLine("|---|---|---|---|---|---|---|---|---|---|---|---|");
+
+        foreach (YearSupply year in Supply)
+        {
+            text.AppendLine(
+                CultureInfo.InvariantCulture,
+                $"| {year.Year} | {year.Obligation:N0} | {year.FreeAllocation:N0} | {year.AuctionOffered:N0} | {year.AuctionBid:N0} | {year.AuctionSold:N0} | {year.ExchangeTraded:N0} | {year.OffsetsGranted:N0} | {year.OffsetsSurrendered:N0} | {year.Abatement:N0} | {year.Banked:N0} | {year.Shortfall:N0} |");
+        }
 
         return text.ToString();
     }
@@ -69,15 +124,15 @@ internal static class FidelityRun
     public static FidelityMeasurements Play(
         BotDifficulty difficulty = BotDifficulty.Normal,
         TimeSpan? tick = null,
-        decimal forwardVintageShare = 0.20m,
+        // The administrator's "hand out offsets" action, sized so the fleet surrenders the 2-3% of
+        // the cap the brief's envelope asks for rather than a third of its obligation.
         decimal offsetShareOfEmissions = 0.03m,
         decimal lumpyOffsetShare = 0.25m)
     {
         TimeSpan step = tick ?? TimeSpan.FromSeconds(30);
         Simulation simulation = ScenarioLoader.LoadFile(Path.Combine("scenarios", "vietnam-2024.json"));
-        Parameters parameters = simulation.TradingSystems.Single().Parameters;
+        Parameters parameters = simulation.Rules;
         TestTimeProvider time = new();
-        SimulationClock clock = new(simulation, time);
 
         // The published exercises ran the whole fleet this way: every enterprise is automated.
         foreach (Unit unit in simulation.Units)
@@ -86,60 +141,116 @@ internal static class FidelityRun
         }
 
         SimulationBots bots = SimulationBots.Create(simulation, BotSettings.For(difficulty));
-        AuctionSchedule schedule = AuctionSchedule.Build(simulation, forwardVintageShare);
-        BotMarkets markets = new(new Exchange(simulation), new OtcMarket(simulation), schedule);
-        CompliancePosition position = new(simulation);
+        // The run module plays this run: the same order of operations the host uses, the schedule from
+        // the run's own settings, and the year closed by the same verb. Nothing here re-implements it.
+        SimulationRun run = SimulationRun.Create(simulation, time, bots);
+        Standing standing = new(simulation);
+        List<BotAction> botLog = [];
+        List<(int Bids, int Asks, decimal Volume)> booksByYear = [];
+        (int Bids, int Asks, decimal Volume) peak = (0, 0, 0m);
+        List<YearSupply> supplyByYear = [];
 
-        clock.Start();
+        // Year 1: the clock begins and its free allocation is granted, exactly as the host's Start does.
+        run.Start();
 
         for (int year = 1; year <= parameters.Years; year++)
         {
-            simulation.Ledger.GrantFreeAllocation(year);
-            DisburseOffsets(simulation, position, year, offsetShareOfEmissions, lumpyOffsetShare);
+            DisburseOffsets(simulation, standing, year, offsetShareOfEmissions, lumpyOffsetShare);
 
-            while (clock.State != SimulationState.YearEnded)
+            decimal obligation = simulation.Companies.Sum(company => standing.Emissions(company, year));
+            decimal offsetsGranted = simulation.Companies.Sum(company => simulation.Ledger.Held(company, Product.Offset));
+            decimal abatement = simulation.Units.Sum(unit => simulation.Abatements.ReductionsFor(unit, year));
+
+            while (run.Clock.State != SimulationState.YearEnded)
             {
                 time.Advance(step);
-                IReadOnlyList<ClockEvent> events = clock.Advance();
+                botLog.AddRange(run.Advance().BotActions);
 
-                foreach (ClockEvent closed in events.Where(@event => @event.Kind == ClockEventKind.AuctionClosed))
+                // What the book holds at its widest during the year: the depth a person watching
+                // the exchange would have seen, rather than whatever is left when the year closes.
+                (int Bids, int Asks, decimal Volume) now = Sample(run.Exchange);
+
+                peak = (
+                    Math.Max(peak.Bids, now.Bids),
+                    Math.Max(peak.Asks, now.Asks),
+                    Math.Max(peak.Volume, now.Volume));
+
+                // The year has run out of time: close it the way the host's End Year control does,
+                // which clears the auction still open before it reconciles.
+                if (run.Clock.State == SimulationState.TradingHalted)
                 {
-                    schedule.ForSection(closed.Year, closed.Auction).Clear();
-                }
-
-                bots.Act(simulation, clock, markets);
-
-                if (clock.State == SimulationState.TradingHalted)
-                {
-                    clock.EndYear();
+                    run.EndYear();
                 }
             }
 
-            simulation.Compliance.Reconcile(year);
-            simulation.Finance.CloseYear(year);
+            booksByYear.Add(peak);
+            peak = (0, 0, 0m);
+
+            Auction[] auctions = [.. Enumerable.Range(1, parameters.AuctionsPerYear).Select(section => run.Auctions.ForSection(year, section))];
+
+            supplyByYear.Add(new YearSupply(
+                year,
+                obligation,
+                simulation.Allocation.FreeAllocationForYear(year),
+                auctions.Sum(auction => auction.OfferedVolume),
+                auctions.Sum(auction => auction.Bids.Sum(bid => bid.Volume)),
+                auctions.Sum(auction => auction.Results.Sum(result => result.VolumeSold)),
+                simulation.Journal.Volume(year, year, TradeChannel.Exchange, ProductKind.Allowance),
+                offsetsGranted,
+                simulation.Compliance.Results.Where(result => result.Year == year).Sum(result => result.OffsetsSurrendered),
+                abatement,
+                simulation.Compliance.Results.Where(result => result.Year == year).Sum(result => result.Banked),
+                simulation.Compliance.Results.Where(result => result.Year == year).Sum(result => result.Shortfall)));
 
             if (year < parameters.Years)
             {
-                clock.BeginNextYear();
+                run.BeginNextYear();
             }
         }
 
-        clock.EndSimulation();
+        run.EndSimulation();
 
-        return Measure(simulation, position);
+        return Measure(simulation, standing, booksByYear, supplyByYear, botLog);
+    }
+
+    /// <summary>Every resting order across the exchange's books, by side.</summary>
+    private static (int Bids, int Asks, decimal Volume) Sample(Exchange exchange)
+    {
+        int bids = 0;
+        int asks = 0;
+        decimal volume = 0m;
+
+        foreach (Product product in exchange.Products)
+        {
+            foreach (Order order in exchange.Book(product).OpenOrders)
+            {
+                volume += order.Volume - order.FilledVolume;
+
+                if (order.Side == OrderSide.Buy)
+                {
+                    bids++;
+                }
+                else
+                {
+                    asks++;
+                }
+            }
+        }
+
+        return (bids, asks, volume);
     }
 
     /// <summary>Stands in for the administrator's "disburse offsets" action.</summary>
     private static void DisburseOffsets(
         Simulation simulation,
-        CompliancePosition position,
+        Standing standing,
         int year,
         decimal shareOfEmissions,
         decimal lumpyShare)
     {
         foreach (Company company in simulation.Companies)
         {
-            decimal emissions = position.EmissionsFor(company, year);
+            decimal emissions = standing.Emissions(company, year);
             decimal volume = emissions * shareOfEmissions;
 
             if (company.Id % 5 == 0)
@@ -154,9 +265,14 @@ internal static class FidelityRun
         }
     }
 
-    private static FidelityMeasurements Measure(Simulation simulation, CompliancePosition position)
+    private static FidelityMeasurements Measure(
+        Simulation simulation,
+        Standing standing,
+        IReadOnlyList<(int Bids, int Asks, decimal Volume)> booksByYear,
+        IReadOnlyList<YearSupply> supplyByYear,
+        IReadOnlyList<BotAction> botLog)
     {
-        Parameters parameters = simulation.TradingSystems.Single().Parameters;
+        Parameters parameters = simulation.Rules;
         MarketJournal journal = simulation.Journal;
         decimal capYear1 = simulation.Allocation.CapForYear(1);
 
@@ -176,6 +292,36 @@ internal static class FidelityRun
             .Sum(result => result.OffsetsSurrendered);
         IReadOnlyList<LeaderboardEntry> table = Leaderboard.Rank(simulation);
         LeaderboardEntry[] botEntries = [.. table.Where(entry => entry.IsAutomated)];
+        decimal[] exchangePrices =
+        [
+            .. simulation.Allocation.Years.Select(year => journal.AveragePrice(year, year, TradeChannel.Exchange, ProductKind.Allowance)),
+        ];
+        decimal[] exchangeVolumes =
+        [
+            .. simulation.Allocation.Years.Select(year => journal.Volume(year, year, TradeChannel.Exchange, ProductKind.Allowance)),
+        ];
+        int[] exchangeFills =
+        [
+            .. simulation.Allocation.Years.Select(year => journal
+                .In(year, TradeChannel.Exchange)
+                .Count(trade => trade.Product.Kind == ProductKind.Allowance && trade.Buyer is not null)),
+        ];
+        int[] penaltiesByYear =
+        [
+            .. simulation.Allocation.Years.Select(year => simulation.Compliance.Results.Count(result => result.Year == year && result.Shortfall > 0m)),
+        ];
+        decimal[] penaltyValuesByYear =
+        [
+            .. simulation.Allocation.Years.Select(year => simulation.Compliance.Results.Where(result => result.Year == year).Sum(result => result.PenaltyCash)),
+        ];
+        // What the year-1 allocation alone leaves each company holding: the mix the market needs.
+        int longCompanies = simulation.Companies.Count(company =>
+        {
+            decimal held = company.Units.Sum(unit => simulation.Allocation.FreeAllocationFor(unit, 1));
+
+            return held > standing.Emissions(company, 1);
+        });
+        (int actionCount, string actionDigest) = BotLog.Summarise(botLog);
 
         return new FidelityMeasurements(
             simulation.Units.Count,
@@ -201,7 +347,20 @@ internal static class FidelityRun
             simulation.Compliance.Results.Count(result => result.IsCompliant),
             simulation.Companies.Count,
             botEntries.Length == 0 ? 0m : botEntries.Min(entry => entry.OverallMarginalCostOfCompliance),
-            botEntries.Length == 0 ? 0m : botEntries.Max(entry => entry.OverallMarginalCostOfCompliance));
+            botEntries.Length == 0 ? 0m : botEntries.Max(entry => entry.OverallMarginalCostOfCompliance),
+            exchangePrices,
+            exchangeVolumes,
+            exchangeFills,
+            [.. booksByYear.Select(book => book.Bids)],
+            [.. booksByYear.Select(book => book.Asks)],
+            [.. booksByYear.Select(book => book.Volume)],
+            penaltiesByYear,
+            penaltyValuesByYear,
+            longCompanies,
+            simulation.Companies.Count - longCompanies,
+            supplyByYear,
+            actionDigest,
+            actionCount);
     }
 
     private static decimal AverageFor(Simulation simulation, int vintage)

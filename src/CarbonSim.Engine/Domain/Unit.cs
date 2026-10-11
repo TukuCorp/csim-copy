@@ -12,7 +12,8 @@ public sealed class Unit
         Company company,
         decimal baselineEmissions,
         IReadOnlyList<AbatementOption>? abatementOptions = null,
-        decimal normalOperatingProfit = 0m)
+        decimal normalOperatingProfit = 0m,
+        decimal allocationFactor = 1m)
     {
         if (string.IsNullOrWhiteSpace(name))
         {
@@ -29,12 +30,21 @@ public sealed class Unit
                 "Baseline emissions cannot be negative.");
         }
 
+        if (allocationFactor <= 0m)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(allocationFactor),
+                allocationFactor,
+                "A unit's allocation factor has to be greater than zero.");
+        }
+
         Id = id;
         Name = name.Trim();
         Company = company;
         BaselineEmissions = baselineEmissions;
         AbatementOptions = abatementOptions ?? [];
         NormalOperatingProfit = normalOperatingProfit;
+        AllocationFactor = allocationFactor;
     }
 
     public int Id { get; }
@@ -48,6 +58,16 @@ public sealed class Unit
 
     /// <summary>Year-0 emissions in tonnes CO2e, before business-as-usual growth.</summary>
     public decimal BaselineEmissions { get; }
+
+    /// <summary>
+    /// How this unit's baseline is weighted when its sector's free cake is shared out. One is a
+    /// plain baseline share; a unit above one was allocated on a more generous historic basis than
+    /// its baseline implies, which is what leaves it holding more allowances than it needs, and a
+    /// unit below one was allocated on a tighter basis. Scenario data, and the only thing in the
+    /// clone that produces a two-sided market: with every unit on the same basis the whole fleet
+    /// is short by the same fraction and nobody has anything to sell.
+    /// </summary>
+    public decimal AllocationFactor { get; }
 
     /// <summary>Abatement projects this unit may implement, cheapest first is not guaranteed.</summary>
     public IReadOnlyList<AbatementOption> AbatementOptions { get; }

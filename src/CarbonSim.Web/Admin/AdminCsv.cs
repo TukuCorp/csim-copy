@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text;
+using CarbonSim.Engine.Reporting;
 using CarbonSim.Web.Player;
 
 namespace CarbonSim.Web.Admin;
@@ -32,8 +33,8 @@ public static class AdminCsv
         StringBuilder csv = new();
         Row(csv, "Metric", "This year", "To date");
 
-        SystemTotalsView now = run.ThisYear;
-        SystemTotalsView all = run.ToDate;
+        SystemTotals now = run.ThisYear;
+        SystemTotals all = run.ToDate;
 
         Row(csv, "Cap", Number(now.Cap), Number(all.Cap));
         Row(csv, "Free allocation", Number(now.FreeAllocation), Number(all.FreeAllocation));

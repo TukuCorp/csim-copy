@@ -176,6 +176,30 @@ public sealed class SimulationClockTests
     }
 
     [Fact]
+    public void A_year_whose_time_is_up_cannot_be_resumed()
+    {
+        (Simulation simulation, TestTimeProvider time, SimulationClock clock) = Build();
+        clock.Start();
+        Advance(time, clock, TimeSpan.FromMinutes(20));
+
+        // The clock halts itself when the year runs out. Resuming there would leave a running
+        // clock with no time left that never advances and cannot be closed, so it is refused:
+        // the year is over, and the year has to be ended before another one begins.
+        Action resume = () => clock.Resume();
+
+        resume.Should().Throw<InvalidOperationException>().WithMessage("*year*over*");
+        simulation.State.Should().Be(SimulationState.TradingHalted);
+        clock.TimeLeftInYear.Should().Be(TimeSpan.Zero);
+
+        clock.EndYear();
+        clock.BeginNextYear();
+
+        simulation.State.Should().Be(SimulationState.Running);
+        clock.CurrentYear.Should().Be(2);
+        clock.TimeLeftInYear.Should().Be(TimeSpan.FromMinutes(20));
+    }
+
+    [Fact]
     public void A_year_can_only_be_ended_after_trading_has_halted()
     {
         (_, _, SimulationClock clock) = Build();

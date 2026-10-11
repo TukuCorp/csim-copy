@@ -8,6 +8,7 @@ namespace CarbonSim.Web.Tests.Components;
 /// order the demo video uses, checking each one arrived. It is the only test that exercises the
 /// whole thing together: the Blazor circuit, the stylesheet, the live run, and a real Chromium.
 /// </summary>
+[Collection(PlaywrightCollection.Name)]
 public sealed class PlaywrightScreenWalkTests : IClassFixture<PlaywrightHostFixture>
 {
     private readonly PlaywrightHostFixture _host;

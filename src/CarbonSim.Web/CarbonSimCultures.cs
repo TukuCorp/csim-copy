@@ -8,7 +8,9 @@ public static class CarbonSimCultures
 {
     public const string Default = "en";
 
+    public const string Vietnamese = "vi";
+
     public const string CookieName = "carbonsim.culture";
 
-    public static IReadOnlyList<string> Supported { get; } = [Default, "vi"];
+    public static IReadOnlyList<string> Supported { get; } = [Default, Vietnamese];
 }

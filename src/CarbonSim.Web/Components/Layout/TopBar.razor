@@ -11,7 +11,7 @@
         <dl class="metrics">
             <div><dt>@Strings["Capital"]</dt><dd>@Display.Money(view.Finance.Capital)</dd></div>
             <div><dt>@Strings["AvailableOverdraft"]</dt><dd>@Display.Money(view.Finance.AvailableOverdraft)</dd></div>
-            <div><dt>@Strings["CurrentPosition"]</dt><dd>@Display.Position(view.Position.Shortfall, Strings)</dd></div>
+            <div><dt>@Strings["CurrentPosition"]</dt><dd>@Display.Position(view.Position, Strings)</dd></div>
             <div><dt>@Strings["OverallMarginalCostOfCompliance"]</dt><dd>@Display.Signed(view.Compliance.OverallMarginalCost)</dd></div>
             <div><dt>@Strings["BestOffer"]</dt><dd>@Display.Price(Quote?.BestOffer)</dd></div>
             <div><dt>@Strings["LastTrade"]</dt><dd>@Display.Price(Quote?.LastTrade)</dd></div>
@@ -22,6 +22,8 @@
         <div class="topbar-tools">
             <a class="tool" href="@RunRoute.Screen(view.SimulationId, "exchange")" title="@Strings["Briefcase"]">@Strings["Briefcase"]</a>
             <a class="tool" href="@RunRoute.Screen(view.SimulationId, "messages")" title="@Strings["MessageLog"]">@Strings["MessageLog"] (@view.Messages.Count)</a>
+
+            <LanguageSwitch />
 
             <details class="menu">
                 <summary>@Strings["Rules"]</summary>
@@ -34,11 +36,6 @@
                 <summary>@view.AccountName</summary>
                 <div class="menu-body">
                     <p class="muted small">@view.PlayerName &middot; @Display.State(Strings, view.State)</p>
-                    <p class="small">
-                        <a href="/culture/set?culture=en&amp;redirect=@RunRoute.Screen(view.SimulationId, "dashboard")">@Strings["English"]</a>
-                        &middot;
-                        <a href="/culture/set?culture=vi&amp;redirect=@RunRoute.Screen(view.SimulationId, "dashboard")">@Strings["Vietnamese"]</a>
-                    </p>
                     <a class="button" href="/sign-out">@Strings["SignOut"]</a>
                 </div>
             </details>

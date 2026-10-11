@@ -1,4 +1,7 @@
+using CarbonSim.Engine.Reporting;
+using CarbonSim.Web.Components.Shared;
 using CarbonSim.Web.Player;
+using CarbonSim.Web.Simulations;
 
 namespace CarbonSim.Web.Admin;
 
@@ -40,6 +43,8 @@ public sealed record AdminParametersView(
     decimal TradingOpenShareOfYear,
     decimal VolatilityBand,
     decimal OverdraftInterestRate,
+    decimal GovernmentReserveToAuctionPercent,
+    decimal ForwardVintageShare,
     IReadOnlyList<AdminGrowthView> BausGrowth);
 
 public sealed record AdminAbatementOptionView(
@@ -85,10 +90,20 @@ public sealed record AdminUnitView(
     decimal FreeAllocation,
     decimal ForecastEmissions,
     decimal Reduction,
+    bool Automated,
     bool AutoTrade,
     bool ShutDown,
     int ImplementedCount,
-    IReadOnlyList<AdminAbatementOptionView> Opportunities);
+    int CompanyId,
+    IReadOnlyList<AdminAbatementOptionView> Opportunities)
+{
+    /// <summary>
+    /// How a picker names this unit: the company it belongs to first, and the unit only where its
+    /// own name says something the company's does not. A scenario usually names a one-unit company
+    /// after the company itself, so "name (company)" would read "Delta Power (Delta Power)".
+    /// </summary>
+    public string Label => Display.CompanyUnit(Company, Name, Automated);
+}
 
 public sealed record AdminLeaderView(
     int Rank,
@@ -148,11 +163,34 @@ public sealed record AdminRunDetail(
     IReadOnlyList<AdminLeaderView> Leaderboard,
     IReadOnlyList<AdminPriceView> Prices,
     IReadOnlyList<AdminSurrenderView> Surrender,
-    SystemTotalsView ThisYear,
-    SystemTotalsView ToDate,
+    SystemTotals ThisYear,
+    SystemTotals ToDate,
     decimal GovernmentRevenue,
     IReadOnlyList<HoldingView> GovernmentReserve,
-    bool CanEndSimulation);
+    bool CanEndSimulation)
+{
+    /// <summary>Every change an administrator has made to this run's rules, newest last.</summary>
+    public IReadOnlyList<RuleChange> RuleChanges { get; init; } = [];
+
+    /// <summary>
+    /// Whether the clock may be let run again: a year paused mid-flight, or a halt the trainer
+    /// took while there was still time on the clock.
+    /// </summary>
+    public bool CanResume =>
+        (State is "Paused" or "PausedAfterAuction" or "TradingHalted") && !YearIsOver;
+
+    /// <summary>
+    /// Whether the clock halted because the year used up its time. There is nothing to resume
+    /// into; the year has to be closed and the next one opened.
+    /// </summary>
+    public bool YearIsOver => State == "TradingHalted" && TimeLeftInYear <= TimeSpan.Zero;
+
+    /// <summary>
+    /// Whether the console has anything to count down. A closed year, a finished simulation or a
+    /// year whose time is up has none, so the clock card shows the state rather than the numbers.
+    /// </summary>
+    public bool CountdownsApply => State is not ("YearEnded" or "GameEnded") && !YearIsOver;
+}
 
 /// <summary>What the registration gate currently allows, for the console's setup screen.</summary>
 public sealed record AdminRegistrationView(bool Open, string Pin);

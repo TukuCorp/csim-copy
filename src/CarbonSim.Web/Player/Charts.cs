@@ -14,45 +14,107 @@ public static class Charts
     private const string Green = "#2f6f4f";
     private const string Red = "#c0392b";
     private const string Amber = "#d68910";
-    private const string Grey = "#8a94a6";
+
+    /// <summary>
+    /// One colour per product on the price chart, so a legend swatch identifies its series. The
+    /// floor line keeps the amber.
+    /// </summary>
+    private static readonly string[] ProductColours = ["#2f6fbf", "#2f6f4f", "#6c4bb6", "#c0392b"];
+
+    /// <summary>Distinct line styles for the close of each product, for readers who cannot tell the colours apart.</summary>
+    private static readonly string[] CloseStyles = ["solid", "dashed", "dotted"];
 
     private static readonly JsonSerializerOptions Options = new()
     {
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
     };
 
-    /// <summary>Marginal abatement cost per project, cheapest first, each labelled with its tonnes.</summary>
-    public static string Macc(IReadOnlyList<AbatementOpportunityView> opportunities)
+    /// <summary>
+    /// The marginal abatement cost curve: every open project as a bar as wide as the tonnes it
+    /// would abate and as tall as it costs per tonne, cheapest first, with the gap the company
+    /// still has to cover drawn across the chart. The width is the point of the curve - a project
+    /// that abates fifteen times as much is fifteen times as wide - so each project is its own
+    /// one-bar series, which is what ECharts needs to give a bar a width of its own.
+    /// </summary>
+    public static string Macc(
+        IReadOnlyList<AbatementOpportunityView> opportunities,
+        decimal shortfall,
+        string shortfallLabel)
     {
         ArgumentNullException.ThrowIfNull(opportunities);
 
         List<AbatementOpportunityView> open = [.. opportunities.Where(opportunity => !opportunity.Implemented)];
-        List<AbatementOpportunityView> source = open.Count > 0 ? open : [.. opportunities];
-        List<AbatementOpportunityView> ordered = [.. source.OrderBy(opportunity => opportunity.CostPerTonne)];
+        List<AbatementOpportunityView> ordered =
+        [
+            .. (open.Count > 0 ? open : opportunities).OrderBy(opportunity => opportunity.CostPerTonne),
+        ];
+
+        decimal widest = ordered.Count == 0 ? 0m : ordered.Max(opportunity => opportunity.AnnualReduction);
+        decimal total = ordered.Sum(opportunity => opportunity.AnnualReduction);
+        List<object> series = [];
+        decimal start = 0m;
+
+        foreach (AbatementOpportunityView option in ordered)
+        {
+            // The widest project gets 120px and the rest share that scale, so the widths keep their
+            // proportion whatever the chart is drawn at.
+            int width = widest <= 0m
+                ? 8
+                : Math.Max(3, (int)Math.Round((double)(option.AnnualReduction / widest) * 120d));
+            decimal middle = start + (option.AnnualReduction / 2m);
+
+            series.Add(new
+            {
+                name = string.Create(
+                    CultureInfo.InvariantCulture,
+                    $"{option.Code} {option.Name} - {option.AnnualReduction:N0} t at {option.CostPerTonne:N0} per tonne"),
+                type = "bar",
+                barWidth = width,
+                data = new object[] { new { value = new[] { middle, option.CostPerTonne } } },
+                itemStyle = new { color = option.CostPerTonne <= 0m ? Blue : Green },
+            });
+
+            start += option.AnnualReduction;
+        }
+
+        // The company's own gap is the line to read the curve against: everything to its left is
+        // the cheapest way to close it. It rides on a series of its own with nothing in it, so the
+        // projects stay plain one-bar series.
+        series.Add(new
+        {
+            name = shortfallLabel,
+            type = "line",
+            data = Array.Empty<decimal>(),
+            silent = true,
+            symbol = "none",
+            markLine = new
+            {
+                symbol = "none",
+                silent = true,
+                lineStyle = new { type = "dashed", color = Red },
+                label = new { formatter = $"{shortfallLabel} {{c}}", position = "insideEndTop" },
+                data = new object[] { new { xAxis = shortfall } },
+            },
+        });
 
         return JsonSerializer.Serialize(
             new
             {
-                grid = new { left = 64, right = 16, top = 24, bottom = 48 },
-                tooltip = new { trigger = "item" },
+                // Room at the top for the axis title: on a phone the plot would otherwise start on it.
+                grid = new { left = 68, right = 24, top = 44, bottom = 44 },
+                // Each project carries what it abates in its own name, so the tooltip has nothing to
+                // look up: the axis reads in tonnes and the bar says which project it is.
+                tooltip = new { trigger = "item", formatter = "{a}" },
                 xAxis = new
                 {
-                    type = "category",
-                    data = ordered.Select(opportunity => Label(opportunity)).ToArray(),
-                    axisLabel = new { interval = 0, fontSize = 10 },
+                    type = "value",
+                    name = "tonnes",
+                    min = 0,
+                    max = Math.Max(total, shortfall),
+                    axisLabel = new { fontSize = 10 },
                 },
-                yAxis = new { type = "value", name = "per tonne" },
-                series = new object[]
-                {
-                    new
-                    {
-                        name = "Cost per tonne",
-                        type = "bar",
-                        data = ordered.Select(opportunity => opportunity.CostPerTonne).ToArray(),
-                        itemStyle = new { color = Green },
-                        barMaxWidth = 44,
-                    },
-                },
+                yAxis = new { type = "value", name = "per tonne", scale = true },
+                series,
             },
             Options);
     }
@@ -86,8 +148,8 @@ public static class Charts
             Options);
     }
 
-    /// <summary>The year's free allocation and the gap the company still has to cover.</summary>
-    public static string LongShort(PositionView position, string company, string freeLabel, string shortLabel)
+    /// <summary>What the company holds against the year, and the gap it still has to cover.</summary>
+    public static string LongShort(PositionView position, string company, string heldLabel, string shortLabel)
     {
         ArgumentNullException.ThrowIfNull(position);
 
@@ -98,17 +160,17 @@ public static class Charts
             {
                 grid = new { left = 16, right = 24, top = 34, bottom = 28 },
                 tooltip = new { trigger = "axis", axisPointer = new { type = "shadow" } },
-                legend = new { data = new[] { freeLabel, shortLabel }, top = 0, textStyle = new { fontSize = 11 } },
+                legend = new { data = new[] { heldLabel, shortLabel }, top = 0, textStyle = new { fontSize = 11 } },
                 xAxis = new { type = "value", axisLabel = new { show = false }, splitLine = new { show = false } },
                 yAxis = new { type = "category", data = new[] { company }, axisLabel = new { show = false } },
                 series = new object[]
                 {
                     new
                     {
-                        name = freeLabel,
+                        name = heldLabel,
                         type = "bar",
                         stack = "position",
-                        data = new[] { position.FreeAllocation },
+                        data = new[] { position.Held },
                         itemStyle = new { color = Blue },
                     },
                     new
@@ -136,8 +198,13 @@ public static class Charts
         List<object> series = [];
         List<string> legend = [];
 
-        foreach (ProductBookView book in books)
+        for (int index = 0; index < books.Count; index++)
         {
+            ProductBookView book = books[index];
+            string colour = ProductColours[index % ProductColours.Length];
+            // A bearish candle is the product's own colour at half weight, so the series is still
+            // identifiable when the market is falling.
+            string faded = colour + "80";
             Dictionary<int, YearPriceView> byYear = book.YearPrices.ToDictionary(price => price.Year);
             // ECharts wants "-" for a year a product did not trade in; a bare null makes its
             // candlestick layout read through a missing point and throw.
@@ -167,10 +234,10 @@ public static class Charts
                 data = candles,
                 itemStyle = new
                 {
-                    color = Green,
-                    color0 = Red,
-                    borderColor = Green,
-                    borderColor0 = Red,
+                    color = colour,
+                    color0 = faded,
+                    borderColor = colour,
+                    borderColor0 = faded,
                 },
             });
 
@@ -181,7 +248,12 @@ public static class Charts
                 data = closes,
                 symbol = "none",
                 connectNulls = true,
-                lineStyle = new { width = 1, type = "dashed", color = Grey },
+                lineStyle = new
+                {
+                    width = 1,
+                    type = CloseStyles[index % CloseStyles.Length],
+                    color = colour,
+                },
             });
         }
 
@@ -199,9 +271,11 @@ public static class Charts
         return JsonSerializer.Serialize(
             new
             {
-                grid = new { left = 56, right = 16, top = 34, bottom = 40 },
+                // Room for the legend to sit above the plot: on a phone it wraps onto a second line
+                // and would otherwise land on the axis title and the top gridline.
+                grid = new { left = 56, right = 16, top = 60, bottom = 40 },
                 tooltip = new { trigger = "axis", axisPointer = new { type = "cross" } },
-                legend = new { data = legend.ToArray(), top = 0, textStyle = new { fontSize = 11 } },
+                legend = new { data = legend.ToArray(), top = 0, type = "scroll", textStyle = new { fontSize = 11 } },
                 xAxis = new { type = "category", data = axis },
                 yAxis = new { type = "value", scale = true, name = "per tonne" },
                 series = series,
@@ -209,7 +283,4 @@ public static class Charts
             Options);
     }
 
-    private static string Label(AbatementOpportunityView opportunity) => string.Create(
-        CultureInfo.InvariantCulture,
-        $"{opportunity.Code} - {opportunity.AnnualReduction:N0} t");
 }

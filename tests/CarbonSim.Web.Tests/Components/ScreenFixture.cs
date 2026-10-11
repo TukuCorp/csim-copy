@@ -1,5 +1,6 @@
 using System.Globalization;
 using Bunit;
+using CarbonSim.Engine.Run;
 using CarbonSim.Web.Player;
 using CarbonSim.Web.Resources;
 using Microsoft.AspNetCore.Components;
@@ -18,6 +19,8 @@ public sealed class StubPlayerSession : IPlayerSession
 
     public IReadOnlyList<RunSummary> Runs { get; set; } = [];
 
+    public FrontDoorView FrontDoor { get; set; } = FrontDoorView.Guest;
+
     public List<string> Actions { get; } = [];
 
     public Task<IReadOnlyList<RunSummary>> RunsAsync(CancellationToken cancellationToken = default) =>
@@ -25,6 +28,9 @@ public sealed class StubPlayerSession : IPlayerSession
 
     public Task<string?> CurrentActorAsync(CancellationToken cancellationToken = default) =>
         Task.FromResult<string?>("1");
+
+    public Task<FrontDoorView> FrontDoorAsync(CancellationToken cancellationToken = default) =>
+        Task.FromResult(FrontDoor);
 
     public Task<PlayerView?> ForPlayerAsync(Guid simulationId, CancellationToken cancellationToken = default) =>
         Task.FromResult(View);
@@ -36,10 +42,10 @@ public sealed class StubPlayerSession : IPlayerSession
         return Task.CompletedTask;
     }
 
-    public Task PlaceOrderAsync(Guid simulationId, int unitId, string product, string side, string kind, decimal volume, decimal? price, decimal? stopPrice, string fillPolicy, CancellationToken cancellationToken = default)
+    public Task<OrderOutcome> PlaceOrderAsync(Guid simulationId, int unitId, string product, string side, string kind, decimal volume, decimal? price, decimal? stopPrice, string fillPolicy, CancellationToken cancellationToken = default)
     {
         Actions.Add(FormattableString.Invariant($"order:{unitId}:{product}:{side}:{kind}:{volume}:{price}:{stopPrice}:{fillPolicy}"));
-        return Task.CompletedTask;
+        return Task.FromResult(new OrderOutcome(1, 0m, 0m, 0m, null));
     }
 
     public Task CancelOrderAsync(Guid simulationId, int unitId, long orderId, CancellationToken cancellationToken = default)
@@ -105,7 +111,9 @@ public abstract class ScreenTestContext : TestContext
         Services.AddSingleton(new PlayerViewOptions { RefreshInterval = null });
         Services.AddSingleton(provider =>
         {
-            PlayerContext context = new(provider.GetRequiredService<IPlayerSession>());
+            PlayerContext context = new(
+                provider.GetRequiredService<IPlayerSession>(),
+                provider.GetRequiredService<IStringLocalizer<SharedStrings>>());
 
             // The shell attaches to a run before its pages render; the test does the same, so an
             // action a page sends has a run to go to.

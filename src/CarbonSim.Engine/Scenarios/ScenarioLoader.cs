@@ -157,6 +157,7 @@ public static class ScenarioLoader
             VolatilityBand = file.VolatilityBand!.Value,
             OverdraftInterestRate = file.OverdraftInterestRate!.Value,
             GovernmentReserveToAuctionPercent = file.GovernmentReserveToAuctionPercent ?? 0m,
+            ForwardVintageShare = file.ForwardVintageShare ?? Parameters.DefaultForwardVintageShare,
         };
 
         errors.AddRange(parameters.Validate().Select(error => $"{Prefix}: {error}"));
@@ -419,7 +420,8 @@ public static class ScenarioLoader
                 units.Add(new UnitTemplate(
                     unitName,
                     unit.BaselineEmissions.Value,
-                    unit.NormalOperatingProfit ?? 0m));
+                    unit.NormalOperatingProfit ?? 0m,
+                    unit.AllocationFactor ?? 1m));
             }
 
             if (units.Count == 0)
@@ -488,7 +490,8 @@ public static class ScenarioLoader
                     company,
                     unitTemplate.BaselineEmissions,
                     AbatementMenu.For(template.Sector, unitTemplate.BaselineEmissions),
-                    unitTemplate.NormalOperatingProfit));
+                    unitTemplate.NormalOperatingProfit,
+                    unitTemplate.AllocationFactor));
             }
 
             players.Add(player);
@@ -519,5 +522,9 @@ public static class ScenarioLoader
         decimal OverdraftLimit,
         IReadOnlyList<UnitTemplate> Units);
 
-    private sealed record UnitTemplate(string Name, decimal BaselineEmissions, decimal NormalOperatingProfit);
+    private sealed record UnitTemplate(
+        string Name,
+        decimal BaselineEmissions,
+        decimal NormalOperatingProfit,
+        decimal AllocationFactor);
 }

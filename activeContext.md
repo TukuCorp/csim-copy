@@ -787,3 +787,512 @@ Market/ReserveToAuctionTests.cs, the migration pair. Files changed: Parameters, 
 AuctionSchedule, ComplianceBot, ScenarioFile/Loader, SimulationSnapshot/Snapshots, SimulationRecord,
 SimulationMapper, CarbonSimDbContextModelSnapshot, ScenarioDraft, AdminSetup.razor, both resx,
 TestSimulation, FidelityTests skip text, AdminScreensTests, and the scenario's parameter and notes.
+
+## Review - QA feedback round 1 (2026-10-10)
+
+Claude's browser pass over http://localhost:5003 (reports/qa/feedback-01.md) raised five findings;
+all five are closed. F1 was the blocker and had two causes rather than one. The demo seeder started
+year one at boot, so the exercise a trainer opened had already spent its twenty-minute year; and a
+clock whose year has run out accepted a resume, which left a run reading Running with the auction at
+4 / 4 and every countdown at 0m 00s and no way to close the year. The seeder now only puts the
+scenario on the shelf ("Start the year" begins it, as the acceptance script says), and
+SimulationClock.Resume refuses once the year's time is used, so the console shows the year end
+instead of a resume that cannot help. Because a not-yet-started run is now the normal first sight of
+an exercise, the console and the waiting screen read it as year 1 with the whole year ahead of it
+rather than as year 0, and the console says so in words when the year is over.
+
+F2 follows from the same seeder change: with nothing started, the waiting screen and the console
+read "Waiting to start - Year 1" instead of "Trading halted - Year 1". F3: the fine, abatement and
+shock pickers name a unit once - "Company - Unit" only where the two differ - and mark bots "(AI)"
+as the leaderboard does (AdminUnitView.Label, fed by the company's owner kind). F4: the waiting
+screen now says who is signed in and offers the way on (trainer -> console, player -> their own run,
+guest -> sign in), and the console's refusal links to the sign-in page. F5: the waiting screen
+counted 242 companies against 37 human companies under a "People" label that meant neither; it now
+shows companies, human companies and AI companies separately.
+
+Gate: build 0 warnings 0 errors; dotnet test CarbonSim.sln green (Engine 249 passing + 3 skipped,
+Data 16 passing, Web 151 passing + 1 skipped, Playwright real). New tests: the clock's refusal, the
+seeder's shelf state, the console's reading of a waiting and a run-out year, the fine picker's
+labels, the console refusal's link, the waiting screen's counts and front door, and a Playwright
+walk of the seeded exercise from "Waiting to start" to a ticking year. PlaywrightVietnamTests starts
+the seeded year first, because a player has no allowances to offer until the year has begun.
+dotnet format reports one pre-existing charset complaint in the generated migration
+20261004145903_GovernmentReserveToAuction.cs, untouched here.
+
+## Review - QA feedback round 2 (2026-10-10)
+
+Claude's second pass (reports/qa/feedback-02.md, screenshots alongside) raised G1-G9; all nine are
+closed, with G3 answered by measurement rather than by a change.
+
+G1 (position ignores holdings) was the correctness bug and the fix is in the engine.
+CompliancePosition gained HeldFor - the offsets up to the year's limit plus the allowances of the
+compliance vintage and older, the same set ComplianceRegister surrenders - and PositionFor, which is
+that year's forecast emissions less what is held. The register now takes its offset limit and its
+vintage order from the position, so one rule governs both the reading and the settlement. The
+screens followed: the top bar, the dashboard's long/short bar and the surrender screen read Held and
+the net position, the admin company and surrender reports take their shortfall from the position,
+and the leaderboard's final column is the position signed the one way up (positive short) with
+Scoring.Holdings kept, renamed, for the tie-break it always was. On the QA case that is Long 975
+instead of Short 255,025 once 256,000 tonnes are bought.
+
+G3 (are the bots on the exchange?) is measured by ExchangeActivityTests over the shipped 242-unit
+run, 15-second steps, one row per virtual year:
+
+| Year | Orders at 20% | Orders at 100% | Bids / asks | Resting volume at 50% | at 100% | Fills | Volume |
+|---|---|---|---|---|---|---|---|
+| 1 | 0 | 242 | 242 / 0 | 13,560,767 t | 22,828,331 t | 0 | 0 |
+| 2 | 242 | 644 | 644 / 0 | 47,010,460 t | 67,076,854 t | 0 | 0 |
+
+So the answer is: the bots do rest orders, but not before their trade trigger, which is drawn
+between 40% and 60% of the year - minute 8 to 12 of 20, which is why the book read empty at QA's
+minute 4. The first order appears at 41% of year 1. What the measurement also shows, and reading the
+code did not, is that no bot ever offers: in this scenario year-1 business-as-usual exactly meets the
+cap and only 90% is allocated free, so every company is short every year and none of them has a
+surplus it cannot bank, which is the only thing a bot sells. The bid side is real depth - a player
+selling into it fills (MarketActionTests covers the engine's crossing fills) - but the bots never
+meet each other and the book grows year on year because nothing cancels a resting order. Changing
+that means rebalancing the scenario the price-path envelopes were calibrated against, so it is
+reported rather than changed.
+
+G2: the auction result now stays on the screen after the clock moves on - the screen shows the last
+cleared auction rather than the current section's, whose cleared state lasted only until the next
+section opened - with what was bid, won and paid, and the history table gained My won and My paid
+columns beside a system-wide column now labelled "Awarded (all bidders)". The player shell also
+renders what the last control did, so "Place bid" is confirmed on the page rather than only in the
+log. G4: the switch's redirect is built in code and escaped once, so it lands on the page it was
+pressed on (it was double-encoded and always went to "/"); a visible English | Tiếng Việt switch
+sits in the top bar of every page and on the sign-in page, both names written in their own language,
+and the copy that was covered by the auction banner is gone. G5: the waiting screen's heading turns
+over to "Simulation under way" once an exercise has begun, and the signed-in line spaces its button.
+G6: the cost curve is drawn to scale - each project a bar as wide as its tonnes and as tall as its
+cost per tonne, cheapest first, with the company's own shortfall drawn across it - and the options
+table scrolls inside its card instead of being cut off. G7: the price chart gives each product its
+own colour and its close line its own dash, the strip is grouped into auction, exchange and OTC, the
+order form's fill policy is labelled and explained, and the top of book pairs bids against offers
+under Buying and Selling headers. G8: the OTC picker and the leaderboard name a unit once and mark
+bots "(AI)", the picker groups by sector and filters as you type, and your own leaderboard row is
+highlighted. G9: the heading keeps FocusOnNavigate for screen readers but no longer draws a ring for
+it, the ten player form fields axe flagged now carry ids, and the scenario notes say what the
+capital scale means (about fifty times a year of compliance cost at the floor, so cash is not the
+binding constraint).
+
+Gate: build 0 warnings 0 errors; dotnet test CarbonSim.sln green - Engine 255 passing + 3 skipped,
+Data 16 passing, Web 163 passing + 1 skipped with Playwright real. The browser walks now take turns
+through one collection, because five classes each booting a host and Chromium were timing out under
+their own load. dotnet format reports only the pre-existing charset complaint in the generated
+migration 20261004145903_GovernmentReserveToAuction.cs.
+
+## Review - QA feedback round 3 (2026-10-10)
+
+Claude's third pass (reports/qa/feedback-03.md) raised H1-H6; all six are closed and the two-sided
+market H3 asked for is built, measured and documented.
+
+H2 (report columns) first, because it was wrong at the source: the cap, free-allocation and
+auctionable rows were summed over every year up to a window that was itself the wrong way round, so
+"this year" read years 1..N and "to date" read the whole simulation. SystemTotals now carries Cap
+and FreeAllocation for the window the rest of the row is built for, and both the admin and the
+player read those, so year 2 now reads year 2's cap (345,174,500) and years 1-2 to date.
+
+H1 (stale position after the year closed) is the same class of bug as G1: the position card read the
+live forecast against the instruments that had survived the settlement, so a compliant company read
+as short by everything it had just surrendered. A reconciled year's position is now the settlement
+itself - the panel reads "Compliant" when nothing is owed, and the settled shortfall when there is -
+and the year's countdowns are zeroed and hidden once the year is closed, so neither the console nor
+the progress strip counts down to an auction that is not coming.
+
+H5 (console forms) had four parts: the forms open on the first unit so a blank selection cannot
+happen, a missing choice or description is refused with a message beside the form, every action
+reports its outcome next to the button it came from (the notices band at the top of the page is out
+of sight from a form halfway down it, which is why a refusal looked like nothing happening), the
+labels name their controls, and the messaging control writes its state in words beside a button that
+says what pressing it will do. A Playwright walk now performs all five console actions and checks
+the player's own screens afterwards.
+
+H3 (two-sided market) was the round's work. Round 2's finding was that the fleet was uniformly
+short, so no bot ever had anything to sell; the fix has four parts. The bots quote rather than deal
+early in the year (a trade trigger drawn at 5-15% instead of 40-60%) with a spread around the price
+they expect, so the book carries bids and offers from the first auction cycle. A second pass late in
+the year pulls the quotes that are below the market and pays up for what is still needed, which is
+what turns a book of quotes into trades. A quarter of any unusable offsets is offered early and the
+rest late, at the discount the bot itself puts on an offset. And the scenario carries a per-unit
+allocation factor (scenarios/tools/set-allocation-factors.ps1 writes it): one unit in ten at 1.5 and
+the rest at 0.9444, a mean-preserving grandfathering pattern that leaves 24 companies holding more
+than they emit, so there are sellers at all. The weights cancel, so the sector cakes and every cap
+figure are unchanged, and the scenario notes say all of this.
+
+The measured seeded three-year run (Normal; Hard is measured beside it in the fidelity report the
+suite writes):
+
+| Year | Resting bids | Resting asks | Resting volume | Exchange fills | Exchange volume | Exchange average | Auction average | Units penalised | Penalty value |
+|---|---|---|---|---|---|---|---|---|---|
+| 1 | 389 | 24 | 51,490,162 | 131 | 9,207,619 | 96.74 | 100.00 | 95 | 144,846,600 |
+| 2 | 466 | 28 | 72,795,484 | 224 | 13,807,277 | 101.59 | 115.40 | 126 | 191,448,998 |
+| 3 | 429 | 26 | 95,509,675 | 113 | 13,916,667 | 103.67 | 240.27 | 204 | 5,827,778,935 |
+
+Auction average by year 100.00 / 115.40 / 240.27, offsets at a 20.1% discount to allowances,
+abatement in year 1 at 1.00% of the cap, vintages 99.16 / 110.54 / 193.56, and the bot fleet's cost
+of compliance between -56.59 and 34.04 per tonne. Every envelope in force holds; the three that stay
+skipped say why in their own skip text.
+
+H4, from the same run: a normal year does not see most bots surrender fully. 95, 126 and 204 units
+were penalised in years 1, 2 and 3, 301 of 726 company-years were compliant, and the market
+shortfall over the run is 20.5 Mt. The reason is structural rather than a bot fault: the cap falls
+3% a year while the fleet's business-as-usual emissions grow, so each year's obligation exceeds
+everything the auctions can sell and the tonnes that close the rest of the gap have to come from
+companies holding a surplus. That is also why envelope one (every bot complies, no penalties) stays
+open and skipped with its measurement. On QA's question: a penalty for a short obligation is charged
+whether the shortfall came from a bad year or from a trainer closing the year early, because the
+regulator cannot tell the difference; the behaviour stays, and what changed is that the console now
+shows the year is over rather than offering a countdown.
+
+H6: the offer form lists the companies people play as their own group before the bots by sector,
+still with type-to-filter; the language switch is light on the dark bar, and a Playwright check now
+measures its colour; and the offsets form asks for a unit like the other three and hands the offsets
+to the company that owns it.
+
+Gate: build 0 warnings 0 errors; dotnet test CarbonSim.sln green - Engine 255 passing + 3 skipped,
+Data 16 passing, Web 173 passing + 1 skipped with Playwright real. dotnet format reports only the
+pre-existing charset complaint in the generated migration 20261004145903_GovernmentReserveToAuction.cs.
+
+## Review - QA feedback round 4 (J1-J4, K1-K4)
+
+The K items are delivered. The J items are diagnosed, partly delivered, and the rest reported with
+their measurements rather than papered over.
+
+K1: the top of book was taking the first twelve orders and pairing them, so a busy book showed the
+selling column as a dash on every row while the strip quoted a best offer. The read model now
+aggregates the whole book into price levels (volume summed per price, best five a side) and both
+columns render from those levels; a read-model test places two offers at one price and asserts they
+come back as one level. K2: the order form reports what became of the order beside its button -
+filled, partly filled, resting, or the engine's refusal. K3: a year closed while an auction window
+is open now clears that auction first, so the bids the room placed are honoured and the result is
+broadcast like any other close; a driver test halts and closes the year mid-window and asserts the
+sale lands on the record. K4: the report row that mixed every channel into an auction label is now
+"Average allowance price (all channels)" with a separate "Auction average price" row, computed in
+the engine off the auction channel alone.
+
+J1-J3 were taken as a calibration problem and measured against the brief's section 6 envelopes. A
+supply-versus-demand diagnostic was added to the fidelity harness (obligation, free allocation,
+auction offered/bid/sold, exchange traded, offsets granted and surrendered, abatement, banked,
+shortfall, per year) and it locates the constraint: with the deck's own parameters (90% free, 10%
+auctioned, 3%/yr cap decline, a 2-6% growth band) the fleet's cumulative obligation outgrows
+everything the scenario can supply, so the later-year compliance rate is set by how much offsets
+supply the run has, and that in turn sets the price path. Measured frontier, same seeded run:
+
+| Offsets granted | Offsets surrendered (year 1) | Year-1 clearing | Year-3 clearing | Compliant company-years | Bot MCC range |
+|---|---|---|---|---|---|
+| 1% + 20% to every 5th | 15.7 Mt (4.4% of cap) | 109.57 | 286.11 | 244 of 726 (34%) | -54.33 to 56.17 |
+| 3% + 25% to every 5th | 25.1 Mt (7.0%) | 100.00 | 242.70 | 339 of 726 (47%) | -55.99 to 37.68 |
+| 6% + 30% to every 5th | 34.6 Mt (9.7%) | 100.00 | 133.11 | 571 of 726 (79%) | -51.72 to 63.70 |
+
+The shipped calibration is the middle row: every envelope in force holds (year-1 clearing at the
+floor and climbing to 242.70, offsets at a 20.4% discount, later vintages above the current one,
+1.0% of the cap abated in year 1, the bot cost spread inside +5..+40 with negative outliers), and
+year 1 has zero penalised units. The compliance envelope stays skipped with its measurement: 47% of
+company-years compliant, and the documented Mexico band (74-84%) only arrives when the offsets are
+supplied at about 10% of the cap, which is the row below it - and that row's price path stops
+climbing (133 by year 3) because cheap offsets are what the price path is made of. The envelope that
+asks for 100% compliance therefore cannot hold together with the envelope that asks for a rising
+price path on this scenario; both are documented, they are mutually exclusive here, and the
+measurement above is the evidence.
+
+J2 (exchange against auction) was tried and reverted with the numbers: anchoring each bot's expected
+price on the last auction clearing plus a trend pulls the exchange up towards the auction, but a
+fleet that expects the auction price holds out on the exchange, and compliance fell (549 -> 422
+company-years) while the auction path rose. The shipped bots price off the last clearing of any
+channel, and the late pass is where the two venues are reconciled. J3's offsets envelope is
+captured in the table above; the shock envelope is not delivered: an emission shock moves demand,
+not a price, and the price response takes until the next auction window or the bots' next pass,
+which is inside the year but not inside one virtual month.
+
+Gate: build 0 warnings 0 errors; dotnet test CarbonSim.sln green - Engine 255 passing + 3 skipped,
+Data 16 passing, Web 175 passing + 1 skipped with Playwright real.
+
+## Review - QA feedback round 5 (L2 and the calibration sweep)
+
+L2 is delivered. An administrator can now change the rules of a live run: the console has a "Change
+the rules" card that moves the collar a tonne may trade between, which goes through
+SimulationClockService.ChangeRulesAsync, validates the pair, writes it into the run's parameters,
+bumps the run's RulesRevision and re-anchors every order book on the new floor. The revision is what
+tells the bots the ground has moved: a bot that sees it re-opens the market passes it has already
+used this year and clamps its expected price into the new collar, so the quotes move on the next
+tick rather than at the next scheduled pass. The shock envelope is un-skipped and measured in
+ComplianceBotTests: three minutes in the fleet has quoted, the floor is raised to 140, and one
+virtual month later the best bid has moved from the old floor's band to the new one. The full
+three-year fidelity class no longer carries a skipped shock test.
+
+The sweep QA asked for was run over the offsets supply (1%, 3% and 6% of emissions, plus a lumpy
+grant), the bot abatement margin (1.00, 1.05, 1.15) and the abatement cost basis, and the finding is
+that the two targets trade against each other on this scenario:
+
+| Offsets granted | Bot margin | Year-1 / 2 / 3 auction average | Compliant company-years | Bot cost range |
+|---|---|---|---|---|
+| 1% + 20% every 5th | 1.00 | 109.57 / 190.24 / 286.11 | 244 of 726 (34%) | -54.33 to 56.17 |
+| 1% + 20% every 5th | 1.05 | 106.45 / 192.52 / 298.31 | 243 of 726 (33%) | -54.37 to 95.09 |
+| 3% + 25% every 5th | 1.05 | 100.00 / 114.87 / 242.70 | 339 of 726 (47%) | -55.99 to 37.68 |
+| 6% + 30% every 5th | (measured before the margin change) | 100.00 / 133.11 / 133.11 | 571 of 726 (79%) | -51.72 to 63.70 |
+
+The third row ships: every envelope in force holds and year 1 has zero penalties. The fourth row
+reaches the Mexico compliance band but its year-3 clearing falls below 160, which is the price-side
+target. The missing lever is the one QA named - rational abatement at 160-220 a tonne - and the
+measurement says why it does not fire: the mid-priced tier on each menu costs about 190 a tonne, and
+the bots' rule is to abate while a project costs less than the price they expect to pay, which in
+years 1 and 2 is 100-115. Making them look through to the penalty instead would abate the whole
+mid tier in year 1, which breaks the year-1 abatement envelope (documented at about 1% of the cap,
+and measured at 1.00% today). The two documented targets are therefore still mutually exclusive on
+this scenario, and the sweep above is the evidence; the abatement cost basis was still improved on
+the way past (a project is now priced over its own service life rather than amortised over the years
+left in the run, which is what stopped the mid tier ever looking affordable at all).
+
+Gate: build 0 warnings 0 errors; dotnet test CarbonSim.sln green - Engine 256 passing + 2 skipped,
+Data 16 passing, Web 175 passing + 1 skipped with Playwright real.
+
+## Review - QA feedback round 6 (M1-M5)
+
+M1, the crossed book, was the real defect and it is fixed in the engine: a rule change now takes
+every order the new band cannot hold off the book (escrow released, and the run's message says how
+many), and then matches what is left against itself, because two orders can both be valid and still
+be crossed once the ground has moved. Two tests hold it: raising the floor from 100 to 140 leaves
+nothing resting below the new floor and no bid above an offer, before or after the market re-quotes.
+
+M2: the change is announced. The driver writes the change into the run as a message - who, the year,
+the old and new floor and ceiling, and how many orders the new band released - pushes ParametersChanged
+and MessageReceived to the run's group, and records it on the run so the console lists the last five
+changes with who made them. M5: each bot now quotes its own rung of the ladder (a per-company offset
+inside the band, deterministic from the company id), so the top levels differ instead of the whole
+fleet resting at two prices; a test asserts more than one level.
+
+M4 re-authored the abatement menus as fiction: three rungs per sector priced at their net cost over
+the project's service life, about 5, 130 and 240 a tonne, with reductions of 1%, 5-20% and 12-20%.
+Only the cheap rung is economic at the year-1 floor, which keeps year-1 abatement at 1.00% of the cap
+as the brief documents, and the middle rung is what a bot can work up to as the market tightens. The
+grid was then re-run with the shipped bot settings:
+
+| Offsets granted | Year-1 / 2 / 3 auction average | Compliant company-years | Years 2-3 units penalised | Bot cost range | Offset discount |
+|---|---|---|---|---|---|
+| 1% + 20% every 5th | 100.00 / 212.09 / 300.00 | 190 of 726 (26%) | 183 / 221 | -57.83 to 98.84 | 8.4% |
+| 3% + 25% every 5th (shipped) | 100.00 / 181.84 / 255.97 | 294 of 726 (40%) | 129 / 212 | -62.64 to 39.72 | 9.0% |
+| 6% + 30% every 5th | 100.00 / 100.00 / 234.58 | 527 of 726 (73%) | 17 / 182 | -50.66 to 25.56 | 38.7% |
+
+No point meets years 2-3 at or above 74%: year 2 does (93% on the last row) but year 3 does not, on
+any row, because the fleet's obligation in the final year outgrows everything the scenario can supply
+and the shortfall lands on most of the room. The shipped row keeps every other envelope - year-1
+clearing at the floor rising to 255.97, the offset discount at 9.0%, the bot cost spread inside
+-60..+40, and 1.00% of the cap abated in year 1 - so the compliance envelope stays skipped with this
+grid as its measurement, which is the documented limit QA said they would accept if no point existed.
+
+M3 is a decision: only the collar can move mid-run. A year's cap, the free allocation split across
+sectors and units, each unit's business-as-usual path and every auction lot are all derived once when
+the exercise is built, and the year-end obligation, the auction volumes and the reports all read
+those figures; a mid-run cap change would leave the plan the run actually settles against disagreeing
+with the cap on the screen. Mainstreaming that would mean re-deriving the plan for the years still to
+play and rebuilding the auction lots, which is a larger piece of work than the demo agenda needs.
+
+One real bug surfaced while measuring: the volatility band can move between the moment a bot clamps
+its price and the moment the order is submitted (a trade lands in between), and the book's refusal
+was escaping the bot's catch as an ArgumentOutOfRangeException, aborting the run. The bots now treat
+that refusal like any other and move on.
+
+Gate: build 0 warnings 0 errors; dotnet test CarbonSim.sln green - Engine 259 passing + 2 skipped,
+Data 16 passing, Web 175 passing + 1 skipped with Playwright real.
+
+## Review - QA feedback round 7 (N1-N4)
+
+N1: the exchange price chart's legend used to wrap onto the axis title at phone width. The plot now
+keeps 60 pixels above itself for the legend (44 on the cost curve) and the legend scrolls rather than
+wrapping. The check is a measurement, not a reading of the stylesheet: the charts render to SVG now
+(wwwroot/js/charts.js), so Playwright can measure the legend's box against the axis title's at 390px.
+Putting grid.top back to its old 34 fails it with "legend Vintage 1 lands on the axis title", which
+is QA's finding, and 60 passes. The cost curve's reserve is locked by a unit test on the option JSON.
+
+N2: the language switch had no rule of its own, so it fell through to the global a { color: var(--blue) }
+- the link blue on the navy bar, underlined, at the roughly 3:1 QA measured. It now has light text and
+a visible focus ring, and the browser test computes the WCAG contrast of the painted colour against
+the bar's own background: 4.5:1 or better, and not underlined at rest.
+
+N3: every input on /admin/setup carries an id and a label for it (the abatement and growth rows use a
+screen-reader-only label inside the cell, because the column heading is the visible name), and the
+shares read as the percentages the console shows - 3% rather than 0.03 - with the fraction kept
+behind them; a field accepts "3" or "3%", and a hint under each percent field says so. The new resx
+key is in both languages. axe found the first cut: a paragraph inside the metrics dl is not allowed,
+so the hint sits in the dd beside the input.
+
+N4 is this section, lesson 6, and the trainer runbook's account of the collar card and the price path.
+
+Gate: build 0 warnings 0 errors; dotnet test CarbonSim.sln green - Engine 259 passing + 2 skipped,
+Data 16 passing, Web 179 passing + 1 skipped with Playwright real. dotnet format reports only the
+pre-existing CHARSET complaint on the GovernmentReserveToAuction migration.
+
+## Review - the QA loop (2026-10-10)
+
+Seven rounds of browser testing against the demo host, one round at a time, each verified live before
+the next began: reports/qa/feedback-01.md through feedback-07.md. The per-round reviews above carry
+the detail; this is the index and the closing position.
+
+| Round | Feedback | What it turned up | Fixed |
+|---|---|---|---|
+| 1 | feedback-01.md | the seeded run read Running and never advanced; pre-start labels; duplicate unit names; the signed-in header; waiting-screen counts | F1-F5 |
+| 2 | feedback-02.md | the position ignored allowances held or bought at auction; the auction outcome was not shown; bots barely traded; the language switch was broken and invisible; the MACC did not encode tonnes; the price chart and summary strip | G1-G9 |
+| 3 | feedback-03.md | position and progress stale after a year closed; the system report's THIS YEAR / TO DATE columns; bots posted no offers and started bidding at 41% of the year; admin action forms failed silently | H1-H6 |
+| 4 | feedback-04.md, feedback-04b.md | bot compliance and the auction-versus-exchange price gap, both outside the envelopes; three skipped envelopes; top of book; order confirmation; closing mid-auction; a report label | J1-J4, K1-K4 |
+| 5 | feedback-05.md | the frontier had only been swept over offsets; the trainer needed a live rule change | L1 (the sweep), L2 (Change the rules), L3 |
+| 6 | feedback-06.md | a rule change left a crossed book; the shock was silent to players; thin depth; the abatement menu, not the offsets, was the missing lever | M1-M5 |
+| 7 | feedback-07.md | the legend landing on the axis title; the switch blue on navy; setup ids, labels and percentages; this record | N1-N4 |
+
+Accepted as documented limits:
+
+- **Full compliance stays open.** The compliance envelope is skipped with the calibration grid as its
+  measurement: the shipped point complies 294 of 726 company-years (40%), the widest-offsets row
+  reaches 527 of 726 (73%), and no point holds years 2-3 at 74% or better because the last year's
+  obligation outgrows everything the scenario can supply. The grid is written out by the fidelity run
+  (fidelity-run.md and calibration-grid.md, in the engine test output) and is the evidence for the
+  claim rather than an assertion. QA accepted this limit in round 6 and confirmed it in round 7.
+- **A mid-run shock moves the price collar only** (M3). A year's cap, the free allocation split
+  across sectors and units, each unit's growth path and every auction lot are derived once when the
+  exercise is built, and the year-end plan the run settles against reads those figures, so moving the
+  cap mid-run would leave the plan and the screen disagreeing. Mainstreaming it means re-deriving the
+  plan for the years still to play and rebuilding the lots, which is more than the training agenda
+  needs.
+- **The exchange's sell side is thin by construction.** The fleet is net short every year - 218 of
+  242 companies are allocated below their need in year 1 - so only the 24 allocated above it ever
+  post offers: 18 resting asks against 350 bids in year 1. That is the allocation spread, not the
+  bots, and lesson 5 records the fix if a future exercise wants a deeper book.
+
+No other open issue is known. One cosmetic thing QA did not raise, noticed while measuring: a scroll
+legend prints its own page counter ("1/2") beside its items.
+
+## Review - architecture pass round A (2026-10-11)
+
+The architecture review's candidate 1 (one run module that owns sequencing, year close, rule changes
+and who may trade when) is the direction. Round A did not attempt it: it laid the safety net the review
+asks for before any refactor, then fixed the two defects the review verified in the source.
+
+A0, the safety net. The suite was measured first and was already green (Engine 259 + 2 skipped, Data 16,
+Web 179 + 1 skipped). A golden of the calibrated run is now checked in at
+tests/CarbonSim.Engine.Tests/Golden/fidelity-golden.md: the published numbers for Normal and Hard plus a
+SHA-256 of each difficulty's BotAction log, kept by The_seeded_run_still_matches_the_golden. It moves
+only deliberately (CARBONSIM_UPDATE_GOLDEN=1), which is what makes the later rounds safe to attempt -
+candidate 6 in particular, where a reordered draw shifts the seeded stream without changing a rule.
+
+A1, the host now plays the run the envelopes measure. The forward vintage share was an argument to
+AuctionSchedule.Build that every harness passed as 0.20 while the host left it at the 0 default, so the
+live app never sold a forward vintage and the calibration measured a run the app did not play. It is now
+a setting of the run: Parameters.ForwardVintageShare, default 0.20, written in the scenario file's
+parameters, explained in its notes, carried through the snapshot, the EF record and the console's setup
+screen, and read by AuctionSchedule.Build - one seam, one value, and no caller can pass a different one.
+The host, the bots (SimulationBots.Markets) and the fidelity harness all call that one Build, so the
+equality the review asked for is structural rather than asserted twice; the golden is identical before
+and after, which is the proof that the two now measure the same run. The envelopes did not move: auction
+average 100.00 / 181.84 / 255.97, 294 of 726 company-years compliant, 432 penalties, offset discount
+9.0%, year-1 abatement 1.00% of the cap. Live in the running app, year 1's second auction lists
+"Vintage 1 - 17,792,500 t" and "Vintage 2 - 6,903,490 t (forward sale)", the bid form offers both
+vintages, and a bid on the forward vintage is accepted.
+
+A2, trading outside its window is refused from one home. TradingWindow (Engine/Market) holds the two
+rules: a year trades only while it is running, and an auction takes bids only while its section's window
+is open. Exchange.Place, OtcMarket.Send and OtcMarket.Accept call it, so the rule sits at the market
+seam and no caller - host, bot or a future one - can bypass it; cancelling an order and turning an offer
+down stay allowed in any state, because they take a player out of the market rather than into it. The
+host's bid path calls RequireAuctionOpen against the clock, which only the host holds. Refusals are
+typed (TradeRefusedException carrying a TradeRefusal reason), and PlayerContext writes them in the
+reader's language ("Trading is halted" / "The auction is closed", en and vi), so a stale page or a hub
+client gets a sentence rather than a stack trace.
+
+The brief expected A2 to move the calibrated numbers; it did not, and the reason is structural: the bots
+already gate themselves on the same two conditions, so the refusal only ever fires for a caller that
+skips that gate. The golden's action-log hash is the evidence - the log records every refusal a bot
+meets, so an identical hash over a full seeded run says no bot hit the new refusal.
+
+Three fixtures had to start a year before their markets would trade (ExchangeTests, OtcMarketTests and
+three FinanceTests cases). A book that only takes orders in a running year is the rule, and those tests
+were trading in a pending one.
+
+Found while fixing A2 and fixed: the console's setup screen scrolled sideways at phone width. Two real
+causes. A nested fieldset carries the browser's own min-width: min-content, so the abatement table grew
+it to 968px inside a 372px card; and the screen-reader-only labels added in round 7 were absolutely
+positioned with no positioned ancestor, so they were placed against the page and widened the document by
+429px while being one pixel and clipped. fieldset.card { min-width: 0 } plus pinning .sr-only to the page
+corner fixed both, and the phone-width gate is green with the tables rendered - which is also why that
+gate looked flaky for two rounds: a measurement taken before the tables rendered saw nothing wrong.
+
+Gate: build 0 warnings 0 errors; dotnet test CarbonSim.sln green - Engine 268 passing + 2 skipped,
+Data 16 passing, Web 182 passing + 1 skipped with Playwright real (466 passing, 3 skipped, 0 failed).
+dotnet format reports only the pre-existing CHARSET complaint on the GovernmentReserveToAuction
+migration, and the golden is unchanged from A0.
+
+
+## Review - architecture pass (2026-10-11)
+
+The architecture review (reports/arch/architecture-review-2026-10-11.html) named seven candidates: one
+run module, a rules accessor, one Standing for a company-year, the order-book band, the view plumbing,
+splitting a bot's plan from its execution, and the persistence mappers. The pass ran in rounds A to E
+and a last deepening round; round A's own detail is in the section above, and this is the whole of it.
+Nothing was committed - the working tree is the deliverable.
+
+Candidate 1, the run module. Engine/Run/SimulationRun.cs owns the order of operations: advance (tick,
+clear every closed auction, bots act, collect), start, begin next year, pause, resume, halt, end year
+(halt, clear the open auction first, reconcile, close), change the collar, and the market verbs (bid,
+place and cancel an order, OTC send and accept). Every verb returns a RunResult carrying what moved, so
+the host broadcasts from a value rather than draining side channels. The four copied test loops
+(FidelityRun, TrainingRun, SnapshotRoundTripTests, ComplianceBotTests) call the same module, so the
+fidelity envelopes measure the run the host plays by construction. In Web the host's open-coded
+gate/collect/broadcast is now one primitive, ApplyAsync in SimulationRegistry: it takes the run's gate,
+runs a run-module verb, collects its announcements, invalidates the screens' shared cache, saves when
+the verb says so, and broadcasts. The hub, the player session and the console all go through it, and
+MutationPrimitiveTests fails if a mutating path bypasses it.
+
+Candidate 3, the rules accessor. Simulation.Rules is the one accessor for a run's current Parameters;
+Auction, OrderBook, SimulationClock and AuctionSchedule read through it instead of capturing the object.
+The collar is the only rule changed at runtime, through the run module's collar verb, which also
+releases the orders and bids the new collar cannot hold.
+
+Candidate 2, Standing. Engine/Allocation/Standing.cs answers where a company (or unit) stands in a year:
+the emissions the obligation is measured on, held (escrow counted) and available separately, offsets
+usable up to the year's limit, position (long-positive), shortfall (never negative), covered, and - for
+a settled year - the settlement, never a fresh recomputation. CompliancePosition is deleted; Scoring,
+ComplianceRegister, SystemReport, ComplianceBot, PlayerSession, AdminSession and every test and harness
+that asked are on Standing, with StandingTests as the table-driven cover.
+
+Candidate 4, the band. OrderBook.FitToBand brings a wanted price inside [BandFloor, BandCeiling] to a
+whole cent, stepping off an edge whose three-decimal bound a rounded cent fell outside, so the quote a
+bot's own rounding used to push past the band (and the catch then hid) is always acceptable;
+ComplianceBot Buy and Sell call it, and Exchange.BandFor is the one home for the band a screen shows.
+The golden moved and was re-baselined once, deliberately: 768 of the Normal run's 4,998 bot actions
+quote a cent differently (the action count is unchanged), both bot-log hashes moved, and every envelope
+in force still holds.
+
+Candidate 5, partly. The SystemTotalsView mirror and the two identical ToTotals mappers are gone:
+SystemInfoView and AdminRunDetail expose the engine's SystemTotals directly, and the shared RunViews
+holds the year-of and reserve helpers both sessions had copied. PlayerSession.PlaceOrderAsync returns a
+typed OrderOutcome (id, filled, average price, resting, refusal) built from the run's own result, so
+Exchange.razor reads its notice from the outcome instead of scanning the next snapshot for the newest of
+the player's orders or trades. The string parsing (ParseProduct, ParseSide, ParseKind, ParseFill) stays
+in SimulationRegistry: moving it to the hub edge would push a second parse into the page and change the
+IPlayerSession contract, the screen stub and eight registry call sites.
+
+The two defects the review verified, fixed in round A: the host played the run with forwardVintageShare
+0 while every harness measured 0.20, so the live app never sold a forward vintage - now one setting of
+the run that the host, the bots and the harness all read; and nothing refused trading outside its
+window - now TradingWindow, typed refusals, and a Playwright step that shows the refusal on the screen.
+
+Three bugs found during the pass and fixed. A bid resting below a floor the trainer then raised was
+stranded in the auction instead of released; it is now released like an out-of-collar order, with the
+cash back and the owner told. The released-bid notice named the bid's price and volume on a feed every
+player reads, leaking a sealed bid; notices now have an audience and the room's line carries only counts
+(BidNoticePrivacyTests). The long/short label inverted for every short company after the Standing change,
+because Display.Position(PositionView) fed a long-positive number to a short-positive formatter;
+DisplayPositionTests now covers both sides of the sign and PlaywrightPositionLabelTests checks the top
+bar live.
+
+Not done, and why. Candidate 6, splitting a bot's plan from its execution: a reordered draw shifts the
+seeded stream, so it needs the golden as its net and is a round of its own. Candidate 7, the persistence
+mappers: low urgency, and the snapshot boundary is the one that has to be exact. The admin half of the
+resting-order test: the escrow test covers the player's view, and the console's company view has no
+equivalent yet.
+
+Gate at the end: build 0 warnings 0 errors; Engine 281 passing + 2 skipped, Data 16 passing, Web 196
+passing + 1 skipped; dotnet format clean apart from the pre-existing CHARSET note. The golden is now the
+re-baselined one - Normal sha256
+b72aab2f2052454f89c4515c4a2c46b20d51e2c4e3bb450a0e8d31962cb4ade2 (4,998 actions) and Hard sha256
+2ca1ec100ec357719cd42dd72919e7e861c3a1e06ad2d734484084a69cd05136 (4,972). The process lesson - report
+green, or that a test bites, only after running the suite that follows the last edit - is in lessons.md.

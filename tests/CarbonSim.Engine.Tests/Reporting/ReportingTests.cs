@@ -72,11 +72,11 @@ public sealed class ReportingTests
         simulation.Compliance.Reconcile(2);
 
         SystemReport report = SystemReport.For(simulation, 2);
-        CompliancePosition position = new(simulation);
+        Standing standing = new(simulation);
 
         report.Year.Should().Be(2);
         report.ThisYear.ForecastEmissions.Should().Be(
-            simulation.Companies.Sum(company => position.EmissionsFor(company, 2)));
+            simulation.Companies.Sum(company => standing.Emissions(company, 2)));
         report.ToDate.ForecastEmissions.Should().BeGreaterThan(report.ThisYear.ForecastEmissions);
         report.ThisYear.AllowancesSurrendered.Should().BeGreaterThan(0m);
         report.ToDate.AllowancesSurrendered.Should().BeGreaterThan(report.ThisYear.AllowancesSurrendered);
@@ -176,7 +176,7 @@ public sealed class ReportingTests
         overall.CostOfCompliance.Should().Be(30_000m);
         overall.Emissions.Should().Be(
             simulation.Allocation.Years.Sum(year => Scoring.ForYear(simulation, company, year).Emissions));
-        Scoring.FinalPosition(simulation, company).Should().Be(1_000m);
+        Scoring.Holdings(simulation, company).Should().Be(1_000m);
     }
 
     [Fact]
@@ -188,8 +188,33 @@ public sealed class ReportingTests
 
         CompanyCompliance result = simulation.Compliance.Reconcile(company, 1);
 
-        Scoring.FinalPosition(simulation, company).Should().Be(-result.Shortfall, "its 1,000 allowances went in against the obligation");
-        Scoring.FinalPosition(simulation, company).Should().BeLessThan(0m, "it could not cover what it emitted");
+        Scoring.Holdings(simulation, company).Should().Be(-result.Shortfall, "its 1,000 allowances went in against the obligation");
+        Scoring.FinalLongShortPosition(simulation, company).Should().Be(
+            result.Shortfall, "the year has been settled, so it is short by what it could not cover");
+    }
+
+    [Fact]
+    public void The_leaderboard_shows_the_position_a_company_is_in_and_not_just_what_it_holds()
+    {
+        (Simulation simulation, _, _) = Build();
+        Company company = simulation.FindCompany(1);
+        simulation.Ledger.GrantFreeAllocation(1);
+
+        Standing standing = new(simulation);
+        decimal shortBy = -standing.Position(company, 1);
+        shortBy.Should().BePositive("the free allocation is 90% of a growing baseline");
+
+        IReadOnlyList<LeaderboardEntry> before = Leaderboard.Rank(simulation);
+
+        before.Single(entry => ReferenceEquals(entry.Company, company)).FinalPosition.Should().Be(
+            shortBy, "the year is still ahead of it, so the column reads short");
+
+        simulation.Ledger.Grant(company, Vintage1, shortBy + 975m);
+
+        IReadOnlyList<LeaderboardEntry> after = Leaderboard.Rank(simulation);
+
+        after.Single(entry => ReferenceEquals(entry.Company, company)).FinalPosition.Should().Be(
+            -975m, "it now holds 975 tonnes more than it owes");
     }
 
     [Fact]
@@ -229,7 +254,8 @@ public sealed class ReportingTests
         LeaderboardEntry secondEntry = table.Single(entry => ReferenceEquals(entry.Company, second));
 
         secondEntry.OverallMarginalCostOfCompliance.Should().Be(firstEntry.OverallMarginalCostOfCompliance);
-        secondEntry.FinalPosition.Should().BeGreaterThan(firstEntry.FinalPosition);
+        Scoring.Holdings(simulation, second).Should().BeGreaterThan(
+            Scoring.Holdings(simulation, first), "the tie-break is what each was left holding");
         secondEntry.Rank.Should().BeLessThan(firstEntry.Rank, "level on cost per tonne, the larger holder ranks first");
     }
 }

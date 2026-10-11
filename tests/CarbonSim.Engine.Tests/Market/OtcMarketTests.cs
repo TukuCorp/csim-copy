@@ -12,6 +12,8 @@ public sealed class OtcMarketTests
     private static (Simulation Simulation, OtcMarket Otc) Build()
     {
         Simulation simulation = TestSimulation.Build();
+        // An OTC desk takes offers only while the year runs, so these tests start one.
+        TestSimulation.Running(simulation);
         simulation.Ledger.Grant(simulation.FindCompany(1), Vintage1, 1_000_000m);
         simulation.Ledger.Grant(simulation.FindCompany(2), Product.Offset, 1_000_000m);
 

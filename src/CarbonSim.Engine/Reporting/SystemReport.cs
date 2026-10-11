@@ -39,7 +39,7 @@ public sealed class SystemReport
 
     private static SystemTotals Totals(Simulation simulation, int from, int to)
     {
-        CompliancePosition position = new(simulation);
+        Standing standing = new(simulation);
         MarketJournal journal = simulation.Journal;
 
         decimal forecastEmissions = 0m;
@@ -51,12 +51,17 @@ public sealed class SystemReport
         decimal penaltyValue = 0m;
         decimal fineValue = 0m;
         decimal emissionsReduced = 0m;
+        decimal cap = 0m;
+        decimal freeAllocation = 0m;
 
         for (int year = from; year <= to; year++)
         {
+            cap += simulation.Allocation.CapForYear(year);
+            freeAllocation += simulation.Allocation.FreeAllocationForYear(year);
+
             foreach (Company company in simulation.Companies)
             {
-                forecastEmissions += position.EmissionsFor(company, year);
+                forecastEmissions += standing.Emissions(company, year);
             }
 
             foreach (CompanyCompliance result in simulation.Compliance.Results.Where(result => result.Year == year))
@@ -107,12 +112,15 @@ public sealed class SystemReport
             journal.Consideration(from, to, TradeChannel.Auction),
             journal.AveragePrice(from, to, kind: ProductKind.Allowance),
             journal.AveragePrice(from, to, kind: ProductKind.Offset),
+            journal.AveragePrice(from, to, TradeChannel.Auction, ProductKind.Allowance),
             projects.Length,
             projects.Sum(project => project.Option.AnnualReduction),
             emissionsReduced,
             penaltyCount,
             penaltyValue,
-            fineValue);
+            fineValue,
+            cap,
+            freeAllocation);
     }
 
     private static void RequireYear(Simulation simulation, int year)
@@ -142,9 +150,20 @@ public sealed record SystemTotals(
     decimal AuctionRevenue,
     decimal AverageAllowancePrice,
     decimal AverageOffsetPrice,
+    decimal AuctionAveragePrice,
     int AbatementsImplemented,
     decimal AbatementTonnes,
     decimal EmissionsReduced,
     int PenaltyCount,
     decimal PenaltyValue,
-    decimal FineValue);
+    decimal FineValue,
+    decimal Cap,
+    decimal FreeAllocation)
+{
+    /// <summary>What the cap leaves for the auctions, which is what the year's bidders can buy.</summary>
+    public decimal AuctionableVolume => Cap - FreeAllocation;
+
+    /// <summary>Nothing reported yet: the window a run that has not started is about.</summary>
+    public static SystemTotals Empty { get; } = new(
+        0m, 0m, 0m, 0m, 0m, 0m, 0m, 0m, 0m, 0m, 0m, 0m, 0m, 0m, 0, 0m, 0m, 0, 0m, 0m, 0m, 0m);
+}

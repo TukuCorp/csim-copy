@@ -1,3 +1,5 @@
+using CarbonSim.Engine.Run;
+
 namespace CarbonSim.Web.Player;
 
 /// <summary>
@@ -13,12 +15,15 @@ public interface IPlayerSession
     /// <summary>The signed-in account's identity, or null when nobody is signed in.</summary>
     Task<string?> CurrentActorAsync(CancellationToken cancellationToken = default);
 
+    /// <summary>Who is at the front door, and where they should go next.</summary>
+    Task<FrontDoorView> FrontDoorAsync(CancellationToken cancellationToken = default);
+
     /// <summary>The view for the signed-in player's company, or null when there is nothing to show.</summary>
     Task<PlayerView?> ForPlayerAsync(Guid simulationId, CancellationToken cancellationToken = default);
 
     Task PlaceBidAsync(Guid simulationId, int unitId, int vintage, decimal price, decimal volume, CancellationToken cancellationToken = default);
 
-    Task PlaceOrderAsync(
+    Task<OrderOutcome> PlaceOrderAsync(
         Guid simulationId,
         int unitId,
         string product,

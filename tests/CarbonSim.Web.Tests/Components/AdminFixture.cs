@@ -1,4 +1,5 @@
 using Bunit;
+using CarbonSim.Engine.Reporting;
 using CarbonSim.Web.Admin;
 using CarbonSim.Web.Player;
 using Microsoft.Extensions.DependencyInjection;
@@ -73,6 +74,12 @@ public sealed class StubAdminSession : IAdminSession
     public Task EndSimulationAsync(Guid simulationId, CancellationToken cancellationToken = default)
     {
         Actions.Add("end-simulation");
+        return Task.CompletedTask;
+    }
+
+    public Task ChangeRulesAsync(Guid simulationId, decimal? floor, decimal? ceiling, CancellationToken cancellationToken = default)
+    {
+        Actions.Add($"rules:{floor}:{ceiling}");
         return Task.CompletedTask;
     }
 
@@ -201,8 +208,8 @@ internal static class AdminViewFixture
         [new AdminLeaderView(1, "Delta Power", "Delta Unit 1", "Delta Power", 2.5m, 81_000m, false)],
         [new AdminPriceView(1, 250_000m, 110m, 1_000m, 90m, 105m, 100m, 120m, 4)],
         Surrender(),
-        Totals(1_000_000m, 900_000m, 100_000m),
-        Totals(1_000_000m, 900_000m, 100_000m),
+        Totals(1_000_000m, 900_000m),
+        Totals(1_000_000m, 900_000m),
         500_000m,
         [new HoldingView(ProductView.Allowance(1), 100_000m, 100_000m)],
         state == "YearEnded");
@@ -224,6 +231,8 @@ internal static class AdminViewFixture
         0.6m,
         0.1m,
         0.07m,
+        0.0m,
+        0.20m,
         [new AdminGrowthView("Power", 0.02m, 0.06m)]);
 
     private static List<AdminCompanyView> Companies() =>
@@ -234,8 +243,8 @@ internal static class AdminViewFixture
 
     private static List<AdminUnitView> Units() =>
     [
-        new AdminUnitView(1, "Delta Unit 1", "Delta Power", "Power", 100_000m, 90_000m, 100_000m, 5_000m, false, false, 1, Opportunities()),
-        new AdminUnitView(2, "Red River Unit 1", "Red River Power", "Power", 100_000m, 90_000m, 100_000m, 0m, false, false, 0, []),
+        new AdminUnitView(1, "Delta Unit 1", "Delta Power", "Power", 100_000m, 90_000m, 100_000m, 5_000m, false, false, false, 1, 1, Opportunities()),
+        new AdminUnitView(2, "Red River Unit 1", "Red River Power", "Power", 100_000m, 90_000m, 100_000m, 0m, false, false, false, 0, 2, []),
     ];
 
     private static List<AdminAbatementOptionView> Opportunities() =>
@@ -250,7 +259,7 @@ internal static class AdminViewFixture
         new AdminSurrenderView(2, "Red River Power", "Red River Unit 1", 100_000m, 100_000m, 90_000m, 90_000m, 0m, 0m, 0m, 10_000m, 3_000_000m, false),
     ];
 
-    private static SystemTotalsView Totals(decimal cap, decimal free, decimal auctionable) => new(
+    private static SystemTotals Totals(decimal cap, decimal free) => new(
         100_000m,
         90_000m,
         10_000m,
@@ -264,6 +273,7 @@ internal static class AdminViewFixture
         550_000m,
         110m,
         87m,
+        0m,
         2,
         200_000m,
         200_000m,
@@ -271,6 +281,5 @@ internal static class AdminViewFixture
         0m,
         0m,
         cap,
-        free,
-        auctionable);
+        free);
 }

@@ -215,6 +215,21 @@ public sealed class AdminSession : IAdminSession
         await _driver.EndSimulationAsync(simulationId, cancellationToken).ConfigureAwait(false);
     }
 
+    public async Task ChangeRulesAsync(
+        Guid simulationId,
+        decimal? floor,
+        decimal? ceiling,
+        CancellationToken cancellationToken = default)
+    {
+        await RequireAdministratorAsync().ConfigureAwait(false);
+
+        ClaimsPrincipal user = await CurrentUserAsync().ConfigureAwait(false);
+
+        await _driver
+            .ChangeRulesAsync(simulationId, floor, ceiling, user.Identity?.Name ?? "trainer", cancellationToken)
+            .ConfigureAwait(false);
+    }
+
     public async Task SetMessagingAsync(Guid simulationId, bool enabled, CancellationToken cancellationToken = default)
     {
         await RequireAdministratorAsync().ConfigureAwait(false);
@@ -328,13 +343,13 @@ public sealed class AdminSession : IAdminSession
     private static AdminRunSummary Summarise(HostedRun run)
     {
         Simulation simulation = run.Simulation;
-        Parameters parameters = simulation.TradingSystems.Single().Parameters;
+        Parameters parameters = simulation.Rules;
 
         return new AdminRunSummary(
             simulation.Id,
             simulation.Name,
             simulation.State.ToString(),
-            simulation.CurrentYear,
+            RunViews.YearOf(simulation),
             parameters.Years,
             simulation.Companies.Count,
             simulation.Companies.Count(company => company.Owner.Kind == PlayerKind.Human),
@@ -345,9 +360,9 @@ public sealed class AdminSession : IAdminSession
     private static AdminRunDetail BuildDetail(HostedRun run)
     {
         Simulation simulation = run.Simulation;
-        Parameters parameters = simulation.TradingSystems.Single().Parameters;
-        int year = Math.Max(1, simulation.CurrentYear);
-        CompliancePosition position = new(simulation);
+        Parameters parameters = simulation.Rules;
+        int year = RunViews.YearOf(simulation);
+        Standing standing = new(simulation);
 
         List<AdminSectorView> sectors =
         [
@@ -365,9 +380,8 @@ public sealed class AdminSession : IAdminSession
         foreach (Company company in simulation.Companies)
         {
             CompanyScore score = Scoring.ForYear(simulation, company, year);
-            CompanyCompliance? result = simulation.Compliance.Results
-                .FirstOrDefault(candidate => ReferenceEquals(candidate.Company, company) && candidate.Year == year);
-            decimal emissions = position.EmissionsFor(company, year);
+            CompanyCompliance? result = simulation.Compliance.For(company, year);
+            decimal emissions = standing.Emissions(company, year);
             decimal free = simulation.Allocation.FreeAllocationFor(company, year);
 
             companies.Add(new AdminCompanyView(
@@ -380,10 +394,10 @@ public sealed class AdminSession : IAdminSession
                 emissions,
                 result?.Obligation ?? emissions,
                 free,
-                result?.Shortfall ?? Math.Max(0m, emissions - free),
+                result?.Shortfall ?? standing.Shortfall(company, year),
                 score.CostOfCompliance,
                 score.MarginalCostOfCompliance,
-                Scoring.FinalPosition(simulation, company),
+                Scoring.FinalLongShortPosition(simulation, company),
                 result is not null,
                 result?.PenaltyCash ?? 0m));
         }
@@ -417,11 +431,13 @@ public sealed class AdminSession : IAdminSession
                 unit.Sector.Name,
                 unit.BaselineEmissions,
                 simulation.Allocation.FreeAllocationFor(unit, year),
-                position.EmissionsFor(unit, year),
+                standing.Emissions(unit, year),
                 simulation.Abatements.ReductionsFor(unit, year),
+                unit.Company.Owner.Kind == PlayerKind.Ai,
                 unit.AutoTrade,
                 simulation.Abatements.IsShutDown(unit, year),
                 simulation.Abatements.For(unit).Count,
+                unit.Company.Id,
                 opportunities));
         }
 
@@ -462,11 +478,11 @@ public sealed class AdminSession : IAdminSession
 
         foreach (Company company in simulation.Companies)
         {
-            CompanyCompliance? result = simulation.Compliance.Results
-                .FirstOrDefault(candidate => ReferenceEquals(candidate.Company, company) && candidate.Year == year);
-            decimal emissions = position.EmissionsFor(company, year);
+            CompanyCompliance? result = simulation.Compliance.For(company, year);
+            decimal emissions = standing.Emissions(company, year);
             decimal free = simulation.Allocation.FreeAllocationFor(company, year);
-            decimal shortfall = result?.Shortfall ?? Math.Max(0m, emissions - free);
+            decimal shortfall = result?.Shortfall ?? standing.Shortfall(company, year);
+            decimal covered = result?.Covered ?? Math.Min(emissions, standing.Held(company, year));
 
             surrender.Add(new AdminSurrenderView(
                 company.Id,
@@ -474,7 +490,7 @@ public sealed class AdminSession : IAdminSession
                 string.Join(", ", company.Units.Select(unit => unit.Name)),
                 emissions,
                 result?.Obligation ?? emissions,
-                result?.Covered ?? (result is null ? Math.Min(emissions, free) : 0m),
+                covered,
                 result?.AllowancesSurrendered ?? 0m,
                 result?.OffsetsSurrendered ?? 0m,
                 result?.Banked ?? 0m,
@@ -485,29 +501,25 @@ public sealed class AdminSession : IAdminSession
         }
 
         SystemReport report = SystemReport.For(simulation, year);
+        // Nothing is left to count down once the year has been closed or the simulation has ended.
+        bool yearOver = simulation.State is SimulationState.YearEnded or SimulationState.GameEnded;
 
-        List<HoldingView> reserve =
-        [
-            .. simulation.Allocation.Years.Select(vintage => new HoldingView(
-                ProductView.Allowance(vintage),
-                simulation.Government.Held(vintage),
-                simulation.Government.Issued(vintage))),
-        ];
+        List<HoldingView> reserve = RunViews.Reserve(simulation);
 
         return new AdminRunDetail(
             simulation.Id,
             simulation.Name,
             simulation.State.ToString(),
-            simulation.CurrentYear,
+            year,
             parameters.Years,
             run.Clock.CurrentAuction,
             parameters.AuctionsPerYear,
             run.Clock.IsAuctionOpen,
             run.Clock.State == SimulationState.Running,
             run.MessagingEnabled,
-            run.Clock.TimeLeftInYear,
-            run.Clock.TimeToAuctionOpen,
-            run.Clock.TimeToAuctionClose,
+            yearOver ? TimeSpan.Zero : run.Clock.TimeLeftInYear,
+            yearOver ? TimeSpan.Zero : run.Clock.TimeToAuctionOpen,
+            yearOver ? TimeSpan.Zero : run.Clock.TimeToAuctionClose,
             ToParametersView(parameters),
             sectors,
             companies,
@@ -515,11 +527,14 @@ public sealed class AdminSession : IAdminSession
             leaderboard,
             prices,
             surrender,
-            ToTotals(simulation, report.ThisYear, year, toDate: false),
-            ToTotals(simulation, report.ToDate, year, toDate: true),
+            report.ThisYear,
+            report.ToDate,
             simulation.Government.Revenue,
             reserve,
-            simulation.State == SimulationState.YearEnded && simulation.CurrentYear >= parameters.Years);
+            simulation.State == SimulationState.YearEnded && simulation.CurrentYear >= parameters.Years)
+        {
+            RuleChanges = [.. run.RuleChanges],
+        };
     }
 
     private static AdminParametersView ToParametersView(Parameters parameters) => new(
@@ -539,40 +554,8 @@ public sealed class AdminSession : IAdminSession
         parameters.TradingOpenShareOfYear,
         parameters.VolatilityBand,
         parameters.OverdraftInterestRate,
+        parameters.GovernmentReserveToAuctionPercent,
+        parameters.ForwardVintageShare,
         [.. parameters.BausGrowthBySector.Select(growth => new AdminGrowthView(growth.Sector, growth.MinAnnualRate, growth.MaxAnnualRate))]);
 
-    private static SystemTotalsView ToTotals(Simulation simulation, SystemTotals totals, int year, bool toDate)
-    {
-        int through = toDate ? simulation.Allocation.Years.Max() : year;
-        decimal cap = simulation.Allocation.Years
-            .Where(candidate => candidate <= through)
-            .Sum(simulation.Allocation.CapForYear);
-        decimal free = simulation.Allocation.Years
-            .Where(candidate => candidate <= through)
-            .Sum(simulation.Allocation.FreeAllocationForYear);
-
-        return new SystemTotalsView(
-            totals.ForecastEmissions,
-            totals.AllowancesSurrendered,
-            totals.OffsetsSurrendered,
-            totals.Banked,
-            totals.Forfeited,
-            totals.AllowancesSold,
-            totals.AllowancesBought,
-            totals.OffsetsSold,
-            totals.OffsetsBought,
-            totals.AuctionVolume,
-            totals.AuctionRevenue,
-            totals.AverageAllowancePrice,
-            totals.AverageOffsetPrice,
-            totals.AbatementsImplemented,
-            totals.AbatementTonnes,
-            totals.EmissionsReduced,
-            totals.PenaltyCount,
-            totals.PenaltyValue,
-            totals.FineValue,
-            cap,
-            free,
-            cap - free);
-    }
 }

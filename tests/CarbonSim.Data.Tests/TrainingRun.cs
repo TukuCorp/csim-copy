@@ -5,6 +5,7 @@ using CarbonSim.Engine.Domain;
 using CarbonSim.Engine.Market;
 using CarbonSim.Engine.Market.Exchange;
 using CarbonSim.Engine.Market.Otc;
+using CarbonSim.Engine.Run;
 using CarbonSim.Engine.Scenarios;
 using CarbonSim.Engine.Snapshot;
 
@@ -17,43 +18,31 @@ namespace CarbonSim.Data.Tests;
 /// </summary>
 internal sealed class TrainingRun
 {
-    private readonly BotMarkets _markets;
     private readonly TimeSpan _tick;
 
-    private TrainingRun(
-        Simulation simulation,
-        SimulationClock clock,
-        TestTimeProvider time,
-        Exchange exchange,
-        OtcMarket otc,
-        AuctionSchedule auctions,
-        SimulationBots bots,
-        TimeSpan tick)
+    private TrainingRun(SimulationRun module, TestTimeProvider time, SimulationBots bots, TimeSpan tick)
     {
-        Simulation = simulation;
-        Clock = clock;
+        Module = module;
         Time = time;
-        Exchange = exchange;
-        Otc = otc;
-        Auctions = auctions;
-        Bots = bots;
         _tick = tick;
-        _markets = SimulationBots.Markets(simulation, exchange, otc, auctions);
     }
 
-    public Simulation Simulation { get; }
+    /// <summary>The run module: the same one the host drives, so a saved state is a played state.</summary>
+    public SimulationRun Module { get; }
 
-    public SimulationClock Clock { get; }
+    public Simulation Simulation => Module.Simulation;
+
+    public SimulationClock Clock => Module.Clock;
 
     public TestTimeProvider Time { get; }
 
-    public Exchange Exchange { get; }
+    public Exchange Exchange => Module.Exchange;
 
-    public OtcMarket Otc { get; }
+    public OtcMarket Otc => Module.Otc;
 
-    public AuctionSchedule Auctions { get; }
+    public AuctionSchedule Auctions => Module.Auctions;
 
-    public SimulationBots Bots { get; }
+    public SimulationBots Bots => Module.Bots ?? throw new InvalidOperationException("A training run always has bots.");
 
     /// <summary>
     /// Starts a run from the scenario file. Every unit is automated, which is how a published
@@ -62,8 +51,7 @@ internal sealed class TrainingRun
     public static TrainingRun Start(
         string scenarioPath,
         BotDifficulty difficulty = BotDifficulty.Normal,
-        TimeSpan? tick = null,
-        decimal forwardVintageShare = 0.20m)
+        TimeSpan? tick = null)
     {
         Simulation simulation = ScenarioLoader.LoadFile(scenarioPath);
 
@@ -73,23 +61,13 @@ internal sealed class TrainingRun
         }
 
         SimulationBots bots = SimulationBots.Create(simulation, BotSettings.For(difficulty));
-        AuctionSchedule auctions = AuctionSchedule.Build(simulation, forwardVintageShare);
-        Exchange exchange = new(simulation);
-        OtcMarket otc = new(simulation);
         TestTimeProvider time = new();
-        SimulationClock clock = new(simulation, time);
+        SimulationRun module = SimulationRun.Create(simulation, time, bots);
 
-        clock.Start();
+        // Year 1 begins the way the host begins it: the clock runs and its free allocation is granted.
+        module.Start();
 
-        return new TrainingRun(
-            simulation,
-            clock,
-            time,
-            exchange,
-            otc,
-            auctions,
-            bots,
-            tick ?? TimeSpan.FromSeconds(30));
+        return new TrainingRun(module, time, bots, tick ?? TimeSpan.FromSeconds(30));
     }
 
     /// <summary>Plays whole virtual years: allocate, trade, clear, reconcile, close the books.</summary>
@@ -101,7 +79,9 @@ internal sealed class TrainingRun
 
             if (played < count - 1)
             {
-                Clock.BeginNextYear();
+                // The next year begins the way the host begins it: the clock moves on and the year's
+                // free allocation is granted once, here, rather than at the top of the play loop.
+                Module.BeginNextYear();
             }
         }
     }
@@ -109,16 +89,7 @@ internal sealed class TrainingRun
     /// <summary>Plays the year the clock is currently in, up to and including the books closing.</summary>
     public void PlayYear(decimal offsetShareOfEmissions = 0.03m, decimal lumpyOffsetShare = 0.25m)
     {
-        Play(
-            Simulation,
-            Clock,
-            Bots,
-            _markets,
-            Auctions,
-            Time,
-            _tick,
-            offsetShareOfEmissions,
-            lumpyOffsetShare);
+        Play(Module, Time, _tick, offsetShareOfEmissions, lumpyOffsetShare);
     }
 
     /// <summary>
@@ -135,12 +106,15 @@ internal sealed class TrainingRun
     {
         ArgumentNullException.ThrowIfNull(restored);
 
+        // The restored pieces go back into a module, which is exactly what the host does on a reload.
         Play(
-            restored.Simulation,
-            restored.Clock,
-            restored.Bots,
-            SimulationBots.Markets(restored.Simulation, restored.Exchange, restored.Otc, restored.Auctions),
-            restored.Auctions,
+            SimulationRun.Restore(
+                restored.Simulation,
+                restored.Clock,
+                restored.Exchange,
+                restored.Otc,
+                restored.Auctions,
+                restored.Bots),
             time,
             tick ?? TimeSpan.FromSeconds(30),
             offsetShareOfEmissions,
@@ -148,47 +122,33 @@ internal sealed class TrainingRun
     }
 
     /// <summary>
-    /// One virtual year: grant the free allocation, hand out the offsets the administrator
-    /// would, tick the clock to the year end clearing auctions as they close, then reconcile and
-    /// close the books.
+    /// One virtual year through the run module: hand out the offsets the administrator would, then
+    /// tick to the year end, clearing the auctions that close and closing the year the way the host
+    /// closes it. The year's free allocation was granted when the year began, by Start or
+    /// BeginNextYear, so this does not grant it a second time.
     /// </summary>
     private static void Play(
-        Simulation simulation,
-        SimulationClock clock,
-        SimulationBots? bots,
-        BotMarkets markets,
-        AuctionSchedule auctions,
+        SimulationRun run,
         TestTimeProvider time,
         TimeSpan tick,
         decimal offsetShareOfEmissions,
         decimal lumpyOffsetShare)
     {
-        int year = clock.CurrentYear;
-        CompliancePosition position = new(simulation);
+        int year = run.Clock.CurrentYear;
+        Standing standing = new(run.Simulation);
 
-        simulation.Ledger.GrantFreeAllocation(year);
-        DisburseOffsets(simulation, position, year, offsetShareOfEmissions, lumpyOffsetShare);
+        DisburseOffsets(run.Simulation, standing, year, offsetShareOfEmissions, lumpyOffsetShare);
 
-        while (clock.State != SimulationState.YearEnded)
+        while (run.Clock.State != SimulationState.YearEnded)
         {
             time.Advance(tick);
-            IReadOnlyList<ClockEvent> events = clock.Advance();
+            run.Advance();
 
-            foreach (ClockEvent closed in events.Where(item => item.Kind == ClockEventKind.AuctionClosed))
+            if (run.Clock.State == SimulationState.TradingHalted)
             {
-                auctions.ForSection(closed.Year, closed.Auction).Clear();
-            }
-
-            bots?.Act(simulation, clock, markets);
-
-            if (clock.State == SimulationState.TradingHalted)
-            {
-                clock.EndYear();
+                run.EndYear();
             }
         }
-
-        simulation.Compliance.Reconcile(year);
-        simulation.Finance.CloseYear(year);
     }
 
     /// <summary>
@@ -198,14 +158,14 @@ internal sealed class TrainingRun
     /// </summary>
     private static void DisburseOffsets(
         Simulation simulation,
-        CompliancePosition position,
+        Standing standing,
         int year,
         decimal share,
         decimal lumpyShare)
     {
         foreach (Company company in simulation.Companies)
         {
-            decimal emissions = position.EmissionsFor(company, year);
+            decimal emissions = standing.Emissions(company, year);
             decimal volume = emissions * share;
 
             if (company.Id % 5 == 0)

@@ -60,8 +60,8 @@ public sealed class AllowanceConservationTests
     [Fact]
     public void An_auction_reports_what_it_is_offering_and_what_is_left_of_it()
     {
-        Simulation simulation = TestSimulation.Build();
-        AuctionSchedule schedule = AuctionSchedule.Build(simulation, forwardVintageShare: 0.20m);
+        Simulation simulation = TestSimulation.Build(forwardVintageShare: 0.20m);
+        AuctionSchedule schedule = AuctionSchedule.Build(simulation);
         Auction auction = schedule.ForSection(1, 4);
 
         auction.OfferedVolume.Should().Be(237_500m + 184_300m);

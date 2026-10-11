@@ -28,8 +28,8 @@ else
     <div class="cards">
         <section class="card wide" tabindex="0">
             <h2>@Strings["AdminRegistration"]</h2>
-            <label class="check"><input id="admin-registration-open" type="checkbox" @bind="_registrationOpen" /> @Strings["AdminRegistrationOpen"]</label>
-            <label>@Strings["AdminAccessPin"]<input id="admin-pin" type="text" @bind="_pin" /></label>
+            <label class="check" for="admin-registration-open"><input id="admin-registration-open" type="checkbox" @bind="_registrationOpen" /> @Strings["AdminRegistrationOpen"]</label>
+            <label for="admin-pin">@Strings["AdminAccessPin"]<input id="admin-pin" type="text" @bind="_pin" /></label>
             <p class="muted small">@Strings["AdminCompaniesOnOffer"]: @Draft.Companies.Count</p>
             <button class="button" id="admin-save-registration" @onclick="SaveRegistrationAsync">@Strings["AdminSave"]</button>
         </section>
@@ -37,34 +37,90 @@ else
         <section class="card wide" tabindex="0">
             <h2>@Strings["AdminParameters"]</h2>
             <dl class="metrics">
-                <div><dt>@Strings["AdminName"]</dt><dd><input type="text" aria-label="@Strings["AdminName"]" @bind="Draft.Name" /></dd></div>
-                <div><dt>@Strings["AdminSeed"]</dt><dd><input type="text" inputmode="decimal" aria-label="@Strings["AdminSeed"]" @bind="Draft.Seed" @bind:culture="CultureInfo.CurrentCulture" /></dd></div>
-                <div><dt>@Strings["Cap"]</dt><dd><input id="setup-cap" type="text" inputmode="decimal" aria-label="@Strings["Cap"]" @bind="Draft.Parameters.Cap" @bind:culture="CultureInfo.CurrentCulture" /></dd></div>
-                <div><dt>@Strings["AnnualCapReductionRate"]</dt><dd><input type="text" inputmode="decimal" step="0.001" aria-label="@Strings["AnnualCapReductionRate"]" @bind="Draft.Parameters.AnnualCapReductionRate" @bind:culture="CultureInfo.CurrentCulture" /></dd></div>
-                <div><dt>@Strings["FreeAllocationShare"]</dt><dd><input type="text" inputmode="decimal" step="0.01" aria-label="@Strings["FreeAllocationShare"]" @bind="Draft.Parameters.FreeAllocationShare" @bind:culture="CultureInfo.CurrentCulture" /></dd></div>
-                <div><dt>@Strings["GovernmentReserveToAuctionPercent"]</dt><dd><input id="setup-reserve-to-auction" type="text" inputmode="decimal" step="0.01" aria-label="@Strings["GovernmentReserveToAuctionPercent"]" @bind="Draft.Parameters.GovernmentReserveToAuctionPercent" @bind:culture="CultureInfo.CurrentCulture" /></dd></div>
-                <div><dt>@Strings["Year"]</dt><dd><input type="text" inputmode="decimal" aria-label="@Strings["Year"]" @bind="Draft.Parameters.Years" @bind:culture="CultureInfo.CurrentCulture" /></dd></div>
-                <div><dt>@Strings["OffsetUsageLimit"]</dt><dd><input type="text" inputmode="decimal" step="0.01" aria-label="@Strings["OffsetUsageLimit"]" @bind="Draft.Parameters.OffsetUsageLimit" @bind:culture="CultureInfo.CurrentCulture" /></dd></div>
-                <div><dt>@Strings["BankingLimit"]</dt><dd><input type="text" inputmode="decimal" step="0.01" aria-label="@Strings["BankingLimit"]" @bind="Draft.Parameters.BankingLimit" @bind:culture="CultureInfo.CurrentCulture" /></dd></div>
-                <div><dt>@Strings["PenaltyPerTonne"]</dt><dd><input type="text" inputmode="decimal" aria-label="@Strings["PenaltyPerTonne"]" @bind="Draft.Parameters.PenaltyPerTonne" @bind:culture="CultureInfo.CurrentCulture" /></dd></div>
-                <div><dt>@Strings["PenaltyAllowanceDebit"]</dt><dd><input type="text" inputmode="decimal" aria-label="@Strings["PenaltyAllowanceDebit"]" @bind="Draft.Parameters.PenaltyAllowanceDebit" @bind:culture="CultureInfo.CurrentCulture" /></dd></div>
-                <div><dt>@Strings["AuctionFloorPrice"]</dt><dd><input type="text" inputmode="decimal" aria-label="@Strings["AuctionFloorPrice"]" @bind="Draft.Parameters.AuctionFloorPrice" @bind:culture="CultureInfo.CurrentCulture" /></dd></div>
-                <div><dt>@Strings["AuctionCeilingPrice"]</dt><dd><input type="text" inputmode="decimal" aria-label="@Strings["AuctionCeilingPrice"]" @bind="Draft.Parameters.AuctionCeilingPrice" @bind:culture="CultureInfo.CurrentCulture" /></dd></div>
-                <div><dt>@Strings["AuctionsPerYear"]</dt><dd><input type="text" inputmode="decimal" aria-label="@Strings["AuctionsPerYear"]" @bind="Draft.Parameters.AuctionsPerYear" @bind:culture="CultureInfo.CurrentCulture" /></dd></div>
-                <div><dt>@Strings["YearLength"] (min)</dt><dd><input type="text" inputmode="decimal" aria-label="@Strings["YearLength"]" @bind="Draft.Parameters.YearLengthMinutes" @bind:culture="CultureInfo.CurrentCulture" /></dd></div>
-                <div><dt>@Strings["AuctionDuration"] (min)</dt><dd><input type="text" inputmode="decimal" aria-label="@Strings["AuctionDuration"]" @bind="Draft.Parameters.AuctionDurationMinutes" @bind:culture="CultureInfo.CurrentCulture" /></dd></div>
-                <div><dt>@Strings["VolatilityBand"]</dt><dd><input type="text" inputmode="decimal" step="0.01" aria-label="@Strings["VolatilityBand"]" @bind="Draft.Parameters.VolatilityBand" @bind:culture="CultureInfo.CurrentCulture" /></dd></div>
-                <div><dt>@Strings["InterestRate"]</dt><dd><input type="text" inputmode="decimal" step="0.01" aria-label="@Strings["InterestRate"]" @bind="Draft.Parameters.OverdraftInterestRate" @bind:culture="CultureInfo.CurrentCulture" /></dd></div>
+                @* Every field carries an id its label points at, and the shares are written as the
+                   percentages a trainer reads on the console: a fraction behind, a percentage on
+                   screen, either "3" or "3%" accepted. *@
+                <div><dt><label for="setup-name">@Strings["AdminName"]</label></dt><dd><input id="setup-name" type="text" @bind="Draft.Name" /></dd></div>
+                <div><dt><label for="setup-seed">@Strings["AdminSeed"]</label></dt><dd><input id="setup-seed" type="text" inputmode="decimal" @bind="Draft.Seed" @bind:culture="CultureInfo.CurrentCulture" /></dd></div>
+                <div><dt><label for="setup-cap">@Strings["Cap"]</label></dt><dd><input id="setup-cap" type="text" inputmode="decimal" @bind="Draft.Parameters.Cap" @bind:culture="CultureInfo.CurrentCulture" /></dd></div>
+                <div>
+                    <dt><label for="setup-reduction">@Strings["AnnualCapReductionRate"]</label></dt>
+                    <dd>
+                        <input id="setup-reduction" type="text" inputmode="decimal" value="@Percent(Draft.Parameters.AnnualCapReductionRate)" @onchange="e => SetPercent(e.Value?.ToString(), v => Draft.Parameters.AnnualCapReductionRate = v)" />
+                        <span class="muted small hint">@Strings["SetupPercentHint"]</span>
+                    </dd>
+                </div>
+                <div>
+                    <dt><label for="setup-free">@Strings["FreeAllocationShare"]</label></dt>
+                    <dd>
+                        <input id="setup-free" type="text" inputmode="decimal" value="@Percent(Draft.Parameters.FreeAllocationShare)" @onchange="e => SetPercent(e.Value?.ToString(), v => Draft.Parameters.FreeAllocationShare = v)" />
+                        <span class="muted small hint">@Strings["SetupPercentHint"]</span>
+                    </dd>
+                </div>
+                <div>
+                    <dt><label for="setup-reserve-to-auction">@Strings["GovernmentReserveToAuctionPercent"]</label></dt>
+                    <dd>
+                        <input id="setup-reserve-to-auction" type="text" inputmode="decimal" value="@Percent(Draft.Parameters.GovernmentReserveToAuctionPercent)" @onchange="e => SetPercent(e.Value?.ToString(), v => Draft.Parameters.GovernmentReserveToAuctionPercent = v)" />
+                        <span class="muted small hint">@Strings["SetupPercentHint"]</span>
+                    </dd>
+                </div>
+                <div>
+                    <dt><label for="setup-forward-vintage">@Strings["ForwardVintageShare"]</label></dt>
+                    <dd>
+                        <input id="setup-forward-vintage" type="text" inputmode="decimal" value="@Percent(Draft.Parameters.ForwardVintageShare)" @onchange="e => SetPercent(e.Value?.ToString(), v => Draft.Parameters.ForwardVintageShare = v)" />
+                        <span class="muted small hint">@Strings["SetupPercentHint"]</span>
+                    </dd>
+                </div>
+                <div><dt><label for="setup-years">@Strings["Year"]</label></dt><dd><input id="setup-years" type="text" inputmode="decimal" @bind="Draft.Parameters.Years" @bind:culture="CultureInfo.CurrentCulture" /></dd></div>
+                <div>
+                    <dt><label for="setup-offset-limit">@Strings["OffsetUsageLimit"]</label></dt>
+                    <dd>
+                        <input id="setup-offset-limit" type="text" inputmode="decimal" value="@Percent(Draft.Parameters.OffsetUsageLimit)" @onchange="e => SetPercent(e.Value?.ToString(), v => Draft.Parameters.OffsetUsageLimit = v)" />
+                        <span class="muted small hint">@Strings["SetupPercentHint"]</span>
+                    </dd>
+                </div>
+                <div>
+                    <dt><label for="setup-banking-limit">@Strings["BankingLimit"]</label></dt>
+                    <dd>
+                        <input id="setup-banking-limit" type="text" inputmode="decimal" value="@Percent(Draft.Parameters.BankingLimit)" @onchange="e => SetPercent(e.Value?.ToString(), v => Draft.Parameters.BankingLimit = v)" />
+                        <span class="muted small hint">@Strings["SetupPercentHint"]</span>
+                    </dd>
+                </div>
+                <div><dt><label for="setup-penalty">@Strings["PenaltyPerTonne"]</label></dt><dd><input id="setup-penalty" type="text" inputmode="decimal" @bind="Draft.Parameters.PenaltyPerTonne" @bind:culture="CultureInfo.CurrentCulture" /></dd></div>
+                <div><dt><label for="setup-penalty-debit">@Strings["PenaltyAllowanceDebit"]</label></dt><dd><input id="setup-penalty-debit" type="text" inputmode="decimal" @bind="Draft.Parameters.PenaltyAllowanceDebit" @bind:culture="CultureInfo.CurrentCulture" /></dd></div>
+                <div><dt><label for="setup-floor">@Strings["AuctionFloorPrice"]</label></dt><dd><input id="setup-floor" type="text" inputmode="decimal" @bind="Draft.Parameters.AuctionFloorPrice" @bind:culture="CultureInfo.CurrentCulture" /></dd></div>
+                <div><dt><label for="setup-ceiling">@Strings["AuctionCeilingPrice"]</label></dt><dd><input id="setup-ceiling" type="text" inputmode="decimal" @bind="Draft.Parameters.AuctionCeilingPrice" @bind:culture="CultureInfo.CurrentCulture" /></dd></div>
+                <div><dt><label for="setup-auctions">@Strings["AuctionsPerYear"]</label></dt><dd><input id="setup-auctions" type="text" inputmode="decimal" @bind="Draft.Parameters.AuctionsPerYear" @bind:culture="CultureInfo.CurrentCulture" /></dd></div>
+                <div><dt><label for="setup-year-length">@Strings["YearLength"] (min)</label></dt><dd><input id="setup-year-length" type="text" inputmode="decimal" @bind="Draft.Parameters.YearLengthMinutes" @bind:culture="CultureInfo.CurrentCulture" /></dd></div>
+                <div><dt><label for="setup-auction-length">@Strings["AuctionDuration"] (min)</label></dt><dd><input id="setup-auction-length" type="text" inputmode="decimal" @bind="Draft.Parameters.AuctionDurationMinutes" @bind:culture="CultureInfo.CurrentCulture" /></dd></div>
+                <div>
+                    <dt><label for="setup-volatility">@Strings["VolatilityBand"]</label></dt>
+                    <dd>
+                        <input id="setup-volatility" type="text" inputmode="decimal" value="@Percent(Draft.Parameters.VolatilityBand)" @onchange="e => SetPercent(e.Value?.ToString(), v => Draft.Parameters.VolatilityBand = v)" />
+                        <span class="muted small hint">@Strings["SetupPercentHint"]</span>
+                    </dd>
+                </div>
+                <div>
+                    <dt><label for="setup-interest">@Strings["InterestRate"]</label></dt>
+                    <dd>
+                        <input id="setup-interest" type="text" inputmode="decimal" value="@Percent(Draft.Parameters.OverdraftInterestRate)" @onchange="e => SetPercent(e.Value?.ToString(), v => Draft.Parameters.OverdraftInterestRate = v)" />
+                        <span class="muted small hint">@Strings["SetupPercentHint"]</span>
+                    </dd>
+                </div>
             </dl>
         </section>
 
         <section class="card wide" tabindex="0">
             <h2>@Strings["AdminSectorsAndAbatement"]</h2>
-            @foreach (DraftSector sector in Draft.Sectors)
+            @for (int s = 0; s < Draft.Sectors.Count; s++)
             {
+                DraftSector sector = Draft.Sectors[s];
+                string sectorNameId = $"setup-sector-{s}-name";
+                string sectorShareId = $"setup-sector-{s}-share";
+
                 <fieldset class="card">
-                    <label>@Strings["AdminSectorName"]<input type="text" @bind="sector.Name" /></label>
-                    <label>@Strings["AdminEmissionShare"]<input type="text" inputmode="decimal" step="0.01" @bind="sector.EmissionShare" @bind:culture="CultureInfo.CurrentCulture" /></label>
+                    <label for="@sectorNameId">@Strings["AdminSectorName"]<input id="@sectorNameId" type="text" @bind="sector.Name" /></label>
+                    <label for="@sectorShareId">@Strings["AdminEmissionShare"]<input id="@sectorShareId" type="text" inputmode="decimal" step="0.01" @bind="sector.EmissionShare" @bind:culture="CultureInfo.CurrentCulture" /></label>
 
                     <table class="grid">
                         <thead>
@@ -80,16 +136,19 @@ else
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach (DraftAbatementOption option in sector.AbatementOptions)
+                            @for (int o = 0; o < sector.AbatementOptions.Count; o++)
                             {
+                                DraftAbatementOption option = sector.AbatementOptions[o];
+                                string optionId = $"setup-abatement-{s}-{o}";
+
                                 <tr>
-                                    <td><input type="text" aria-label="@Strings["AdminAbatementCode"]" @bind="option.Code" /></td>
-                                    <td><input type="text" aria-label="@Strings["AdminAbatementName"]" @bind="option.Name" /></td>
-                                    <td><input type="text" inputmode="decimal" step="0.01" aria-label="@Strings["AdminReductionShare"]" @bind="option.AnnualReductionShare" @bind:culture="CultureInfo.CurrentCulture" /></td>
-                                    <td><input type="text" inputmode="decimal" aria-label="@Strings["AdminUpfrontPerTonne"]" @bind="option.UpfrontCostPerTonne" @bind:culture="CultureInfo.CurrentCulture" /></td>
-                                    <td><input type="text" inputmode="decimal" aria-label="@Strings["AdminNetRevenuePerTonne"]" @bind="option.AnnualNetRevenuePerTonne" @bind:culture="CultureInfo.CurrentCulture" /></td>
-                                    <td><input type="text" inputmode="decimal" aria-label="@Strings["AdminImplementationYears"]" @bind="option.ImplementationYears" @bind:culture="CultureInfo.CurrentCulture" /></td>
-                                    <td><input type="text" inputmode="decimal" aria-label="@Strings["AdminLifetimeYears"]" @bind="option.LifetimeYears" @bind:culture="CultureInfo.CurrentCulture" /></td>
+                                    <td><label class="sr-only" for="@(optionId + "-code")">@Strings["AdminAbatementCode"]</label><input id="@(optionId + "-code")" type="text" @bind="option.Code" /></td>
+                                    <td><label class="sr-only" for="@(optionId + "-name")">@Strings["AdminAbatementName"]</label><input id="@(optionId + "-name")" type="text" @bind="option.Name" /></td>
+                                    <td><label class="sr-only" for="@(optionId + "-reduction")">@Strings["AdminReductionShare"]</label><input id="@(optionId + "-reduction")" type="text" inputmode="decimal" step="0.01" @bind="option.AnnualReductionShare" @bind:culture="CultureInfo.CurrentCulture" /></td>
+                                    <td><label class="sr-only" for="@(optionId + "-upfront")">@Strings["AdminUpfrontPerTonne"]</label><input id="@(optionId + "-upfront")" type="text" inputmode="decimal" @bind="option.UpfrontCostPerTonne" @bind:culture="CultureInfo.CurrentCulture" /></td>
+                                    <td><label class="sr-only" for="@(optionId + "-revenue")">@Strings["AdminNetRevenuePerTonne"]</label><input id="@(optionId + "-revenue")" type="text" inputmode="decimal" @bind="option.AnnualNetRevenuePerTonne" @bind:culture="CultureInfo.CurrentCulture" /></td>
+                                    <td><label class="sr-only" for="@(optionId + "-implementation")">@Strings["AdminImplementationYears"]</label><input id="@(optionId + "-implementation")" type="text" inputmode="decimal" @bind="option.ImplementationYears" @bind:culture="CultureInfo.CurrentCulture" /></td>
+                                    <td><label class="sr-only" for="@(optionId + "-lifetime")">@Strings["AdminLifetimeYears"]</label><input id="@(optionId + "-lifetime")" type="text" inputmode="decimal" @bind="option.LifetimeYears" @bind:culture="CultureInfo.CurrentCulture" /></td>
                                     <td><button class="button ghost small-button" @onclick="() => sector.AbatementOptions.Remove(option)">@Strings["AdminRemove"]</button></td>
                                 </tr>
                             }
@@ -112,12 +171,16 @@ else
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach (DraftGrowth growth in Draft.Parameters.BausGrowthBySector)
+                    @for (int g = 0; g < Draft.Parameters.BausGrowthBySector.Count; g++)
                     {
+                        DraftGrowth growth = Draft.Parameters.BausGrowthBySector[g];
+                        string growthMinId = $"setup-growth-{g}-min";
+                        string growthMaxId = $"setup-growth-{g}-max";
+
                         <tr>
                             <td>@growth.Sector</td>
-                            <td><input type="text" inputmode="decimal" step="0.01" aria-label="@Strings["AdminMinimumRate"]" @bind="growth.MinAnnualRate" @bind:culture="CultureInfo.CurrentCulture" /></td>
-                            <td><input type="text" inputmode="decimal" step="0.01" aria-label="@Strings["AdminMaximumRate"]" @bind="growth.MaxAnnualRate" @bind:culture="CultureInfo.CurrentCulture" /></td>
+                            <td><label class="sr-only" for="@growthMinId">@Strings["AdminMinimumRate"]</label><input id="@growthMinId" type="text" inputmode="decimal" step="0.01" @bind="growth.MinAnnualRate" @bind:culture="CultureInfo.CurrentCulture" /></td>
+                            <td><label class="sr-only" for="@growthMaxId">@Strings["AdminMaximumRate"]</label><input id="@growthMaxId" type="text" inputmode="decimal" step="0.01" @bind="growth.MaxAnnualRate" @bind:culture="CultureInfo.CurrentCulture" /></td>
                         </tr>
                     }
                 </tbody>
@@ -144,6 +207,29 @@ else
         _registrationOpen = Context.Snapshot.Registration.Open;
         _pin = Context.Snapshot.Registration.Pin;
         _draft = await Session.SetupDraftAsync();
+    }
+
+    /// <summary>
+    /// A share written the way the rest of the console writes it: three hundredths reads as "3%" and
+    /// the fraction stays behind it. An unsaved field keeps whatever it held.
+    /// </summary>
+    private static string Percent(decimal? share) =>
+        share is null ? string.Empty : (share.Value * 100m).ToString("0.###", CultureInfo.CurrentCulture) + "%";
+
+    /// <summary>
+    /// Reads a percentage back into a fraction. The trainer may type the number the console showed
+    /// them - "3" or "3%" both mean three hundredths - so a bare number is a percentage, not a share.
+    /// </summary>
+    private static void SetPercent(string? text, Action<decimal?> set)
+    {
+        ArgumentNullException.ThrowIfNull(set);
+
+        string typed = (text ?? string.Empty).Trim().TrimEnd('%').Trim();
+
+        if (decimal.TryParse(typed, NumberStyles.Number, CultureInfo.CurrentCulture, out decimal percent))
+        {
+            set(percent / 100m);
+        }
     }
 
     private Task SaveRegistrationAsync() =>

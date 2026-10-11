@@ -1,3 +1,4 @@
+using CarbonSim.Engine.Reporting;
 using CarbonSim.Web.Player;
 
 namespace CarbonSim.Web.Tests.Components;
@@ -36,7 +37,7 @@ internal static class PlayerViewFixture
             false,
             new FinancialView(1_000_000m, 900_000m, 100_000m, 50_000m, 50_000m, 4_000_000m, 1_500m, 4_001_500m, -250_000m, 0m, 3_751_500m),
             new ComplianceView(250_000m, 250_000m, 2.5m, 2.5m, 100_000m, 90_000m, 90_000m, 80_000m, 0m, 0m, 0m, true),
-            new PositionView(81_000m, 100_000m, 5_000m, 14_000m, 42_000m),
+            new PositionView(81_000m, 86_000m, 100_000m, 5_000m, 14_000m, Settled: false),
             Units(),
             Abatements(),
             [ClearedAuction(), OpenAuction()],
@@ -45,7 +46,7 @@ internal static class PlayerViewFixture
             Books(vintage1, vintage2),
             [vintage1, vintage2, ProductView.Offset],
             new AuctionPriceSummaryView(100m, 120m, 110m, 115m, 110m),
-            [new CounterpartyView(99, "Red River Unit 1", "Red River Power", "Power")],
+            [new CounterpartyView(99, "Red River Unit 1", "Red River Power", "Power", Automated: true)],
             [Offer(7, mine: false)],
             [Offer(6, mine: true)],
             [new HoldingView(vintage1, 81_000m, 12_000m), new HoldingView(ProductView.Offset, 2_000m, 0m)],
@@ -59,7 +60,8 @@ internal static class PlayerViewFixture
     public static RunSummary Summary(Guid simulationId) => new(
         simulationId,
         "Vietnam pilot",
-        "Running",
+        // The waiting screen is about an exercise that has not begun, which is what it lists.
+        "Pending",
         1,
         3,
         39,
@@ -134,7 +136,8 @@ internal static class PlayerViewFixture
             110m,
             99m,
             121m,
-            [new OrderView(11, 1, vintage1.Key, "Sell", "Limit", 5_000m, 0m, 112m, null, "Open")],
+            [new BookLevelView(108m, 5_000m)],
+            [new BookLevelView(112m, 5_000m)],
             [new OrderView(11, 1, vintage1.Key, "Sell", "Limit", 5_000m, 0m, 112m, null, "Open")],
             [Trade(1, vintage1, 110m, 100m)],
             [new YearPriceView(1, 100m, 118m, 98m, 110m, 250_000m)]),
@@ -146,6 +149,7 @@ internal static class PlayerViewFixture
             106m,
             95m,
             117m,
+            [],
             [],
             [],
             [],
@@ -192,13 +196,15 @@ internal static class PlayerViewFixture
         0.45m,
         0.1m,
         0.07m,
+        0.0m,
+        0.20m,
         [new SectorView("Power", 0.43m, 200, 137_000_000m)],
-        Totals(355_850_000m, 320_265_000m, 35_585_000m),
-        Totals(355_850_000m, 320_265_000m, 35_585_000m),
+        Totals(355_850_000m, 320_265_000m),
+        Totals(355_850_000m, 320_265_000m),
         3_558_500m,
         [new HoldingView(ProductView.Allowance(1), 2_000_000m, 35_585_000m)]);
 
-    private static SystemTotalsView Totals(decimal cap, decimal free, decimal auctionable) => new(
+    private static SystemTotals Totals(decimal cap, decimal free) => new(
         350_000_000m,
         300_000_000m,
         21_000_000m,
@@ -212,6 +218,7 @@ internal static class PlayerViewFixture
         550_000_000m,
         110m,
         87m,
+        0m,
         4,
         200_000m,
         200_000m,
@@ -219,6 +226,5 @@ internal static class PlayerViewFixture
         0m,
         0m,
         cap,
-        free,
-        auctionable);
+        free);
 }

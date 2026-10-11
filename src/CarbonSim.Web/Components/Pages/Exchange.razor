@@ -1,6 +1,7 @@
 @page "/run/{SimulationId:guid}/exchange"
 @inject IStringLocalizer<SharedStrings> Strings
 @inject PlayerContext Context
+@using CarbonSim.Engine.Run
 
 <PageTitle>@Strings["ExchangeMarket"]</PageTitle>
 <h1>@Strings["ExchangeMarket"]</h1>
@@ -15,11 +16,25 @@ else
         <h2>@Strings["PriceChart"]</h2>
         <p class="muted small">@Strings["PriceChartHint"]</p>
         <EChart Option="@Charts.Prices(view.Books, view.Years, view.System.AuctionFloorPrice, Strings["AuctionFloorPrice"])" Height="260px" Label="@Strings["PriceChart"]" />
+        <h3>@Strings["AllowanceAuction"]</h3>
         <dl class="metrics">
-            <div><dt>@Strings["AllowanceAuction"] @Strings["AuctionFloorPrice"]</dt><dd>@Display.Price(view.AuctionPrices.Low ?? view.System.AuctionFloorPrice)</dd></div>
+            <div><dt>@Strings["AuctionFloorPrice"]</dt><dd>@Display.Price(view.AuctionPrices.Low ?? view.System.AuctionFloorPrice)</dd></div>
             <div><dt>@Strings["ClearedAt"]</dt><dd>@Display.Price(view.AuctionPrices.Last)</dd></div>
             <div><dt>@Strings["AuctionCeilingPrice"]</dt><dd>@Display.Price(view.AuctionPrices.High ?? view.System.AuctionCeilingPrice)</dd></div>
             <div><dt>@Strings["Average"]</dt><dd>@Display.Price(view.AuctionPrices.Average)</dd></div>
+        </dl>
+
+        <h3>@Strings["ExchangeMarket"]</h3>
+        <dl class="metrics">
+            <div><dt>@Strings["BestBid"]</dt><dd>@Display.Price(YearBook(view)?.BestBid)</dd></div>
+            <div><dt>@Strings["LastTrade"]</dt><dd>@Display.Price(YearBook(view)?.LastTrade)</dd></div>
+            <div><dt>@Strings["BestOffer"]</dt><dd>@Display.Price(YearBook(view)?.BestOffer)</dd></div>
+        </dl>
+
+        <h3>@Strings["OtcMarket"]</h3>
+        <dl class="metrics">
+            <div><dt>@Strings["OtcBestPrice"]</dt><dd>@Display.Price(OtcBestPrice(view))</dd></div>
+            <div><dt>@Strings["OffersToAnswer"]</dt><dd>@view.OffersToAnswer.Count</dd></div>
         </dl>
     </section>
 
@@ -28,7 +43,7 @@ else
             <h2>@Strings["TradeActivity"]</h2>
             <label>
                 @Strings["Product"]
-                <select @bind="_productKey">
+                <select id="book-product" @bind="_productKey">
                     @foreach (ProductBookView book in view.Books)
                     {
                         <option value="@book.Product.Key">@book.Label</option>
@@ -46,12 +61,30 @@ else
                 </dl>
 
                 <h3>@Strings["TopOfBook"]</h3>
-                <ul class="settings">
-                    @foreach (OrderView order in selected.OpenOrders.Take(6))
-                    {
-                        <li>@order.Side @Display.Tonnes(order.Volume - order.Filled) @Display.Price(order.Price)</li>
-                    }
-                </ul>
+                @if (selected.BidLevels.Count == 0 && selected.AskLevels.Count == 0)
+                {
+                    <p class="muted">@Strings["NoRows"]</p>
+                }
+                else
+                {
+                    <table class="grid">
+                        <thead>
+                            <tr>
+                                <th>@Strings["Buying"]</th>
+                                <th>@Strings["Selling"]</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @for (int level = 0; level < Math.Max(selected.BidLevels.Count, selected.AskLevels.Count); level++)
+                            {
+                                <tr>
+                                    <td>@Level(selected.BidLevels, level)</td>
+                                    <td>@Level(selected.AskLevels, level)</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
 
                 <h3>@Strings["LastTrades"]</h3>
                 @if (selected.RecentTrades.Count == 0)
@@ -78,14 +111,14 @@ else
             <h2>@Strings["ExchangeMarketOrders"]</h2>
             <label>
                 @Strings["Side"]
-                <select @bind="_side">
+                <select id="order-side" @bind="_side">
                     <option value="Buy">@Strings["Buy"]</option>
                     <option value="Sell">@Strings["Sell"]</option>
                 </select>
             </label>
             <label>
                 @Strings["OrderType"]
-                <select @bind="_kind">
+                <select id="order-kind" @bind="_kind">
                     <option value="Limit">@Strings["Limit"]</option>
                     <option value="Market">@Strings["Market"]</option>
                     <option value="StopLoss">@Strings["StopLoss"]</option>
@@ -93,7 +126,7 @@ else
             </label>
             <label>
                 @Strings["Product"]
-                <select @bind="_productKey">
+                <select id="order-product" @bind="_productKey">
                     @foreach (ProductView product in view.TradableProducts)
                     {
                         <option value="@product.Key">@Display.Product(product, Strings)</option>
@@ -118,11 +151,17 @@ else
                     <input id="order-stop-price" type="text" inputmode="decimal" @bind="_stopPrice" @bind:culture="CultureInfo.CurrentCulture" />
                 </label>
             }
-            <label class="check">
-                <input type="checkbox" @bind="_fillOrKill" /> @Strings["ImmediateOrCancel"]
+            @* Partial fill is what an unticked order does; ticking the box makes it fill or kill. *@
+            <label class="check" title="@Strings["FillOrKillHint"]">
+                <input id="order-fill-or-kill" type="checkbox" @bind="_fillOrKill" /> @Strings["ImmediateOrCancel"]
             </label>
+            <p class="muted small">@Strings["FillOrKillHint"]</p>
             <p id="order-capital-cost" class="small muted">@Strings["CapitalCost"]: @Display.Money(Display.PriceFromInput(_price ?? 0m) * _volume)</p>
             <button class="button" @onclick="PlaceOrderAsync">@Strings["PlaceOrder"]</button>
+            @if (_orderNotice is { } notice)
+            {
+                <p class="notice @(notice.IsError ? "notice-error" : "notice-status")" role="status">@notice.Text</p>
+            }
         </section>
     </div>
 
@@ -161,6 +200,7 @@ else
     private decimal? _price;
     private decimal? _stopPrice;
     private bool _fillOrKill;
+    private OrderNotice? _orderNotice;
 
     private PlayerView? View => Screen?.View;
 
@@ -185,11 +225,38 @@ else
     private static List<OrderView> myOrders(PlayerView view) =>
         [.. view.Books.SelectMany(book => book.MyOrders)];
 
-    private Task PlaceOrderAsync()
+    /// <summary>The book for the year being played, which is what the summary strip reads.</summary>
+    private static ProductBookView? YearBook(PlayerView view) =>
+        view.Books.FirstOrDefault(book => book.Product.Vintage == view.Year && !book.Product.IsOffset)
+        ?? view.Books.FirstOrDefault();
+
+    /// <summary>
+    /// The best asking price among the offers the player can see. This clone's OTC market is an
+    /// offer made to a named buyer rather than an open book, so the best visible offer stands in
+    /// for a market price.
+    /// </summary>
+    private static decimal? OtcBestPrice(PlayerView view)
+    {
+        List<decimal> prices =
+        [
+            .. view.OffersToAnswer.Select(offer => offer.Price),
+            .. view.MyOffers.Select(offer => offer.Price),
+        ];
+
+        return prices.Count == 0 ? null : prices.Min();
+    }
+
+    /// <summary>One price level of a side of the book, or a dash where that side is thinner.</summary>
+    private static string Level(IReadOnlyList<BookLevelView> levels, int index) =>
+        index < levels.Count
+            ? $"{Display.Tonnes(levels[index].Volume)} @ {Display.Price(levels[index].Price)}"
+            : "-";
+
+    private async Task PlaceOrderAsync()
     {
         if (View is not { } view || _productKey is null)
         {
-            return Task.CompletedTask;
+            return;
         }
 
         int unitId = view.Units.Count > 0 ? view.Units[0].Id : 0;
@@ -201,10 +268,45 @@ else
         decimal? stopPrice = kind == "StopLoss" && _stopPrice is { } stop ? Display.PriceFromInput(stop) : null;
         string fillPolicy = _fillOrKill ? "FillOrKill" : "AllowPartial";
 
-        return Context.ActAsync(
+        _orderNotice = null;
+
+        // The registry reports what became of the order, so the notice is read from the run rather
+        // than guessed from whichever order or trade the next snapshot happens to show first.
+        OrderOutcome? outcome = await Context.ActAsync(
             session => session.PlaceOrderAsync(SimulationId, unitId, product, side, kind, volume, price, stopPrice, fillPolicy),
             Strings["PlaceOrder"]);
+
+        if (outcome is null)
+        {
+            // Refused before an order existed, or an unexpected failure: the snapshot carries it.
+            _orderNotice = Context.Snapshot.Error is { } error ? new OrderNotice(error, IsError: true) : null;
+            return;
+        }
+
+        _orderNotice = outcome.Refusal is { } refusal
+            ? new OrderNotice(Display.Refusal(refusal, Strings), IsError: true)
+            : new OrderNotice(OutcomeNotice(outcome, price), IsError: false);
     }
+
+    /// <summary>What the order did, in the form's own words: how much filled, rested or neither.</summary>
+    private string OutcomeNotice(OrderOutcome outcome, decimal? limit)
+    {
+        decimal price = limit ?? outcome.AveragePrice;
+
+        if (outcome.Resting > 0m)
+        {
+            return outcome.Filled > 0m
+                ? Strings["OrderPartlyFilled", Display.Tonnes(outcome.Filled), Display.Tonnes(outcome.Resting), Display.Price(price)]
+                : Strings["OrderResting", Display.Tonnes(outcome.Resting), Display.Price(price)];
+        }
+
+        return outcome.Filled > 0m
+            ? Strings["OrderFilled", Display.Tonnes(outcome.Filled), Display.Price(price)]
+            : Strings["OrderSent"];
+    }
+
+    /// <summary>What the order form has to say for itself.</summary>
+    private sealed record OrderNotice(string Text, bool IsError);
 
     private Task CancelAsync(OrderView order)
     {

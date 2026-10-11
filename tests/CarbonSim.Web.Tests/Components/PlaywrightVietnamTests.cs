@@ -8,6 +8,7 @@ namespace CarbonSim.Web.Tests.Components;
 /// Vietnamese player types the Vietnamese way (a dot grouping the thousands, a comma before the
 /// fraction) is understood both by the bid form and by the engine behind an order.
 /// </summary>
+[Collection(PlaywrightCollection.Name)]
 public sealed class PlaywrightVietnamTests : IClassFixture<PlaywrightHostFixture>
 {
     private readonly PlaywrightHostFixture _host;
@@ -22,6 +23,10 @@ public sealed class PlaywrightVietnamTests : IClassFixture<PlaywrightHostFixture
     {
         IBrowser browser = _host.Browser ?? throw new InvalidOperationException("Chromium was not launched.");
         IPage page = await browser.NewPageAsync();
+
+        // A player holds the year's free allowances only once the trainer has begun the year, so
+        // start the seeded exercise first: the offer this walk places has to be able to settle.
+        await _host.StartSeededYearAsync();
 
         await _host.SignInAsync(page, "playwright-vi@example.com");
         string runId = RunId(page);

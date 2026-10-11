@@ -1,5 +1,6 @@
 using CarbonSim.Engine.Domain;
 using CarbonSim.Engine.Market;
+using CarbonSim.Engine.Reporting;
 using CarbonSim.Engine.Scenarios;
 using CarbonSim.Web.Simulations;
 using FluentAssertions;

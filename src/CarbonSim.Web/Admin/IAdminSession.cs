@@ -39,6 +39,9 @@ public interface IAdminSession
 
     Task EndSimulationAsync(Guid simulationId, CancellationToken cancellationToken = default);
 
+    /// <summary>Changes the rules a live run trades under: the price collar, mid-run.</summary>
+    Task ChangeRulesAsync(Guid simulationId, decimal? floor, decimal? ceiling, CancellationToken cancellationToken = default);
+
     Task SetMessagingAsync(Guid simulationId, bool enabled, CancellationToken cancellationToken = default);
 
     Task IssueFineAsync(Guid simulationId, int unitId, decimal amount, string description, CancellationToken cancellationToken = default);

@@ -1,8 +1,10 @@
 // Draws one ECharts option onto one element. The library itself is vendored under
 // wwwroot/lib/echarts, so an offline training box renders the same charts as a connected one.
 
+// Vector text: the legend and the axis titles are drawn as real elements rather than into a bitmap,
+// so they stay sharp at any zoom and a test can measure whether one lands on the other.
 function chartFor(element) {
-    return echarts.getInstanceByDom(element) ?? echarts.init(element);
+    return echarts.getInstanceByDom(element) ?? echarts.init(element, null, { renderer: "svg" });
 }
 
 export function render(element, optionJson) {

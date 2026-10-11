@@ -34,6 +34,7 @@ internal static class TestRunFactory
             "tradingOpenShareOfYear": 0.6,
             "volatilityBand": 0.1,
             "overdraftInterestRate": 0.07,
+            "forwardVintageShare": 0,
             "bausGrowthBySector": [
               { "sector": "Power", "minAnnualRate": 0.02, "maxAnnualRate": 0.06 }
             ]
@@ -108,6 +109,7 @@ internal static class TestRunFactory
             "tradingOpenShareOfYear": 0.6,
             "volatilityBand": 0.1,
             "overdraftInterestRate": 0.07,
+            "forwardVintageShare": 0,
             "bausGrowthBySector": [
               { "sector": "Long", "minAnnualRate": 0.0, "maxAnnualRate": 0.0 },
               { "sector": "Short", "minAnnualRate": 0.0, "maxAnnualRate": 0.0 }

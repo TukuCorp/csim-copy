@@ -30,6 +30,46 @@
     outline-offset: 2px;
 }
 
+/* FocusOnNavigate moves focus to the page heading after a navigation so a screen reader lands at
+   the top of the new screen. A programmatic focus counts as keyboard focus, so the ring above
+   would draw around the heading on every page; the heading is not in the tab order, so nothing
+   loses its cue. */
+h1:focus {
+    outline: none;
+}
+
+/* A field inside a repeated row or a grid is named by its column heading on screen and by this
+   label for a screen reader, so the row stays a row. */
+.sr-only {
+    position: absolute;
+    /* Pinned to the page corner. Left at its static position the label would sit inside a wide
+       table and, with no positioned ancestor, be placed against the page itself, which widens the
+       document on a phone even though the label is one pixel and clipped. */
+    left: 0;
+    top: 0;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* The language switch, on every page: both names are written in their own language. */
+.lang { display: flex; align-items: center; gap: .45rem; font-size: .82rem; }
+.lang a { color: var(--ink); text-decoration: none; }
+.lang a:hover { text-decoration: underline; }
+.lang a[aria-current="true"] { font-weight: 700; text-decoration: underline; }
+.topbar .lang a:link, .topbar .lang a:visited { color: var(--nav-ink); text-decoration: none; }
+.topbar .lang a:hover { text-decoration: underline; }
+.topbar .lang a:focus-visible { outline: 3px solid var(--nav-ink); outline-offset: 2px; }
+.plain > .lang { justify-content: flex-end; margin: .4rem 0; }
+
+/* "Signed in as ..." and the way on from there: the button needs air around it. */
+.signed-in { display: flex; align-items: center; gap: .7rem; flex-wrap: wrap; }
+
 html, body {
     margin: 0;
     padding: 0;
@@ -101,6 +141,7 @@ a { color: var(--blue); }
 .metrics > div { min-width: 0; }
 .metrics dt { font-size: .68rem; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
 .metrics dd { margin: 0; font-variant-numeric: tabular-nums; }
+.metrics .hint { display: block; font-size: .68rem; }
 .topbar .metrics dt { color: #a9b4c7; }
 
 .topbar-tools { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
@@ -217,6 +258,11 @@ a { color: var(--blue); }
 
 .card.wide { grid-column: 1 / -1; }
 
+/* A fieldset carries the browser's own min-width: min-content, so one holding a wide table (the
+   abatement menu on the setup screen) grows past the card around it and widens the whole page.
+   Zero lets the card's own overflow-x scroll that table instead. */
+fieldset.card { min-width: 0; }
+
 .settings { margin: 0; padding-left: 1.1rem; font-size: .86rem; }
 .settings li { margin-bottom: .15rem; }
 
@@ -282,6 +328,7 @@ input[type="range"] { width: 100%; max-width: 32rem; }
 }
 .notice-error { background: #fdecea; color: #7d2318; border: 1px solid #f3c3bc; }
 .notice-status { background: #e8f4ec; color: #1c4a31; border: 1px solid #bfdcc9; }
+.notice { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
 
 /* Tables and charts ---------------------------------------------------- */
 
@@ -293,6 +340,17 @@ table.grid th, table.grid td {
     white-space: nowrap;
 }
 table.grid th { color: var(--muted); font-weight: 600; font-size: .74rem; text-transform: uppercase; letter-spacing: .03em; }
+
+/* The player's own line on the leaderboard, so a room of 240 companies can find itself. */
+table.grid tr.row-mine > td {
+    background: #eef4fc;
+    font-weight: 600;
+}
+
+/* A grid with many columns scrolls inside its own box and lets its headings wrap, so the card
+   around it keeps its shape instead of the whole card scrolling sideways. */
+table.grid-wide { display: block; overflow-x: auto; }
+table.grid-wide th { white-space: normal; }
 
 .chart { width: 100%; min-height: 120px; }
 

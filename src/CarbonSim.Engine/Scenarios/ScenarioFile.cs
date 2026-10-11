@@ -56,6 +56,12 @@ internal sealed class ParametersFile
     /// <summary>Share of the government reserve offered again at the next auction (absent means zero).</summary>
     public decimal? GovernmentReserveToAuctionPercent { get; set; }
 
+    /// <summary>
+    /// Share of the next year's volume sold forward in a year's last auction. Absent means the
+    /// calibrated share, so a scenario written before this setting existed still plays that run.
+    /// </summary>
+    public decimal? ForwardVintageShare { get; set; }
+
     public List<BausGrowthFile>? BausGrowthBySector { get; set; }
 }
 
@@ -125,4 +131,7 @@ internal sealed class UnitFile
 
     /// <summary>What the unit earns in a normal year, before abatement and compliance.</summary>
     public decimal? NormalOperatingProfit { get; set; }
+
+    /// <summary>How generously the unit was allocated when the sector's free cake is shared out.</summary>
+    public decimal? AllocationFactor { get; set; }
 }

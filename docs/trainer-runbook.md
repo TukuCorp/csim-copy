@@ -147,6 +147,15 @@ Everything is on the exercise page (/admin/run/{id}).
   an AI unit off makes it passive. The switch rebuilds the AI fleet, so a bot's progress is dropped
   when you use it.
 
+- **Change the rules** — moves the price collar while the year is running: put the new floor and/or
+  ceiling in and apply. The band changes within one virtual month. Orders the new band cannot hold
+  come off the book, with the cash and allowances back with the unit that placed them, and what is
+  left is matched against itself, so the book cannot be left bid above offer. The bots re-quote
+  inside the new collar on their next pass. The room is told rather than surprised: the change lands
+  in each unit's **Messages**, and the console shows the last five changes with who made them and how
+  many orders the new band released. Only the collar can move mid-run - the cap, the free allocation
+  split, the growth path and the auction lots are all fixed when the exercise is built.
+
 ## 5. What to point out on the player screens
 
 - **Dashboard** — finance, compliance, the long/short bar, abatement status, auction and trade
@@ -207,11 +216,16 @@ unit, so a spreadsheet reads them as numbers. The surrender status page
 ## 8. Fidelity: what this clone promises, and what it does not
 
 The clone is behaviourally faithful within the envelopes in the bot-fidelity brief, not numerically
-identical to the original. The seeded three-year run of the shipped scenario currently meets the
-envelopes for the year-one clearing price at the floor, the offset discount, later vintages pricing
-above earlier ones, the year-one abatement share, and the leaderboard spread with negative outliers.
-It does not yet meet full compliance at Normal difficulty, prices climbing to the ceiling by year
-three, the 2-3% offset surrender share, or a mid-run price shock inside one virtual month, and those
-four are recorded as skipped measurements rather than tuned away. Treat the price path and the
+identical to the original. On the seeded three-year run of the shipped scenario the auction clears at
+100.00, 181.84 and 255.97 - year one on the floor, year three most of the way to the 300 ceiling -
+with the offset discount at 9.0%, later vintages priced above earlier ones, year-one abatement at
+1.00% of the cap, the leaderboard spread between -62.64 and +39.72 with negative outliers, and a
+mid-run collar shock moving the market inside one virtual month. Two envelopes stay open and are
+recorded as skipped measurements rather than tuned away: **every bot complies and nobody pays a
+penalty** (294 of 726 company-years comply as measured) and **offsets surrender 2-3% of the cap**
+(measured at 7.18%). The fleet is net short in every year and the last year's obligation outgrows
+anything the scenario can supply, so the two cannot both hold here; the grid behind the shipped
+point, including the rows that trade one against the other, is written out by the fidelity run into
+the engine test output (fidelity-run.md and calibration-grid.md). Treat the price path and the
 leaderboard as directionally right, and do not present a specific number as the original's.
 

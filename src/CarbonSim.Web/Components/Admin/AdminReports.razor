@@ -1,6 +1,7 @@
 @page "/admin/run/{SimulationId:guid}/reports"
 @layout AdminLayout
 @inject IStringLocalizer<SharedStrings> Strings
+@using CarbonSim.Engine.Reporting
 
 @if (Run is not { } run)
 {
@@ -171,8 +172,8 @@ else
 
     private List<ReportRow> SystemRows(AdminRunDetail run)
     {
-        SystemTotalsView now = run.ThisYear;
-        SystemTotalsView all = run.ToDate;
+        SystemTotals now = run.ThisYear;
+        SystemTotals all = run.ToDate;
 
         return
         [
@@ -185,7 +186,8 @@ else
             new ReportRow(Strings["AllowancesBankedForTheNextYear"], Display.Tonnes(now.Banked), Display.Tonnes(all.Banked)),
             new ReportRow(Strings["Forfeited"], Display.Tonnes(now.Forfeited), Display.Tonnes(all.Forfeited)),
             new ReportRow(Strings["AuctionRevenueCollectedByGovernment"], Display.Money(now.AuctionRevenue), Display.Money(all.AuctionRevenue)),
-            new ReportRow(Strings["Average"] + " " + Strings["AllowanceAuction"], Display.Price(now.AverageAllowancePrice), Display.Price(all.AverageAllowancePrice)),
+            new ReportRow(Strings["AverageAllowancePriceAllChannels"], Display.Price(now.AverageAllowancePrice), Display.Price(all.AverageAllowancePrice)),
+            new ReportRow(Strings["AuctionAveragePrice"], Display.Price(now.AuctionAveragePrice), Display.Price(all.AuctionAveragePrice)),
             new ReportRow(Strings["Average"] + " " + Strings["Offset"], Display.Price(now.AverageOffsetPrice), Display.Price(all.AverageOffsetPrice)),
             new ReportRow(Strings["EmissionReductions"], Display.Tonnes(now.EmissionsReduced), Display.Tonnes(all.EmissionsReduced)),
             new ReportRow(Strings["PenaltyPerTonne"], now.PenaltyCount.ToString(CultureInfo.CurrentCulture) + " / " + Display.Money(now.PenaltyValue), all.PenaltyCount.ToString(CultureInfo.CurrentCulture) + " / " + Display.Money(all.PenaltyValue)),

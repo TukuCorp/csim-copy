@@ -18,7 +18,6 @@ namespace CarbonSim.Engine.Clock;
 public sealed class SimulationClock
 {
     private readonly Simulation _simulation;
-    private readonly Parameters _parameters;
     private readonly TimeProvider _timeProvider;
     private readonly SimulationClockOptions _options;
     private readonly TimeSpan _sectionLength;
@@ -44,23 +43,22 @@ public sealed class SimulationClock
         _simulation = simulation;
         _timeProvider = timeProvider;
         _options = options ?? new SimulationClockOptions();
-        _parameters = simulation.TradingSystems.Single().Parameters;
 
-        if (_parameters.AuctionsPerYear < 1)
+        if (_simulation.Rules.AuctionsPerYear < 1)
         {
             throw new ArgumentException("The trading system needs at least one auction per year.", nameof(simulation));
         }
 
-        _sectionLength = TimeSpan.FromTicks(_parameters.YearLength.Ticks / _parameters.AuctionsPerYear);
+        _sectionLength = TimeSpan.FromTicks(_simulation.Rules.YearLength.Ticks / _simulation.Rules.AuctionsPerYear);
 
-        if (_parameters.AuctionDuration > _sectionLength)
+        if (_simulation.Rules.AuctionDuration > _sectionLength)
         {
             throw new ArgumentException(
-                $"The auction window ({_parameters.AuctionDuration}) must fit inside a year section ({_sectionLength}).",
+                $"The auction window ({_simulation.Rules.AuctionDuration}) must fit inside a year section ({_sectionLength}).",
                 nameof(simulation));
         }
 
-        _auctionOpensAfter = _sectionLength - _parameters.AuctionDuration;
+        _auctionOpensAfter = _sectionLength - _simulation.Rules.AuctionDuration;
     }
 
     /// <summary>Or "game state" in the original's vocabulary.</summary>
@@ -69,9 +67,9 @@ public sealed class SimulationClock
     public int CurrentYear => _simulation.CurrentYear;
 
     /// <summary>How many auctions the year holds.</summary>
-    public int AuctionsInYear => _parameters.AuctionsPerYear;
+    public int AuctionsInYear => _simulation.Rules.AuctionsPerYear;
 
-    public TimeSpan YearLength => _parameters.YearLength;
+    public TimeSpan YearLength => _simulation.Rules.YearLength;
 
     /// <summary>The section of the year the clock is in, 1-based, clamped to the last section.</summary>
     public int CurrentAuction => SectionOf(ElapsedInYear);
@@ -88,11 +86,11 @@ public sealed class SimulationClock
                 elapsed += _timeProvider.GetUtcNow() - since;
             }
 
-            return elapsed < TimeSpan.Zero ? TimeSpan.Zero : elapsed > _parameters.YearLength ? _parameters.YearLength : elapsed;
+            return elapsed < TimeSpan.Zero ? TimeSpan.Zero : elapsed > _simulation.Rules.YearLength ? _simulation.Rules.YearLength : elapsed;
         }
     }
 
-    public TimeSpan TimeLeftInYear => _parameters.YearLength - ElapsedInYear;
+    public TimeSpan TimeLeftInYear => _simulation.Rules.YearLength - ElapsedInYear;
 
     /// <summary>True only while the clock runs and the current section's auction window is open.</summary>
     public bool IsAuctionOpen
@@ -239,6 +237,16 @@ public sealed class SimulationClock
             throw new InvalidOperationException($"A simulation in state {State} is not waiting to be resumed.");
         }
 
+        // A year that has used all of its time halts itself, and there is nothing to resume into:
+        // letting it run again would leave a running clock with no time left that never raises
+        // anything again and cannot be closed, because the year end is taken from a halt.
+        if (ElapsedInYear >= _simulation.Rules.YearLength)
+        {
+            throw new InvalidOperationException(
+                $"The year is over: year {CurrentYear} has used its whole {_simulation.Rules.YearLength}. End the year "
+                + "before another one begins.");
+        }
+
         _runningSince = _timeProvider.GetUtcNow();
         _simulation.State = SimulationState.Running;
 
@@ -281,9 +289,9 @@ public sealed class SimulationClock
     {
         Require(SimulationState.YearEnded, "Unable to start a new year before the previous year has ended.");
 
-        if (CurrentYear >= _parameters.Years)
+        if (CurrentYear >= _simulation.Rules.Years)
         {
-            throw new InvalidOperationException($"Year {CurrentYear} was the last of {_parameters.Years}; end the simulation instead.");
+            throw new InvalidOperationException($"Year {CurrentYear} was the last of {_simulation.Rules.Years}; end the simulation instead.");
         }
 
         _simulation.CurrentYear++;
@@ -299,10 +307,10 @@ public sealed class SimulationClock
     /// <summary>Ends the simulation, once the last year has been closed.</summary>
     public IReadOnlyList<ClockEvent> EndSimulation()
     {
-        if (State != SimulationState.YearEnded || CurrentYear < _parameters.Years)
+        if (State != SimulationState.YearEnded || CurrentYear < _simulation.Rules.Years)
         {
             throw new InvalidOperationException(
-                $"The simulation can only end after year {_parameters.Years} has ended (now year {CurrentYear}, state {State}).");
+                $"The simulation can only end after year {_simulation.Rules.Years} has ended (now year {CurrentYear}, state {State}).");
         }
 
         _simulation.State = SimulationState.GameEnded;
@@ -312,7 +320,7 @@ public sealed class SimulationClock
 
     private void HaltIfYearIsOver(List<ClockEvent> events)
     {
-        if (_haltedForYearEnd || ElapsedInYear < _parameters.YearLength)
+        if (_haltedForYearEnd || ElapsedInYear < _simulation.Rules.YearLength)
         {
             return;
         }
@@ -320,8 +328,8 @@ public sealed class SimulationClock
         _haltedForYearEnd = true;
         Freeze();
         _simulation.State = SimulationState.TradingHalted;
-        events.Add(new ClockEvent(ClockEventKind.YearEnding, CurrentYear, AuctionsInYear, _parameters.YearLength));
-        events.Add(new ClockEvent(ClockEventKind.TradingHalted, CurrentYear, AuctionsInYear, _parameters.YearLength));
+        events.Add(new ClockEvent(ClockEventKind.YearEnding, CurrentYear, AuctionsInYear, _simulation.Rules.YearLength));
+        events.Add(new ClockEvent(ClockEventKind.TradingHalted, CurrentYear, AuctionsInYear, _simulation.Rules.YearLength));
     }
 
     private void RaiseDueEvents(List<ClockEvent> events, TimeSpan elapsed)

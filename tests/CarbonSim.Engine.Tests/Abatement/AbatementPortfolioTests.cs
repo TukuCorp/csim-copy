@@ -166,21 +166,21 @@ public sealed class AbatementPortfolioTests
     }
 
     [Fact]
-    public void Implemented_projects_reduce_the_forecast_shortfall_for_the_company()
+    public void Implemented_projects_reduce_the_emissions_for_the_company()
     {
         Simulation simulation = TestSimulation.Build();
-        CompliancePosition position = new(simulation);
+        Standing standing = new(simulation);
         Unit unit = simulation.FindUnit(1);
         Company company = unit.Company;
-        decimal beforeYearOne = position.ForecastShortfallFor(company, 1);
-        decimal beforeYearTwo = position.ForecastShortfallFor(company, 2);
-        decimal beforeOverall = position.OverallShortfallFor(company);
+        decimal beforeYearOne = standing.Emissions(company, 1);
+        decimal beforeYearTwo = standing.Emissions(company, 2);
+        decimal beforeOverall = simulation.Allocation.Years.Sum(year => standing.Emissions(company, year));
 
         simulation.Abatements.Implement(unit, Option(unit, "P1"), year: 1);
 
-        position.ForecastShortfallFor(company, 1).Should().Be(beforeYearOne, "the project is still being built in year 1");
-        position.ForecastShortfallFor(company, 2).Should().Be(beforeYearTwo - 100_000m);
-        position.OverallShortfallFor(company).Should().Be(
+        standing.Emissions(company, 1).Should().Be(beforeYearOne, "the project is still being built in year 1");
+        standing.Emissions(company, 2).Should().Be(beforeYearTwo - 100_000m);
+        simulation.Allocation.Years.Sum(year => standing.Emissions(company, year)).Should().Be(
             beforeOverall - 200_000m,
             "the project operates in years 2 and 3 of a three year run");
     }
@@ -228,16 +228,15 @@ public sealed class AbatementPortfolioTests
     {
         Simulation simulation = TestSimulation.Build();
         Unit unit = simulation.FindUnit(1);
-        CompliancePosition position = new(simulation);
-        decimal allocation = simulation.Allocation.FreeAllocationFor(unit, 2);
+        Standing standing = new(simulation);
 
         simulation.Abatements.ShutdownForYear(unit, 2);
 
         simulation.Abatements.IsShutDown(unit, 2).Should().BeTrue();
         simulation.Abatements.IsShutDown(unit, 1).Should().BeFalse();
         simulation.Abatements.IsShutDown(unit, 3).Should().BeFalse();
-        position.ForecastShortfallFor(unit, 2).Should().Be(-allocation, "a shut down unit emits nothing but keeps its free allocation");
-        position.ForecastShortfallFor(unit, 3).Should().BeGreaterThan(0m);
+        standing.Emissions(unit, 2).Should().Be(0m, "a shut down unit emits nothing");
+        standing.Emissions(unit, 3).Should().BeGreaterThan(0m);
     }
 
     [Fact]

@@ -112,7 +112,7 @@
   <data name="Vintage" xml:space="preserve"><value>Thời hạn</value></data>
   <data name="TotalVolume" xml:space="preserve"><value>Tổng khối lượng</value></data>
   <data name="ClearedAt" xml:space="preserve"><value>Giá khớp</value></data>
-  <data name="TotalAwarded" xml:space="preserve"><value>Được cấp</value></data>
+  <data name="TotalAwarded" xml:space="preserve"><value>Tổng đã phát (mọi người đặt giá)</value></data>
   <data name="YouBid" xml:space="preserve"><value>Bạn đã đặt giá</value></data>
   <data name="BidVolume" xml:space="preserve"><value>Khối lượng đặt giá</value></data>
   <data name="UnitBidPrice" xml:space="preserve"><value>Giá đặt</value></data>
@@ -157,7 +157,9 @@
   <data name="Rank" xml:space="preserve"><value>Hạng</value></data>
   <data name="Company" xml:space="preserve"><value>Công ty</value></data>
   <data name="UnitNamePlayer" xml:space="preserve"><value>Đơn vị (người chơi)</value></data>
-  <data name="FinalLongShortPosition" xml:space="preserve"><value>Vị thế cuối cùng</value></data>
+  <data name="FinalLongShortPosition" xml:space="preserve"><value>Vị thế thừa/thiếu cuối cùng</value></data>
+  <data name="AllowancesHeld" xml:space="preserve"><value>Hạn ngạch đang giữ</value></data>
+  <data name="FilterUnits" xml:space="preserve"><value>Lọc đơn vị</value></data>
   <data name="System" xml:space="preserve"><value>Hệ thống</value></data>
   <data name="UnitName" xml:space="preserve"><value>Đơn vị</value></data>
   <data name="Sector" xml:space="preserve"><value>Ngành</value></data>
@@ -208,7 +210,36 @@
   <data name="NoCompany" xml:space="preserve"><value>Tài khoản này chưa nhận công ty nào trong mô phỏng.</value></data>
   <data name="NoSimulations" xml:space="preserve"><value>Chưa có mô phỏng nào đang chạy.</value></data>
   <data name="Language" xml:space="preserve"><value>Ngôn ngữ</value></data>
-  <data name="English" xml:space="preserve"><value>Tiếng Anh</value></data>
+  <data name="English" xml:space="preserve"><value>English</value></data>
+  <data name="SimulationInProgress" xml:space="preserve"><value>Mô phỏng đang diễn ra</value></data>
+  <data name="MyWon" xml:space="preserve"><value>Tôi thắng</value></data>
+  <data name="MyPaid" xml:space="preserve"><value>Tôi đã trả</value></data>
+  <data name="Buying" xml:space="preserve"><value>Mua</value></data>
+  <data name="Selling" xml:space="preserve"><value>Bán</value></data>
+  <data name="OtcBestPrice" xml:space="preserve"><value>Giá OTC tốt nhất</value></data>
+  <data name="FillOrKillHint" xml:space="preserve"><value>Để trống nếu muốn lệnh được khớp một phần; tích vào để hủy phần không khớp được ngay.</value></data>
+  <data name="Dismiss" xml:space="preserve"><value>Đóng</value></data>
+  <data name="Compliant" xml:space="preserve"><value>Đã tuân thủ</value></data>
+  <data name="AdminSwitchOff" xml:space="preserve"><value>Tắt nhắn tin</value></data>
+  <data name="AdminSwitchOn" xml:space="preserve"><value>Bật nhắn tin</value></data>
+  <data name="AdminChooseUnit" xml:space="preserve"><value>Hãy chọn một đơn vị trước.</value></data>
+  <data name="AdminChooseCompany" xml:space="preserve"><value>Hãy chọn một công ty trước.</value></data>
+  <data name="AdminFineNeedsDescription" xml:space="preserve"><value>Khoản phạt cần có mô tả.</value></data>
+  <data name="AdminVolumeNeeded" xml:space="preserve"><value>Nhập khối lượng lớn hơn không.</value></data>
+  <data name="AdminFinedUnit" xml:space="preserve"><value>Đã phạt {0} {1}</value></data>
+  <data name="AdminOffsetsGivenTo" xml:space="preserve"><value>Đã cấp {0} tín chỉ bù trừ cho {1}</value></data>
+  <data name="AdminAbatementCommittedFor" xml:space="preserve"><value>Đã triển khai {0} cho {1}</value></data>
+  <data name="AdminShockAppliedToUnit" xml:space="preserve"><value>Đã thay đổi phát thải năm {1} của {0} thêm {2} t</value></data>
+  <data name="OrderFilled" xml:space="preserve"><value>Đã khớp {0} ở giá {1}</value></data>
+  <data name="OrderPartlyFilled" xml:space="preserve"><value>Đã khớp {0}, còn {1} đang chờ ở giá {2}</value></data>
+  <data name="OrderResting" xml:space="preserve"><value>Đang chờ khớp: {0} ở giá {1}</value></data>
+  <data name="OrderRejected" xml:space="preserve"><value>Lệnh không được chấp nhận.</value></data>
+  <data name="OrderSent" xml:space="preserve"><value>Đã gửi lệnh.</value></data>
+  <data name="AverageAllowancePriceAllChannels" xml:space="preserve"><value>Giá hạn ngạch trung bình (mọi kênh)</value></data>
+  <data name="AuctionAveragePrice" xml:space="preserve"><value>Giá đấu giá trung bình</value></data>
+  <data name="AdminChangeRules" xml:space="preserve"><value>Thay đổi quy định</value></data>
+  <data name="AdminChangeRulesHint" xml:space="preserve"><value>Điều chỉnh khung giá sàn - giá trần trong khi năm đang chạy. Thị trường báo giá lại trong một nhịp.</value></data>
+  <data name="AdminRulesChanged" xml:space="preserve"><value>Quy định hiện là sàn {0}, trần {1}.</value></data>
   <data name="Vietnamese" xml:space="preserve"><value>Tiếng Việt</value></data>
   <data name="Message" xml:space="preserve"><value>Tin nhắn</value></data>
   <data name="Send" xml:space="preserve"><value>Gửi</value></data>
@@ -241,10 +272,12 @@
   <data name="Issued" xml:space="preserve"><value>Đã phát hành</value></data>
   <data name="CalculatorHint" xml:space="preserve"><value>Giá x khối lượng = chi phí vốn.</value></data>
   <data name="ComplianceCostCalculator" xml:space="preserve"><value>Máy tính chi phí tuân thủ</value></data>
-  <data name="People" xml:space="preserve"><value>Người</value></data>
+  <data name="HumanCompanies" xml:space="preserve"><value>Công ty do người chơi điều hành</value></data>
+  <data name="AiCompanies" xml:space="preserve"><value>Công ty do AI điều hành</value></data>
   <data name="None" xml:space="preserve"><value>Không có</value></data>
   <data name="Total" xml:space="preserve"><value>Tổng</value></data>
   <data name="OpenSimulation" xml:space="preserve"><value>Mở</value></data>
+  <data name="SignedInAs" xml:space="preserve"><value>Đã đăng nhập với tư cách {0}</value></data>
   <data name="Companies" xml:space="preserve"><value>Công ty</value></data>
   <data name="Units" xml:space="preserve"><value>Đơn vị</value></data>
   <data name="SectorEmissions" xml:space="preserve"><value>Ngành</value></data>
@@ -346,6 +379,7 @@
   <data name="AdminShockApplied" xml:space="preserve"><value>Đã áp dụng điều chỉnh.</value></data>
   <data name="AdminMessagingSaved" xml:space="preserve"><value>Đã lưu thiết lập tin nhắn.</value></data>
   <data name="AdminRegistrationSaved" xml:space="preserve"><value>Đã lưu thiết lập đăng ký.</value></data>
+  <data name="AdminYearOver" xml:space="preserve"><value>Đồng hồ đã hết thời gian của năm nay. Hãy kết thúc năm để tiếp tục.</value></data>
   <data name="AdminTimeLeftInYear" xml:space="preserve"><value>Thời gian còn lại của năm</value></data>
   <data name="AdminAuctionOpensIn" xml:space="preserve"><value>Phiên đấu giá tiếp theo mở sau</value></data>
   <data name="AdminAuctionClosesIn" xml:space="preserve"><value>Phiên đấu giá đóng sau</value></data>
@@ -363,5 +397,12 @@
   <data name="AdminAbatementFor" xml:space="preserve"><value>Biện pháp giảm phát thải cho đơn vị đã chọn</value></data>
   <data name="DisplayCurrency" xml:space="preserve"><value>Đơn vị tiền hiển thị</value></data>
   <data name="VndPerUsdRate" xml:space="preserve"><value>VND trên 1 USD</value></data>
+  <data name="SetupPercentHint" xml:space="preserve"><value>Nhập theo phần trăm: 3 và 3% đều là ba phần trăm.</value></data>
+  <data name="ForwardVintageShare" xml:space="preserve"><value>Tỷ lệ bán trước hạn ngạch của năm sau</value></data>
+  <data name="TradingIsHalted" xml:space="preserve"><value>Giao dịch đang tạm dừng: chỉ nhận lệnh và chào bán khi năm đang chạy.</value></data>
+  <data name="AuctionIsClosed" xml:space="preserve"><value>Phiên đấu giá đã đóng: chỉ nhận giá thầu khi cửa sổ đấu giá đang mở.</value></data>
+  <data name="RulesChangedLine" xml:space="preserve"><value>Quy tắc đã thay đổi: giá sàn {0} thành {1}, giá trần {2} thành {3}.</value></data>
+  <data name="RulesReleasedOrders" xml:space="preserve"><value>{0} lệnh nằm ngoài dải giá mới đã được giải phóng.</value></data>
+  <data name="RulesReleasedBids" xml:space="preserve"><value>{0} giá thầu đấu giá đã được giải phóng.</value></data>
+  <data name="BidReleased" xml:space="preserve"><value>Giá thầu của bạn cho {0} t tại {1} trong phiên đấu giá {2} năm {3} đã được giải phóng: giá sàn hiện là {4} và giá trần là {5}.</value></data>
 </root>
-

@@ -1,0 +1,23 @@
+@inject IStringLocalizer<SharedStrings> Strings
+@inject NavigationManager Navigation
+
+@* Both names are written in their own language and are the same strings in either resource file,
+   so the switch reads English | Tiếng Việt whoever is looking at it. The page the player is on is
+   where the switch sends them back to, built here rather than in markup so the query string is
+   escaped once. *@
+<nav class="lang" aria-label="@Strings["Language"]">
+    <a href="@Href("en")" lang="en" hreflang="en" aria-current="@(Current is "en" ? "true" : null)">@Strings["English"]</a>
+    <span aria-hidden="true">|</span>
+    <a href="@Href("vi")" lang="vi" hreflang="vi" aria-current="@(Current is "vi" ? "true" : null)">@Strings["Vietnamese"]</a>
+</nav>
+
+@code {
+    private static string Current => CultureInfo.CurrentUICulture.TwoLetterISOLanguageName;
+
+    private string Href(string culture)
+    {
+        string path = new Uri(Navigation.Uri, UriKind.Absolute).PathAndQuery;
+
+        return $"/culture/set?culture={culture}&redirect={Uri.EscapeDataString(path)}";
+    }
+}

@@ -1,3 +1,6 @@
+using CarbonSim.Engine.Reporting;
+using CarbonSim.Web.Components.Shared;
+
 namespace CarbonSim.Web.Player;
 
 /// <summary>
@@ -43,7 +46,22 @@ public sealed record PlayerView(
     IReadOnlyList<LeaderboardRow> Leaderboard,
     SystemInfoView System,
     IReadOnlyList<ChatLine> Messages,
-    bool MessagingEnabled);
+    bool MessagingEnabled)
+{
+    /// <summary>
+    /// The auction the run cleared most recently. A section's result is worth reading after the
+    /// clock has moved on to the next one, so the screen shows this rather than the current
+    /// section's auction, which is only cleared for the moment between its close and the next
+    /// section opening.
+    /// </summary>
+    public AuctionView? LastClearedAuction => Auctions.LastOrDefault(auction => auction.IsCleared);
+
+    /// <summary>
+    /// Whether there is any time left to count down. A year that has been closed, or that ran out,
+    /// has none: what is left is the settlement, not a countdown to the next auction.
+    /// </summary>
+    public bool YearIsOver => State is "YearEnded" or "GameEnded" || TimeLeftInYear <= TimeSpan.Zero;
+}
 
 /// <summary>A run the host is driving, for the waiting screen's list.</summary>
 public sealed record RunSummary(
@@ -64,6 +82,16 @@ public sealed record RunSummary(
     decimal AuctionFloorPrice,
     decimal AuctionCeilingPrice,
     decimal TradingOpenShareOfYear);
+
+/// <summary>
+/// Who is at the front door of the host, and where they go from there: a trainer to the console,
+/// a player to the run their company plays in, and a guest to the sign-in page.
+/// </summary>
+public sealed record FrontDoorView(string? AccountName, string? CompanyName, bool IsAdministrator, Guid? RunId)
+{
+    /// <summary>Nobody is signed in, so the front door offers the way in and nothing else.</summary>
+    public static FrontDoorView Guest { get; } = new(null, null, IsAdministrator: false, null);
+}
 
 /// <summary>What is traded: a vintage-dated allowance or an offset. The key is the label the feed uses.</summary>
 public sealed record ProductView(string Key, int Vintage, bool IsOffset)
@@ -105,12 +133,25 @@ public sealed record ComplianceView(
     decimal Shortfall,
     bool HasResult);
 
+/// <summary>
+/// The company's position for the year: what it was granted free, everything it holds that could
+/// be surrendered against the year, what it forecasts emitting, and the gap between them.
+/// </summary>
 public sealed record PositionView(
     decimal FreeAllocation,
+    decimal Held,
     decimal ForecastEmissions,
     decimal Reduction,
     decimal Shortfall,
-    decimal OverallShortfall);
+    bool Settled)
+{
+    /// <summary>
+    /// The position the screens read: what the company holds less what it forecasts emitting, so
+    /// long is positive, the way the engine's Standing has it. Shortfall is the same gap the other
+    /// way up and never goes below zero, so a covered year owes nothing.
+    /// </summary>
+    public decimal Position => Held - ForecastEmissions;
+}
 
 public sealed record UnitView(
     int Id,
@@ -201,10 +242,17 @@ public sealed record ProductBookView(
     decimal LastTrade,
     decimal BandFloor,
     decimal BandCeiling,
-    IReadOnlyList<OrderView> OpenOrders,
+    IReadOnlyList<BookLevelView> BidLevels,
+    IReadOnlyList<BookLevelView> AskLevels,
     IReadOnlyList<OrderView> MyOrders,
     IReadOnlyList<TradeRow> RecentTrades,
     IReadOnlyList<YearPriceView> YearPrices);
+
+/// <summary>One price level of the book: what is on offer at that price, added up.</summary>
+public sealed record BookLevelView(decimal Price, decimal Volume);
+
+/// <summary>The best price levels of one product's book, each side best-first.</summary>
+public sealed record BookLevelsView(IReadOnlyList<BookLevelView> Bids, IReadOnlyList<BookLevelView> Asks);
 
 /// <summary>One product's price range in one virtual year, for the price chart's candles.</summary>
 public sealed record YearPriceView(int Year, decimal Open, decimal High, decimal Low, decimal Close, decimal Volume);
@@ -213,7 +261,11 @@ public sealed record YearPriceView(int Year, decimal Open, decimal High, decimal
 public sealed record AuctionPriceSummaryView(decimal? Low, decimal? High, decimal? Average, decimal? Last, decimal? ThisYearAverage);
 
 /// <summary>A unit another company owns, which an offer may be addressed to.</summary>
-public sealed record CounterpartyView(int UnitId, string UnitName, string CompanyName, string SectorName);
+public sealed record CounterpartyView(int UnitId, string UnitName, string CompanyName, string SectorName, bool Automated)
+{
+    /// <summary>How the offer form names this counterparty: the unit once, and "(AI)" for a bot.</summary>
+    public string Label => Display.Unit(UnitName, CompanyName, Automated);
+}
 
 public sealed record OtcOfferView(
     long Id,
@@ -238,35 +290,15 @@ public sealed record LeaderboardRow(
     decimal MarginalCostOfCompliance,
     decimal FinalPosition,
     bool IsAutomated,
-    bool IsMine);
+    bool IsMine)
+{
+    /// <summary>The unit and whoever plays it, named once: "(AI)" marks a bot.</summary>
+    public string UnitLabel => Display.Unit(Unit, Player, IsAutomated);
+}
 
 public sealed record ChatLine(int Year, string From, string Text);
 
 public sealed record SectorView(string Name, decimal EmissionShare, int Units, decimal FreeAllocationThisYear);
-
-public sealed record SystemTotalsView(
-    decimal ForecastEmissions,
-    decimal AllowancesSurrendered,
-    decimal OffsetsSurrendered,
-    decimal Banked,
-    decimal Forfeited,
-    decimal AllowancesSold,
-    decimal AllowancesBought,
-    decimal OffsetsSold,
-    decimal OffsetsBought,
-    decimal AuctionVolume,
-    decimal AuctionRevenue,
-    decimal AverageAllowancePrice,
-    decimal AverageOffsetPrice,
-    int AbatementsImplemented,
-    decimal AbatementTonnes,
-    decimal EmissionsReduced,
-    int PenaltyCount,
-    decimal PenaltyValue,
-    decimal FineValue,
-    decimal Cap,
-    decimal FreeAllocation,
-    decimal AuctionableVolume);
 
 public sealed record SystemInfoView(
     string Name,
@@ -285,8 +317,10 @@ public sealed record SystemInfoView(
     decimal TradingOpenShareOfYear,
     decimal VolatilityBand,
     decimal OverdraftInterestRate,
+    decimal GovernmentReserveToAuctionPercent,
+    decimal ForwardVintageShare,
     IReadOnlyList<SectorView> Sectors,
-    SystemTotalsView ThisYear,
-    SystemTotalsView ToDate,
+    SystemTotals ThisYear,
+    SystemTotals ToDate,
     decimal GovernmentRevenue,
     IReadOnlyList<HoldingView> GovernmentReserve);

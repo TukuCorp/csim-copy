@@ -18,6 +18,9 @@ public sealed class ExchangeTests
         Simulation simulation = TestSimulation.Build();
         Exchange exchange = new(simulation);
 
+        // A book takes orders only while the year runs, so these tests start one.
+        TestSimulation.Running(simulation);
+
         simulation.Ledger.Grant(simulation.FindCompany(1), Vintage1, 1_000_000m);
         simulation.Ledger.Grant(simulation.FindCompany(2), Vintage1, 1_000_000m);
 

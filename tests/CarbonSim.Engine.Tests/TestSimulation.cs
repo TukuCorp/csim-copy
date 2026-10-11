@@ -1,3 +1,4 @@
+using CarbonSim.Engine.Clock;
 using CarbonSim.Engine.Domain;
 
 namespace CarbonSim.Engine.Tests;
@@ -34,7 +35,11 @@ internal static class TestSimulation
         int years = 3,
         int auctionsPerYear = 4,
         TimeSpan? auctionDuration = null,
-        decimal governmentReserveToAuctionPercent = 0m)
+        decimal governmentReserveToAuctionPercent = 0m,
+        // This hand-made scenario sells nothing forward, so its auctions are one lot each; the
+        // shipped scenario sells a fifth of the next year's vintage in the year's last auction,
+        // which is what the forward-vintage tests ask for explicitly.
+        decimal forwardVintageShare = 0m)
     {
         return new Parameters
         {
@@ -55,6 +60,7 @@ internal static class TestSimulation
             VolatilityBand = 0.10m,
             OverdraftInterestRate = 0.07m,
             GovernmentReserveToAuctionPercent = governmentReserveToAuctionPercent,
+            ForwardVintageShare = forwardVintageShare,
             BausGrowthBySector =
             [
                 new SectorBausGrowth("Power", 0.02m, 0.06m),
@@ -82,7 +88,8 @@ internal static class TestSimulation
         TimeSpan? auctionDuration = null,
         decimal? capital = null,
         decimal? overdraftLimit = null,
-        decimal governmentReserveToAuctionPercent = 0m)
+        decimal governmentReserveToAuctionPercent = 0m,
+        decimal forwardVintageShare = 0m)
     {
         decimal companyCapital = capital ?? CompanyCapital;
         decimal credit = overdraftLimit ?? 0m;
@@ -104,7 +111,11 @@ internal static class TestSimulation
         TradingSystem system = new(
             1,
             "Vietnam ETS",
-            Parameters(years, auctionDuration: auctionDuration, governmentReserveToAuctionPercent: governmentReserveToAuctionPercent),
+            Parameters(
+                years,
+                auctionDuration: auctionDuration,
+                governmentReserveToAuctionPercent: governmentReserveToAuctionPercent,
+                forwardVintageShare: forwardVintageShare),
             [power, cement],
             [evn, cementCompany, aiPower]);
 
@@ -114,6 +125,18 @@ internal static class TestSimulation
     public static Unit Unit(Simulation simulation, int id) => simulation.FindUnit(id);
 
     public static Company Company(Simulation simulation, int id) => simulation.FindCompany(id);
+
+    /// <summary>
+    /// Starts the year, which is the state a market trades in: a book or an OTC desk only takes
+    /// orders and offers while the clock is running. Returns the clock so a test can move the year on.
+    /// </summary>
+    public static SimulationClock Running(Simulation simulation)
+    {
+        SimulationClock clock = new(simulation, new TestTimeProvider());
+        clock.Start();
+
+        return clock;
+    }
 
     public const decimal ProfitPerTonne = 40m;
 

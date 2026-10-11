@@ -86,6 +86,9 @@ public sealed class DraftParameters
 
     public decimal? GovernmentReserveToAuctionPercent { get; set; }
 
+    /// <summary>Share of the next year's volume a year's last auction sells forward (absent means the engine's default).</summary>
+    public decimal? ForwardVintageShare { get; set; }
+
     public List<DraftGrowth> BausGrowthBySector { get; set; } = [];
 }
 
@@ -146,4 +149,7 @@ public sealed class DraftUnit
     public decimal? BaselineEmissions { get; set; }
 
     public decimal? NormalOperatingProfit { get; set; }
+
+    /// <summary>How generously the unit was allocated, carried through the setup screen untouched.</summary>
+    public decimal? AllocationFactor { get; set; }
 }

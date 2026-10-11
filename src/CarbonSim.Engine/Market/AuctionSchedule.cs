@@ -42,23 +42,27 @@ public sealed class AuctionSchedule
     }
 
     /// <summary>
-    /// Builds the whole run's auctions and offers their lots out of the government's issue.
-    /// <paramref name="forwardVintageShare"/> is the share of a later year's volume sold early
-    /// in the previous year's last auction (0 = no forward sales).
+    /// Builds the whole run's auctions and offers their lots out of the government's issue. The
+    /// forward share comes from the run's own settings (<see cref="Parameters.ForwardVintageShare"/>),
+    /// which is the share of a later year's volume sold early in the previous year's last auction
+    /// (0 = no forward sales). It is read rather than passed in so the host, the bots and every
+    /// harness build the same schedule.
     /// </summary>
-    public static AuctionSchedule Build(Simulation simulation, decimal forwardVintageShare = 0m)
+    public static AuctionSchedule Build(Simulation simulation)
     {
         ArgumentNullException.ThrowIfNull(simulation);
+
+        Parameters parameters = simulation.Rules;
+        decimal forwardVintageShare = parameters.ForwardVintageShare;
 
         if (forwardVintageShare is < 0m or > 1m)
         {
             throw new ArgumentOutOfRangeException(
-                nameof(forwardVintageShare),
+                nameof(parameters.ForwardVintageShare),
                 forwardVintageShare,
                 "The forward vintage share is a fraction of a year's auctionable volume.");
         }
 
-        Parameters parameters = simulation.TradingSystems.Single().Parameters;
         simulation.Government.IssueAll();
 
         List<Auction> auctions = [];
@@ -103,7 +107,7 @@ public sealed class AuctionSchedule
     {
         ArgumentNullException.ThrowIfNull(closed);
 
-        Parameters parameters = _simulation.TradingSystems.Single().Parameters;
+        Parameters parameters = _simulation.Rules;
         decimal percent = parameters.GovernmentReserveToAuctionPercent;
 
         // The reserve is reviewed once a year, when the last auction of the year closes: its

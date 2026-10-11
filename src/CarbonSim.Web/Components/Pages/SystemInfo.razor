@@ -1,5 +1,6 @@
 @page "/run/{SimulationId:guid}/system"
 @inject IStringLocalizer<SharedStrings> Strings
+@using CarbonSim.Engine.Reporting
 
 <PageTitle>@Strings["SystemInfo"]</PageTitle>
 <h1>@Strings["SystemInfo"]</h1>
@@ -28,6 +29,8 @@ else
                 <div><dt>@Strings["AuctionDuration"]</dt><dd>@Display.Duration(view.System.AuctionDuration)</dd></div>
                 <div><dt>@Strings["VolatilityBand"]</dt><dd>@Display.Percent(view.System.VolatilityBand)</dd></div>
                 <div><dt>@Strings["InterestRate"]</dt><dd>@Display.Percent(view.System.OverdraftInterestRate)</dd></div>
+                <div><dt>@Strings["GovernmentReserveToAuctionPercent"]</dt><dd>@Display.Percent(view.System.GovernmentReserveToAuctionPercent)</dd></div>
+                <div><dt>@Strings["ForwardVintageShare"]</dt><dd>@Display.Percent(view.System.ForwardVintageShare)</dd></div>
             </dl>
         </section>
 
@@ -73,8 +76,8 @@ else
 
     private List<ReportRow> ReportRows(PlayerView view)
     {
-        SystemTotalsView now = view.System.ThisYear;
-        SystemTotalsView all = view.System.ToDate;
+        SystemTotals now = view.System.ThisYear;
+        SystemTotals all = view.System.ToDate;
 
         return
         [
@@ -88,7 +91,8 @@ else
             new ReportRow(Strings["Forfeited"], Display.Tonnes(now.Forfeited), Display.Tonnes(all.Forfeited)),
             new ReportRow(Strings["TotalVolume"], Display.Tonnes(now.AllowancesSold), Display.Tonnes(all.AllowancesSold)),
             new ReportRow(Strings["AuctionRevenueCollectedByGovernment"], Display.Money(now.AuctionRevenue), Display.Money(all.AuctionRevenue)),
-            new ReportRow(Strings["Average"] + " " + Strings["AllowanceAuction"], Display.Price(now.AverageAllowancePrice), Display.Price(all.AverageAllowancePrice)),
+            new ReportRow(Strings["AverageAllowancePriceAllChannels"], Display.Price(now.AverageAllowancePrice), Display.Price(all.AverageAllowancePrice)),
+            new ReportRow(Strings["AuctionAveragePrice"], Display.Price(now.AuctionAveragePrice), Display.Price(all.AuctionAveragePrice)),
             new ReportRow(Strings["Average"] + " " + Strings["Offset"], Display.Price(now.AverageOffsetPrice), Display.Price(all.AverageOffsetPrice)),
             new ReportRow(Strings["Abatement"], now.AbatementsImplemented.ToString(CultureInfo.CurrentCulture), all.AbatementsImplemented.ToString(CultureInfo.CurrentCulture)),
             new ReportRow(Strings["EmissionReductions"], Display.Tonnes(now.EmissionsReduced), Display.Tonnes(all.EmissionsReduced)),

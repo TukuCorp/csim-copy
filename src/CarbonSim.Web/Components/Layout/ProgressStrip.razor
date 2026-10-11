@@ -21,7 +21,10 @@
                     <span class="segment @(auction == view.Auction ? "segment-current" : auction < view.Auction ? "segment-done" : null)">@Strings["Auction_X", auction]</span>
                 }
             </div>
-            <span class="countdown">@Countdown(view)</span>
+            @if (!view.YearIsOver)
+            {
+                <span class="countdown">@Countdown(view)</span>
+            }
         </div>
 
         @if (view.AuctionOpen)

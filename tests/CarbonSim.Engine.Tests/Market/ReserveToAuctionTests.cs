@@ -195,7 +195,7 @@ public sealed class ReserveToAuctionTests
 
         RestoredSimulation restored = SimulationSnapshots.Restore(snapshot, time);
 
-        restored.Simulation.TradingSystems.Single().Parameters.GovernmentReserveToAuctionPercent
+        restored.Simulation.Rules.GovernmentReserveToAuctionPercent
             .Should().Be(0.50m, "the reoffer share is a rule of the run, so it is carried with it");
         restored.Auctions.Auctions.Should().HaveCount(schedule.Auctions.Count);
     }

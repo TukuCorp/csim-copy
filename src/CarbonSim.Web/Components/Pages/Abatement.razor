@@ -13,7 +13,7 @@ else
 {
     <section class="card wide" tabindex="0">
         <h2>@Strings["MarginalAbatementCostCurve_MACC"]</h2>
-        <EChart Option="@Charts.Macc(Opportunities(view))" Height="260px" Label="@Strings["MarginalAbatementCostCurve_MACC"]" />
+        <EChart Option="@Charts.Macc(Opportunities(view), view.Position.Shortfall, Strings["Shortfall"])" Height="260px" Label="@Strings["MarginalAbatementCostCurve_MACC"]" />
     </section>
 
     <section class="card">
@@ -47,7 +47,7 @@ else
 
     <section class="card wide" tabindex="0">
         <h2>@Strings["AvailableEmissionReductionOpportunities"]</h2>
-        <QuickGrid Items="@Items(view).AsQueryable()" Class="grid">
+        <QuickGrid Items="@Items(view).AsQueryable()" Class="grid grid-wide">
             <TemplateColumn Title="@Strings["Project"]" Context="row">@row.Code @row.Name</TemplateColumn>
             <TemplateColumn Title="@Strings["UnitName"]" Context="row">@row.UnitName</TemplateColumn>
             <TemplateColumn Title="@Strings["UpfrontCapitalCost"]" Context="row">@Display.Money(row.UpfrontCost)</TemplateColumn>

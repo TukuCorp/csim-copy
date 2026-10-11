@@ -1,0 +1,311 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Architecture review for csim-copy</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script type="module">
+  import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+  mermaid.initialize({ startOnLoad: true, theme: "neutral", securityLevel: "loose" });
+</script>
+<style>
+  .seam { stroke-dasharray: 4 4; }
+  .leak { stroke: #dc2626; }
+  .deep { background: linear-gradient(135deg, #0f172a, #1e293b); color: #f8fafc; }
+  .mod { border: 1.5px solid #475569; background: #fff; }
+  .mod-leak { border: 1.5px solid #dc2626; background: #fef2f2; }
+  .mod-thin { border: 1.5px dashed #94a3b8; background: #f8fafc; color: #64748b; }
+  .lbl { font-size: .68rem; letter-spacing: .08em; text-transform: uppercase; }
+  .pre-mermaid { margin: 0; }
+</style>
+</head>
+<body class="bg-stone-50 text-slate-900 font-sans">
+<main class="max-w-5xl mx-auto px-6 py-12 space-y-12">
+
+<header class="space-y-4">
+  <h1 class="font-serif text-4xl">Architecture review &middot; csim-copy</h1>
+  <p class="text-sm text-slate-500">2026-10-11 &middot; working tree after the QA loop (uncommitted) &middot; Engine / Data / Web</p>
+  <div class="flex flex-wrap gap-4 text-xs lbl text-slate-600">
+    <span class="flex items-center gap-2"><span class="inline-block w-6 h-4 mod"></span>module</span>
+    <span class="flex items-center gap-2"><span class="inline-block w-6 border-t-2 border-dashed border-slate-500"></span>seam</span>
+    <span class="flex items-center gap-2"><span class="inline-block w-6 h-4 mod-leak"></span>leakage</span>
+    <span class="flex items-center gap-2"><span class="inline-block w-6 h-4 deep"></span>deep module</span>
+    <span class="flex items-center gap-2"><span class="inline-block w-6 h-4 mod-thin"></span>pass-through</span>
+  </div>
+  <div class="rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm">
+    <strong>Two candidate-1 findings were verified in the source, not only reported.</strong>
+    <ul class="list-disc ml-5 mt-1">
+      <li>The host builds <code>AuctionSchedule.Build(simulation)</code> (forward share 0); every test harness builds it at 0.20. The calibrated envelopes measure a run the host never plays.</li>
+      <li><code>BidAtAuctionAsync</code> and <code>PlaceOrderAsync</code> check ownership only. Nothing refuses a bid outside the auction window or an order while trading is halted; the disabled button is the only guard.</li>
+    </ul>
+  </div>
+</header>
+
+<section id="candidates" class="space-y-10">
+
+<!-- 1 -->
+<article id="c1" class="rounded-xl border border-slate-200 bg-white p-6 space-y-4">
+  <div class="flex flex-wrap items-center gap-2">
+    <h2 class="font-serif text-2xl mr-auto">1 &middot; A run module: sequencing, year close, rule change, who may trade when</h2>
+    <span class="px-2 py-1 rounded text-xs font-semibold bg-emerald-100 text-emerald-800">Strong</span>
+    <span class="px-2 py-1 rounded text-xs bg-slate-100 text-slate-600">in-process</span>
+  </div>
+  <p class="font-mono text-sm text-slate-600">Web/Simulations/SimulationClockService.cs (535) &middot; SimulationRegistry.cs (836) &middot; tests: FidelityRun.cs, TrainingRun.cs, SnapshotRoundTripTests, ComplianceBotTests.Run</p>
+  <div class="grid md:grid-cols-2 gap-4">
+    <div class="rounded-lg border border-slate-200 p-4">
+      <div class="lbl text-slate-500 mb-2">Before &middot; order of operations open-coded 5&times;</div>
+      <pre class="mermaid pre-mermaid">
+flowchart TB
+  subgraph Web
+    T[TickOnce] --> C1[Clock.Advance]
+    C1 --> C2[clear closed auctions]
+    C2 --> C3[Bots.Act]
+    E[EndYearAsync] --> E1[Clock.EndYear]
+    E1 --> E2[clear open auction]
+    E2 --> E3[Reconcile + CloseYear + Capture]
+    R[ChangeRulesAsync] --> R1[Parameters mutate]
+    R1 --> R2[RulesRevision++]
+    R2 --> R3[Exchange.FollowRules]
+  end
+  subgraph Tests
+    F[FidelityRun loop]
+    D[TrainingRun loop]
+    S[Snapshot loop]
+    B[BotTests.Run]
+  end
+  F -.copy.-> T
+  D -.copy.-> T
+  S -.copy.-> E
+  B -.copy.-> R
+  classDef leak stroke:#dc2626,stroke-width:2px;
+  class F,D,S,B leak
+      </pre>
+    </div>
+    <div class="rounded-lg border border-slate-200 p-4 flex flex-col gap-3">
+      <div class="lbl text-slate-500">After &middot; one run module, Web keeps gate + broadcast</div>
+      <div class="mod rounded p-3 text-sm">Web: gate, collect announcements, SignalR</div>
+      <div class="text-center text-slate-400 text-xs">&#9660; interface: advance &middot; end year &middot; change collar &middot; bid &middot; order</div>
+      <div class="deep rounded p-4 text-sm space-y-1">
+        <div class="lbl text-slate-300">Run module (Engine)</div>
+        <div>owns sequencing, trading-window rules, halted-state refusals</div>
+        <div class="text-slate-400 text-xs">Clock &middot; Auctions &middot; Exchange &middot; Otc &middot; Bots &middot; Compliance (internal)</div>
+      </div>
+      <div class="mod rounded p-3 text-sm">Host, FidelityRun, TrainingRun, snapshot tests: same module, same seam</div>
+    </div>
+  </div>
+  <p><strong>Problem.</strong> Engine has no module that sequences itself, so Web owns the order of operations and tests copy it; the mid-auction close fix lives in one copy.</p>
+  <p><strong>Solution.</strong> Deepen into one Engine run module; Web becomes gate plus broadcast.</p>
+  <ul class="list-disc ml-5 text-sm space-y-1">
+    <li>locality: year-close bugs fixed once</li>
+    <li>envelopes measure the run the host plays</li>
+    <li>refusals (window, halted) get one home</li>
+    <li>delete 4 hand-rolled loops</li>
+    <li>ConsoleDoorTests shrink to wiring</li>
+  </ul>
+</article>
+
+<!-- 2 -->
+<article id="c2" class="rounded-xl border border-slate-200 bg-white p-6 space-y-4">
+  <div class="flex flex-wrap items-center gap-2">
+    <h2 class="font-serif text-2xl mr-auto">2 &middot; One standing for a company-year (held, position, shortfall)</h2>
+    <span class="px-2 py-1 rounded text-xs font-semibold bg-emerald-100 text-emerald-800">Strong</span>
+    <span class="px-2 py-1 rounded text-xs bg-slate-100 text-slate-600">in-process</span>
+  </div>
+  <p class="font-mono text-sm text-slate-600">Engine/Allocation/CompliancePosition.cs &middot; Reporting/Scoring.cs &middot; Compliance/ComplianceRegister.cs &middot; Bots/ComplianceBot.cs &middot; Web/Player/PlayerSession.cs &middot; Web/Admin/AdminSession.cs</p>
+  <div class="grid md:grid-cols-2 gap-4">
+    <div class="rounded-lg border border-slate-200 p-4">
+      <div class="lbl text-slate-500 mb-2">Before &middot; five answers to one question</div>
+      <pre class="mermaid pre-mermaid">
+flowchart LR
+  Q((where does the company stand?))
+  Q --> A[CompliancePosition.PositionFor]
+  Q --> B[Scoring.Holdings]
+  Q --> C[ComplianceBot.Shortfall]
+  Q --> D[PlayerSession.BuildPosition]
+  Q --> E[AdminSession shortfall]
+  X[Results.FirstOrDefault company+year x10] -.leak.-> B
+  X -.leak.-> D
+  X -.leak.-> E
+  classDef leak stroke:#dc2626,stroke-width:2px;
+  class B,C,D,E,X leak
+      </pre>
+    </div>
+    <div class="rounded-lg border border-slate-200 p-4 flex flex-col gap-3">
+      <div class="lbl text-slate-500">After &middot; ask the standing, do not recompute</div>
+      <div class="flex gap-2 text-xs">
+        <span class="mod rounded p-2 flex-1 text-center">Scoring</span>
+        <span class="mod rounded p-2 flex-1 text-center">Register</span>
+        <span class="mod rounded p-2 flex-1 text-center">Bot</span>
+        <span class="mod rounded p-2 flex-1 text-center">Player / Admin views</span>
+      </div>
+      <div class="text-center text-slate-400 text-xs">&#9660; emissions &middot; held &middot; position &middot; shortfall &middot; covered &middot; settled?</div>
+      <div class="deep rounded p-4 text-sm">
+        <div class="lbl text-slate-300">Company-year standing (Engine)</div>
+        live or settled, offset limit and escrow rules inside
+      </div>
+    </div>
+  </div>
+  <p><strong>Problem.</strong> The same question has five answers; QA found the position bug on several screens because each recomputed it.</p>
+  <p><strong>Solution.</strong> Deepen one module that answers for a company in a year, live or settled.</p>
+  <ul class="list-disc ml-5 text-sm space-y-1">
+    <li>locality: held and position defined once</li>
+    <li>leverage: 5 consumers, one interface</li>
+    <li>table-driven golden replaces scattered asserts</li>
+    <li>bUnit hand-set positions stop hiding bugs</li>
+  </ul>
+</article>
+
+<!-- 3 -->
+<article id="c3" class="rounded-xl border border-slate-200 bg-white p-6 space-y-4">
+  <div class="flex flex-wrap items-center gap-2">
+    <h2 class="font-serif text-2xl mr-auto">3 &middot; Rules: stop reaching through TradingSystems.Single()</h2>
+    <span class="px-2 py-1 rounded text-xs font-semibold bg-amber-100 text-amber-800">Worth exploring</span>
+    <span class="px-2 py-1 rounded text-xs bg-slate-100 text-slate-600">in-process</span>
+  </div>
+  <p class="font-mono text-sm text-slate-600">Engine/Domain/Parameters.cs (223) &middot; ~35 sites in 16 files &middot; Auction, OrderBook, SimulationClock capture the object</p>
+  <div class="grid md:grid-cols-2 gap-4">
+    <div class="rounded-lg border border-slate-200 p-4 space-y-2 text-xs">
+      <div class="lbl text-slate-500">Before &middot; mass</div>
+      <div class="flex items-end gap-3 h-36">
+        <div class="flex-1 mod-leak rounded flex items-center justify-center h-full text-center">interface: Single().Parameters<br/>everywhere</div>
+        <div class="flex-1 mod rounded h-10 flex items-center justify-center">mutated in place</div>
+      </div>
+      <div class="text-slate-500">16 files read it; the collar has no owner</div>
+    </div>
+    <div class="rounded-lg border border-slate-200 p-4 space-y-2 text-xs">
+      <div class="lbl text-slate-500">After &middot; mass</div>
+      <div class="flex items-end gap-3 h-36">
+        <div class="flex-1 mod rounded h-8 flex items-center justify-center">current rules</div>
+        <div class="flex-1 deep rounded h-full flex items-center justify-center text-center p-2">collar change + notify dependents<br/>(folds into candidate 1)</div>
+      </div>
+    </div>
+  </div>
+  <p><strong>Problem.</strong> Adding one parameter touched 16 files; capture by reference works only because one object is edited in place.</p>
+  <p><strong>Solution.</strong> One accessor for the current rules that owns changing the collar. Restrict to the collar; do not generalise to multiple systems.</p>
+  <ul class="list-disc ml-5 text-sm space-y-1"><li>locality: parameter changes in one place</li><li>interface shrinks: no Single() ritual</li></ul>
+</article>
+
+<!-- 4 -->
+<article id="c4" class="rounded-xl border border-slate-200 bg-white p-6 space-y-4">
+  <div class="flex flex-wrap items-center gap-2">
+    <h2 class="font-serif text-2xl mr-auto">4 &middot; The band: the book fits prices, callers stop re-implementing it</h2>
+    <span class="px-2 py-1 rounded text-xs font-semibold bg-amber-100 text-amber-800">Worth exploring</span>
+    <span class="px-2 py-1 rounded text-xs bg-slate-100 text-slate-600">in-process</span>
+  </div>
+  <p class="font-mono text-sm text-slate-600">Engine/Market/Exchange/OrderBook.cs (531) &middot; Exchange.cs (118) &middot; Bots/ComplianceBot Buy/Sell/Clamp &middot; Web/Player/PlayerSession.BuildBooks</p>
+  <div class="grid md:grid-cols-2 gap-4">
+    <div class="rounded-lg border border-slate-200 p-4">
+      <div class="lbl text-slate-500 mb-2">Before</div>
+      <pre class="mermaid pre-mermaid">
+flowchart LR
+  Bot[Bot.Clamp rounds to 2dp] -- reads band --> OB[OrderBook]
+  PS[PlayerSession band maths] -- copies rule --> OB
+  Host[host] -- must remember --> FR[FollowRules]
+  FR --> CR[Cross]
+  Host -.redundant.-> CR
+  Bot -.catch ArgumentException.-> Bot
+  classDef leak stroke:#dc2626,stroke-width:2px;
+  class Bot,PS,CR leak
+      </pre>
+    </div>
+    <div class="rounded-lg border border-slate-200 p-4 flex flex-col gap-3 text-sm">
+      <div class="lbl text-slate-500">After</div>
+      <div class="mod rounded p-2">Bot: "limit at about P"</div>
+      <div class="text-center text-slate-400 text-xs">&#9660; intent in, fitted price out</div>
+      <div class="deep rounded p-4">Order book: owns band edge, anchor, crossing after a collar change</div>
+    </div>
+  </div>
+  <p><strong>Problem.</strong> The bot clamps then rounds, so a price just inside the band can round just outside it; the patch is a catch whose comment blames the wrong cause.</p>
+  <p><strong>Solution.</strong> Take intent at the book; make anchoring and crossing internal consequences of a collar change.</p>
+  <ul class="list-disc ml-5 text-sm space-y-1"><li>locality: band rule lives in one module</li><li>delete the catch and its describe-tests</li><li>pass-throughs CashOf/HoldingsOf go</li></ul>
+  <div class="rounded border border-amber-300 bg-amber-50 p-2 text-xs">Rounding could shift bot prices by 0.01 and nudge the fidelity envelopes; re-measure.</div>
+</article>
+
+<!-- 5 -->
+<article id="c5" class="rounded-xl border border-slate-200 bg-white p-6 space-y-4">
+  <div class="flex flex-wrap items-center gap-2">
+    <h2 class="font-serif text-2xl mr-auto">5 &middot; Read models duplicated; the player screen guesses what its action did</h2>
+    <span class="px-2 py-1 rounded text-xs font-semibold bg-amber-100 text-amber-800">Worth exploring</span>
+    <span class="px-2 py-1 rounded text-xs bg-slate-100 text-slate-600">in-process</span>
+  </div>
+  <p class="font-mono text-sm text-slate-600">Web/Player/PlayerSession.cs (857) &middot; Admin/AdminSession.cs (606) &middot; PlayerView.cs (340, 38 members) &middot; Components/Pages/Exchange.razor lines 282-305</p>
+  <div class="grid md:grid-cols-2 gap-4">
+    <div class="rounded-lg border border-slate-200 p-4 text-xs space-y-1">
+      <div class="lbl text-slate-500 mb-2">Before &middot; cross-section</div>
+      <div class="mod-leak rounded p-2 border-l-4">PlayerSession.ToTotals (23 args)</div>
+      <div class="mod-leak rounded p-2 border-l-4">AdminSession.ToTotals (identical)</div>
+      <div class="mod-thin rounded p-2">SystemTotalsView mirrors SystemTotals one-for-one</div>
+      <div class="mod-leak rounded p-2 border-l-4">Exchange.razor infers "newest of my orders" after Place order</div>
+      <div class="mod-thin rounded p-2">string parsing: "Limit", "Vintage 3", "AllowPartial"</div>
+    </div>
+    <div class="rounded-lg border border-slate-200 p-4 text-xs space-y-1">
+      <div class="lbl text-slate-500 mb-2">After</div>
+      <div class="deep rounded p-3">Run-wide read models built once (totals, leaderboard, reserve)</div>
+      <div class="deep rounded p-3">Typed order request in; order outcome out (id, fills, refusal)</div>
+      <div class="mod rounded p-2">Per-player PlayerView projection stays (the gate forbids live objects on pages)</div>
+    </div>
+  </div>
+  <p><strong>Problem.</strong> Two byte-identical copies and a screen that reverse-engineers its own result.</p>
+  <p><strong>Solution.</strong> Build run-wide views once; return the outcome of an action instead of making the next screen infer it.</p>
+  <ul class="list-disc ml-5 text-sm space-y-1"><li>delete SystemTotalsView mirror</li><li>PlayerViewFixture surface shrinks</li><li>locality: confirmation logic in one place</li></ul>
+  <div class="rounded border border-amber-300 bg-amber-50 p-2 text-xs">Playwright suites pin wording and ids on these screens.</div>
+</article>
+
+<!-- 6 -->
+<article id="c6" class="rounded-xl border border-slate-200 bg-white p-6 space-y-4">
+  <div class="flex flex-wrap items-center gap-2">
+    <h2 class="font-serif text-2xl mr-auto">6 &middot; ComplianceBot: what it wants versus how it asks</h2>
+    <span class="px-2 py-1 rounded text-xs font-semibold bg-slate-200 text-slate-700">Speculative</span>
+    <span class="px-2 py-1 rounded text-xs bg-slate-100 text-slate-600">in-process</span>
+  </div>
+  <p class="font-mono text-sm text-slate-600">Engine/Bots/ComplianceBot.cs (656) &middot; SimulationBots.cs &middot; ComplianceBotTests (352)</p>
+  <div class="rounded-lg border border-slate-200 p-4 text-xs">
+    <div class="grid grid-cols-5 gap-1 text-center">
+      <div class="mod rounded p-2">Bid</div><div class="mod rounded p-2">Quote</div><div class="mod rounded p-2">Settle</div><div class="mod rounded p-2">Buy</div><div class="mod rounded p-2">Sell</div>
+    </div>
+    <div class="text-center text-slate-500 my-2">each: read Parameters + build position + decide + clamp + call market + swallow refusal (6 catch blocks)</div>
+    <div class="grid grid-cols-2 gap-2"><div class="deep rounded p-2 text-center">intent: pure plan of bids, quotes, abatements</div><div class="mod rounded p-2 text-center">execution: market calls</div></div>
+  </div>
+  <p><strong>Problem.</strong> Decision and placement are fused, so only the whole fleet run exercises the rules.</p>
+  <p><strong>Solution.</strong> Separate the plan from its execution so plans are golden-testable.</p>
+  <div class="rounded border border-red-300 bg-red-50 p-2 text-xs">Highest risk: <code>_random</code> is drawn inside Bid only when short, so control-flow changes shift the seeded stream. Capture a golden BotAction log first. Do last, and only with the log.</div>
+</article>
+
+<!-- 7 -->
+<article id="c7" class="rounded-xl border border-slate-200 bg-white p-6 space-y-4">
+  <div class="flex flex-wrap items-center gap-2">
+    <h2 class="font-serif text-2xl mr-auto">7 &middot; Persistence: three representations of every saved fact</h2>
+    <span class="px-2 py-1 rounded text-xs font-semibold bg-slate-200 text-slate-700">Speculative</span>
+    <span class="px-2 py-1 rounded text-xs bg-slate-100 text-slate-600">local-substitutable</span>
+  </div>
+  <p class="font-mono text-sm text-slate-600">Data/Persistence/SimulationMapper.cs (1031) &middot; Engine/Snapshot/* (~950) &middot; 8 *Records.cs (~1500) &middot; SimulationSnapshots.cs (469)</p>
+  <div class="rounded-lg border border-slate-200 p-4 text-xs flex items-center gap-2 flex-wrap">
+    <span class="mod rounded p-2">Engine object</span>&rarr;<span class="mod rounded p-2">Snapshot record</span>&rarr;<span class="mod-leak rounded p-2">EF record</span>&rarr;<span class="mod-leak rounded p-2">Mapper (both ways)</span>
+  </div>
+  <p><strong>Problem.</strong> A new field is declared three times with a mapper each way, and nothing marks saved versus transient state.</p>
+  <p><strong>Solution.</strong> Persist the snapshot more directly. Low urgency; the snapshot seam earns its keep. Skip unless fields keep arriving.</p>
+</article>
+
+</section>
+
+<section>
+  <h2 class="font-serif text-2xl mb-3">Leave alone (already deep)</h2>
+  <ul class="list-disc ml-5 text-sm space-y-1">
+    <li><strong>SimulationClock</strong>: seven verbs over an injected TimeProvider; deterministic tests, no sleeps.</li>
+    <li><strong>Auction.PlaceBid / Clear</strong>: small interface over escrow, ranking, uniform-price clearing, reserve return.</li>
+    <li><strong>ScenarioLoader.LoadJson + Parameters.Validate</strong>: one call, all errors in one pass.</li>
+    <li><strong>OrderBook matching and escrow core</strong> (Submit, Cancel, Plan/Fillable); only its band-facing edge is candidate 4.</li>
+  </ul>
+</section>
+
+<section id="top-recommendation" class="rounded-xl deep p-8 space-y-3">
+  <div class="lbl text-slate-300">Top recommendation</div>
+  <h2 class="font-serif text-3xl">Candidate 1: a run module, with the two verified defects fixed first</h2>
+  <p class="text-slate-200">Locality for year close and rule changes, and the only way the fidelity envelopes can be trusted: the host and the harnesses must play the same run. Then candidate 2, then 3+4 together, then 5. Candidate 6 only behind a golden bot log; 7 not now.</p>
+  <a class="underline text-emerald-300" href="#c1">Go to candidate 1</a>
+</section>
+
+</main>
+</body>
+</html>

@@ -50,8 +50,8 @@ public sealed class AuctionTests
     [Fact]
     public void A_forward_auction_sells_part_of_a_later_vintage_early()
     {
-        Simulation simulation = TestSimulation.Build();
-        AuctionSchedule schedule = AuctionSchedule.Build(simulation, forwardVintageShare: 0.20m);
+        Simulation simulation = TestSimulation.Build(forwardVintageShare: 0.20m);
+        AuctionSchedule schedule = AuctionSchedule.Build(simulation);
 
         Auction lastOfYearOne = schedule.ForSection(1, 4);
         lastOfYearOne.Lots.Should().HaveCount(2);
@@ -217,8 +217,8 @@ public sealed class AuctionTests
     [Fact]
     public void Forward_and_current_vintages_clear_separately_with_their_own_prices()
     {
-        Simulation simulation = TestSimulation.Build();
-        AuctionSchedule schedule = AuctionSchedule.Build(simulation, forwardVintageShare: 0.20m);
+        Simulation simulation = TestSimulation.Build(forwardVintageShare: 0.20m);
+        AuctionSchedule schedule = AuctionSchedule.Build(simulation);
         Auction auction = schedule.ForSection(1, 4);
         Unit unit = simulation.FindUnit(1);
         auction.PlaceBid(unit, 1, 150m, 100_000m);

@@ -110,6 +110,9 @@ public sealed class FinanceTests
         Product vintage1 = Product.Allowance(1);
         Unit buyer = simulation.FindUnit(4);
 
+        // Orders are only taken in a running year.
+        TestSimulation.Running(simulation);
+
         Action tooBig = () => exchange.Place(new OrderRequest(
             buyer, vintage1, OrderSide.Buy, OrderKind.Limit, 5_000m, Price: 105m));
 
@@ -129,6 +132,7 @@ public sealed class FinanceTests
         Simulation simulation = Build(capital: 20_000m);
         Exchange exchange = new(simulation);
         Product vintage1 = Product.Allowance(1);
+        TestSimulation.Running(simulation);
         simulation.Ledger.Grant(simulation.FindCompany(1), vintage1, 1_000m);
         exchange.Place(new OrderRequest(simulation.FindUnit(1), vintage1, OrderSide.Sell, OrderKind.Limit, 100m, Price: 100m));
 
@@ -186,6 +190,7 @@ public sealed class FinanceTests
         Simulation simulation = Build(capital: 1_000_000m);
         OtcMarket otc = new(simulation);
         Product vintage1 = Product.Allowance(1);
+        TestSimulation.Running(simulation);
         simulation.Ledger.Grant(simulation.FindCompany(1), vintage1, 1_000m);
         OtcOffer offer = otc.Send(simulation.FindUnit(1), simulation.FindUnit(4), vintage1, price: 2_000m, volume: 1_000m);
 

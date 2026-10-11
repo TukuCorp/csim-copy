@@ -31,6 +31,22 @@ Three source projects and three test projects.
 | tests/CarbonSim.Data.Tests | Save/reload round trips, provider selection, the SQLite backup drill. |
 | tests/CarbonSim.Web.Tests | bUnit component tests, host integration tests, the load harness, and the Playwright walks (screens, phone width, Vietnamese, admin, accessibility). |
 
+Inside the engine the shape is: a Simulation holds the state and the scenario; the run module
+(Engine/Run) owns the order of operations and returns a typed result for each verb; the host
+(Web/Simulations) holds the one gate every mutation goes through and broadcasts from that result. Every
+screen reads a copy built while the gate is held, never a live engine object.
+
+    Engine             Simulation state: AllocationPlan, Abatement, AllowanceLedger, Cash, Compliance
+    Engine/Run         SimulationRun owns the verbs; each returns a RunResult (notices, fills, books, order)
+    Engine/Allocation  Standing: the one answer to "where does this company stand this year"
+    Engine/Market      Auction, Exchange (OrderBook.FitToBand), Otc, TradingWindow (who may trade when)
+    Engine/Reporting   Scoring, Leaderboard, SystemReport -> SystemTotals
+    Web/Simulations    SimulationRegistry: the gate and ApplyAsync (verb -> collect -> invalidate -> broadcast)
+    Web/Simulations    SimulationClockService: the tick loop and the trainer's controls; HostedRun holds a live run
+    Web/Player         PlayerSession: the PlayerView read model; actions return typed results (OrderOutcome)
+    Web/Admin          AdminSession: the AdminRunDetail read model and the console's actions
+    Web/Components     Blazor screens; Display formats every figure they share
+
 The engine owns state; the host owns time. A run advances only when something calls the driver,
 which in production is a hosted service ticking once a second.
 
@@ -39,12 +55,15 @@ which in production is a hosted service ticking once a second.
 | Mechanic | File |
 |---|---|
 | Virtual-year clock, states, auction sections | src/CarbonSim.Engine/Clock/SimulationClock.cs |
+| The run module: verbs, order of operations, typed results | src/CarbonSim.Engine/Run/SimulationRun.cs, RunFacts.cs |
+| The current rules (the Parameters accessor) | src/CarbonSim.Engine/Domain/Simulation.cs (Simulation.Rules) |
 | Cap, sector cakes, free allocation, BAU growth | src/CarbonSim.Engine/Allocation/AllocationPlan.cs |
-| Long/short forecast position | src/CarbonSim.Engine/Allocation/CompliancePosition.cs |
+| Where a company stands: emissions, held, available, shortfall, position | src/CarbonSim.Engine/Allocation/Standing.cs |
 | Abatement lifecycle (build, operate, expire, shutdown) | src/CarbonSim.Engine/Abatement/ |
 | Sealed-bid uniform-price auction, collar, forward vintages | src/CarbonSim.Engine/Market/Auction.cs, AuctionSchedule.cs |
 | Government reserve and auction revenue | src/CarbonSim.Engine/Market/GovernmentAccount.cs |
-| Exchange order book (market, limit, stop, partial fill, band) | src/CarbonSim.Engine/Market/Exchange/ |
+| Exchange order book (market, limit, stop, partial fill, band, FitToBand) | src/CarbonSim.Engine/Market/Exchange/ |
+| The outcome of an exchange order (fills, resting, refusal) | src/CarbonSim.Engine/Run/OrderOutcome.cs |
 | OTC offers | src/CarbonSim.Engine/Market/Otc/ |
 | Instrument balances and escrow | src/CarbonSim.Engine/Market/AllowanceLedger.cs |
 | Year-end surrender, banking, penalties, fines | src/CarbonSim.Engine/Compliance/ComplianceRegister.cs |
@@ -54,7 +73,8 @@ which in production is a hosted service ticking once a second.
 | Scenario JSON loader and validation | src/CarbonSim.Engine/Scenarios/ScenarioLoader.cs |
 | The save/restore boundary (every drawn value is carried) | src/CarbonSim.Engine/Snapshot/ |
 | EF model and the engine-to-table map | src/CarbonSim.Data/CarbonSimDbContext.cs, Persistence/SimulationMapper.cs |
-| Live runs, per-run gate, event feed, player actions | src/CarbonSim.Web/Simulations/SimulationRegistry.cs |
+| Live runs, the per-run gate, the one ApplyAsync primitive, the event feed | src/CarbonSim.Web/Simulations/SimulationRegistry.cs |
+| Run-view helpers both sessions share (year-of, reserve) | src/CarbonSim.Web/Simulations/RunViews.cs |
 | The tick loop and admin controls | src/CarbonSim.Web/Simulations/SimulationClockService.cs |
 | Player read model and its shared view cache | src/CarbonSim.Web/Player/PlayerSession.cs |
 | Admin read model and controls | src/CarbonSim.Web/Admin/ |
@@ -132,4 +152,3 @@ acceptable for a trainer nudge, not a per-unit refinement.
 7. Decide Blazor Server versus a React front end before the player UI grows further (the stack
    decision has been deferred since Phase 0).
 8. Settle the licensing question with EDF before any commercial offering in Vietnam.
-

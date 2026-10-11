@@ -21,6 +21,7 @@ public sealed class ComplianceRegister
 {
     private readonly Simulation _simulation;
     private readonly List<CompanyCompliance> _results = [];
+    private readonly Dictionary<(Company Company, int Year), CompanyCompliance> _byCompanyYear = [];
     private readonly List<Fine> _fines = [];
     private readonly HashSet<(int CompanyId, int Year)> _reconciled = [];
 
@@ -30,6 +31,32 @@ public sealed class ComplianceRegister
     }
 
     public IReadOnlyList<CompanyCompliance> Results => _results;
+
+    /// <summary>
+    /// The company's settlement for a year, or null while the year is live. One dictionary, so the
+    /// question every caller asks is a lookup rather than a scan of the whole register. A register put
+    /// back from a snapshot fills its results in one pass, so the dictionary is built from them the
+    /// first time it is asked rather than maintained in two places.
+    /// </summary>
+    public CompanyCompliance? For(Company company, int year)
+    {
+        ArgumentNullException.ThrowIfNull(company);
+
+        if (_byCompanyYear.TryGetValue((company, year), out CompanyCompliance? known))
+        {
+            return known;
+        }
+
+        CompanyCompliance? found = _results.FirstOrDefault(candidate =>
+            ReferenceEquals(candidate.Company, company) && candidate.Year == year);
+
+        if (found is not null)
+        {
+            _byCompanyYear[(company, year)] = found;
+        }
+
+        return found;
+    }
 
     public IReadOnlyList<Fine> Fines => _fines;
 
@@ -125,10 +152,10 @@ public sealed class ComplianceRegister
                 $"Company '{company.Name}' has already been reconciled for year {year}.");
         }
 
-        Parameters parameters = _simulation.TradingSystems.Single().Parameters;
-        decimal obligation = new CompliancePosition(_simulation).EmissionsFor(company, year);
+        Parameters parameters = _simulation.Rules;
+        decimal obligation = new Standing(_simulation).Emissions(company, year);
 
-        (decimal offsetsSurrendered, decimal allowancesSurrendered, decimal shortfall) = Cover(company, year, obligation, parameters);
+        (decimal offsetsSurrendered, decimal allowancesSurrendered, decimal shortfall) = Cover(company, year, obligation);
 
         decimal penaltyCash = shortfall * parameters.PenaltyPerTonne;
         decimal penaltyAllowanceDebit = year < _simulation.Allocation.Years.Count
@@ -160,6 +187,8 @@ public sealed class ComplianceRegister
             penaltyAllowanceDebit);
 
         _results.Add(result);
+
+        _byCompanyYear[(result.Company, result.Year)] = result;
 
         return result;
     }
@@ -208,10 +237,9 @@ public sealed class ComplianceRegister
     private (decimal Offsets, decimal Allowances, decimal Shortfall) Cover(
         Company company,
         int year,
-        decimal obligation,
-        Parameters parameters)
+        decimal obligation)
     {
-        decimal offsetLimit = Round(obligation * parameters.OffsetUsageLimit);
+        decimal offsetLimit = new Standing(_simulation).OffsetLimit(company, year);
         decimal offsets = Math.Min(_simulation.Ledger.Available(company, Product.Offset), offsetLimit);
 
         if (offsets > 0m)
@@ -222,7 +250,7 @@ public sealed class ComplianceRegister
         decimal needed = obligation - offsets;
         decimal allowances = 0m;
 
-        foreach (Product product in UsableVintages(year))
+        foreach (Product product in Standing.UsableVintages(year))
         {
             if (needed <= 0m)
             {
@@ -251,7 +279,9 @@ public sealed class ComplianceRegister
         decimal obligation,
         Parameters parameters)
     {
-        decimal held = UsableVintages(year).Sum(product => _simulation.Ledger.Available(company, product));
+        decimal held = Standing
+            .UsableVintages(year)
+            .Sum(product => _simulation.Ledger.Available(company, product));
 
         if (held <= 0m)
         {
@@ -270,7 +300,7 @@ public sealed class ComplianceRegister
 
         decimal remaining = forfeited;
 
-        foreach (Product product in UsableVintages(year).Reverse())
+        foreach (Product product in Standing.UsableVintages(year).Reverse())
         {
             if (remaining <= 0m)
             {
@@ -290,17 +320,6 @@ public sealed class ComplianceRegister
         }
 
         return (banked, forfeited);
-    }
-
-    /// <summary>The compliance year's vintage first, then older vintages oldest first.</summary>
-    private static IEnumerable<Product> UsableVintages(int year)
-    {
-        yield return Product.Allowance(year);
-
-        for (int vintage = 0; vintage < year; vintage++)
-        {
-            yield return Product.Allowance(vintage);
-        }
     }
 
     private void RequireYear(int year)

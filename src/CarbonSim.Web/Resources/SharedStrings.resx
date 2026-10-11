@@ -112,7 +112,7 @@
   <data name="Vintage" xml:space="preserve"><value>Vintage</value></data>
   <data name="TotalVolume" xml:space="preserve"><value>Total volume</value></data>
   <data name="ClearedAt" xml:space="preserve"><value>Cleared at</value></data>
-  <data name="TotalAwarded" xml:space="preserve"><value>Awarded</value></data>
+  <data name="TotalAwarded" xml:space="preserve"><value>Awarded (all bidders)</value></data>
   <data name="YouBid" xml:space="preserve"><value>You bid</value></data>
   <data name="BidVolume" xml:space="preserve"><value>Bid volume</value></data>
   <data name="UnitBidPrice" xml:space="preserve"><value>Bid price</value></data>
@@ -157,7 +157,9 @@
   <data name="Rank" xml:space="preserve"><value>Rank</value></data>
   <data name="Company" xml:space="preserve"><value>Company</value></data>
   <data name="UnitNamePlayer" xml:space="preserve"><value>Unit (player)</value></data>
-  <data name="FinalLongShortPosition" xml:space="preserve"><value>Final position</value></data>
+  <data name="FinalLongShortPosition" xml:space="preserve"><value>Final long/short position</value></data>
+  <data name="AllowancesHeld" xml:space="preserve"><value>Allowances held</value></data>
+  <data name="FilterUnits" xml:space="preserve"><value>Filter units</value></data>
   <data name="System" xml:space="preserve"><value>System</value></data>
   <data name="UnitName" xml:space="preserve"><value>Unit</value></data>
   <data name="Sector" xml:space="preserve"><value>Sector</value></data>
@@ -209,7 +211,36 @@
   <data name="NoSimulations" xml:space="preserve"><value>No simulation is running yet.</value></data>
   <data name="Language" xml:space="preserve"><value>Language</value></data>
   <data name="English" xml:space="preserve"><value>English</value></data>
-  <data name="Vietnamese" xml:space="preserve"><value>Vietnamese</value></data>
+  <data name="Vietnamese" xml:space="preserve"><value>Tiếng Việt</value></data>
+  <data name="SimulationInProgress" xml:space="preserve"><value>Simulation under way</value></data>
+  <data name="MyWon" xml:space="preserve"><value>My won</value></data>
+  <data name="MyPaid" xml:space="preserve"><value>My paid</value></data>
+  <data name="Buying" xml:space="preserve"><value>Buying</value></data>
+  <data name="Selling" xml:space="preserve"><value>Selling</value></data>
+  <data name="OtcBestPrice" xml:space="preserve"><value>OTC best price</value></data>
+  <data name="FillOrKillHint" xml:space="preserve"><value>Leave this unticked to let the order fill in part; tick it to cancel whatever cannot be filled at once.</value></data>
+  <data name="Dismiss" xml:space="preserve"><value>Dismiss</value></data>
+  <data name="Compliant" xml:space="preserve"><value>Compliant</value></data>
+  <data name="AdminSwitchOff" xml:space="preserve"><value>Switch messaging off</value></data>
+  <data name="AdminSwitchOn" xml:space="preserve"><value>Switch messaging on</value></data>
+  <data name="AdminChooseUnit" xml:space="preserve"><value>Choose a unit first.</value></data>
+  <data name="AdminChooseCompany" xml:space="preserve"><value>Choose a company first.</value></data>
+  <data name="AdminFineNeedsDescription" xml:space="preserve"><value>A fine needs a description.</value></data>
+  <data name="AdminVolumeNeeded" xml:space="preserve"><value>Enter a volume greater than zero.</value></data>
+  <data name="AdminFinedUnit" xml:space="preserve"><value>Fined {0} {1}</value></data>
+  <data name="AdminOffsetsGivenTo" xml:space="preserve"><value>Handed {0} offsets to {1}</value></data>
+  <data name="AdminAbatementCommittedFor" xml:space="preserve"><value>Committed {0} for {1}</value></data>
+  <data name="AdminShockAppliedToUnit" xml:space="preserve"><value>Changed {0} year {1} emissions by {2} t</value></data>
+  <data name="OrderFilled" xml:space="preserve"><value>Filled {0} at {1}</value></data>
+  <data name="OrderPartlyFilled" xml:space="preserve"><value>Filled {0}, {1} still resting at {2}</value></data>
+  <data name="OrderResting" xml:space="preserve"><value>Resting: {0} at {1}</value></data>
+  <data name="OrderRejected" xml:space="preserve"><value>The order was not accepted.</value></data>
+  <data name="OrderSent" xml:space="preserve"><value>Order sent.</value></data>
+  <data name="AverageAllowancePriceAllChannels" xml:space="preserve"><value>Average allowance price (all channels)</value></data>
+  <data name="AuctionAveragePrice" xml:space="preserve"><value>Auction average price</value></data>
+  <data name="AdminChangeRules" xml:space="preserve"><value>Change the rules</value></data>
+  <data name="AdminChangeRulesHint" xml:space="preserve"><value>Move the collar a tonne may trade between while the year runs. The market re-quotes within a tick.</value></data>
+  <data name="AdminRulesChanged" xml:space="preserve"><value>The rules are now floor {0}, ceiling {1}.</value></data>
   <data name="Message" xml:space="preserve"><value>Message</value></data>
   <data name="Send" xml:space="preserve"><value>Send</value></data>
   <data name="Rules" xml:space="preserve"><value>Rules</value></data>
@@ -224,6 +255,13 @@
   <data name="AnnualCapReductionRate" xml:space="preserve"><value>Annual cap reduction</value></data>
   <data name="FreeAllocationShare" xml:space="preserve"><value>Free allocation share</value></data>
   <data name="GovernmentReserveToAuctionPercent" xml:space="preserve"><value>Government reserve re-offered at auction (share)</value></data>
+  <data name="ForwardVintageShare" xml:space="preserve"><value>Forward vintage share</value></data>
+  <data name="TradingIsHalted" xml:space="preserve"><value>Trading is halted: orders and offers are only taken while the year is running.</value></data>
+  <data name="AuctionIsClosed" xml:space="preserve"><value>The auction is closed: bids are only taken while the auction window is open.</value></data>
+  <data name="RulesChangedLine" xml:space="preserve"><value>Rules changed: floor {0} to {1}, ceiling {2} to {3}.</value></data>
+  <data name="RulesReleasedOrders" xml:space="preserve"><value>{0} orders outside the new band were released.</value></data>
+  <data name="RulesReleasedBids" xml:space="preserve"><value>{0} auction bids were released.</value></data>
+  <data name="BidReleased" xml:space="preserve"><value>Your bid for {0} t at {1} in auction {2} of year {3} was released: the floor is now {4} and the ceiling {5}.</value></data>
   <data name="OffsetUsageLimit" xml:space="preserve"><value>Offset usage limit</value></data>
   <data name="PenaltyPerTonne" xml:space="preserve"><value>Penalty per tonne</value></data>
   <data name="PenaltyAllowanceDebit" xml:space="preserve"><value>Penalty allowance debit</value></data>
@@ -241,10 +279,12 @@
   <data name="Issued" xml:space="preserve"><value>Issued</value></data>
   <data name="CalculatorHint" xml:space="preserve"><value>Price x volume = capital cost.</value></data>
   <data name="ComplianceCostCalculator" xml:space="preserve"><value>Compliance cost calculator</value></data>
-  <data name="People" xml:space="preserve"><value>People</value></data>
+  <data name="HumanCompanies" xml:space="preserve"><value>Human companies</value></data>
+  <data name="AiCompanies" xml:space="preserve"><value>AI companies</value></data>
   <data name="None" xml:space="preserve"><value>None</value></data>
   <data name="Total" xml:space="preserve"><value>Total</value></data>
   <data name="OpenSimulation" xml:space="preserve"><value>Open</value></data>
+  <data name="SignedInAs" xml:space="preserve"><value>Signed in as {0}</value></data>
   <data name="Companies" xml:space="preserve"><value>Companies</value></data>
   <data name="Units" xml:space="preserve"><value>Units</value></data>
   <data name="SectorEmissions" xml:space="preserve"><value>Sectors</value></data>
@@ -346,6 +386,7 @@
   <data name="AdminShockApplied" xml:space="preserve"><value>The modification has been applied.</value></data>
   <data name="AdminMessagingSaved" xml:space="preserve"><value>The messaging setting has been saved.</value></data>
   <data name="AdminRegistrationSaved" xml:space="preserve"><value>The registration settings have been saved.</value></data>
+  <data name="AdminYearOver" xml:space="preserve"><value>The clock has run out of time for this year. Close the year to carry on.</value></data>
   <data name="AdminTimeLeftInYear" xml:space="preserve"><value>Time left in the year</value></data>
   <data name="AdminAuctionOpensIn" xml:space="preserve"><value>Next auction opens in</value></data>
   <data name="AdminAuctionClosesIn" xml:space="preserve"><value>Auction closes in</value></data>
@@ -363,4 +404,5 @@
   <data name="AdminAbatementFor" xml:space="preserve"><value>Abatement for the chosen unit</value></data>
   <data name="DisplayCurrency" xml:space="preserve"><value>Display currency</value></data>
   <data name="VndPerUsdRate" xml:space="preserve"><value>VND per USD</value></data>
+  <data name="SetupPercentHint" xml:space="preserve"><value>Type a percentage: 3 and 3% both mean three hundredths.</value></data>
 </root>

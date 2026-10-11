@@ -60,22 +60,24 @@ public sealed class BotFillBroadcastTests : IClassFixture<SimulationTestHost>, I
         SimulationClockService driver = _host.CreateDriver();
         await driver.StartAsync(_simulationId);
 
-        // Past 60% of the year, where both bots' trade triggers lie, their orders cross and the
-        // fill happens while the tick is running rather than in response to anything a player did.
-        _host.FakeTime.Advance(TimeSpan.FromMinutes(13));
+        // Late in the year, past both of the bots' market passes, their orders cross and the fill
+        // happens while the tick is running rather than in response to anything a player did.
+        _host.FakeTime.Advance(TimeSpan.FromMinutes(19));
         await driver.TickAsync(_simulationId);
 
         await WaitForExchangeFillAsync();
 
         List<HubEvent> fills = ExchangeFills();
+
         fills.Should().ContainSingle();
         fills[0].Args[1].Should().Be("Vintage 1");
         Convert.ToDecimal(fills[0].Args[3], CultureInfo.InvariantCulture).Should().Be(1_000m);
         fills[0].Args[4].Should().Be(TestRunFactory.RedRiverCompany);
         fills[0].Args[5].Should().Be(TestRunFactory.DeltaCompany);
 
-        // A later player order that does not trade must not re-announce the bot's fill.
-        await runs.PlaceOrderAsync(_simulationId, _delta.Actor, 1, "Vintage 1", "Buy", "Limit", 1m, 90m);
+        // A later player order that does not trade must not re-announce the bot's fill. It has to
+        // be inside the volatility band, which is anchored on the price the bots traded at.
+        await runs.PlaceOrderAsync(_simulationId, _delta.Actor, 1, "Vintage 1", "Buy", "Limit", 1m, 100m);
         await Task.Delay(TimeSpan.FromMilliseconds(200));
 
         ExchangeFills().Should().ContainSingle();
@@ -88,7 +90,9 @@ public sealed class BotFillBroadcastTests : IClassFixture<SimulationTestHost>, I
 
     private async Task WaitForExchangeFillAsync()
     {
-        for (int attempt = 0; attempt < 50 && ExchangeFills().Count == 0; attempt++)
+        // Long polling needs a moment: a tick that clears three auctions and lands an exchange fill
+        // sends a run of events, and the connection has to drain them all.
+        for (int attempt = 0; attempt < 300 && ExchangeFills().Count == 0; attempt++)
         {
             await Task.Delay(TimeSpan.FromMilliseconds(100));
         }

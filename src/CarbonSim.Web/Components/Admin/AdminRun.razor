@@ -1,5 +1,6 @@
 @page "/admin/run/{SimulationId:guid}"
 @layout AdminLayout
+@using CarbonSim.Web.Simulations
 @inject IStringLocalizer<SharedStrings> Strings
 @inject AdminContext Context
 
@@ -18,9 +19,12 @@ else
                 <div><dt>@Strings["State"]</dt><dd>@Display.State(Strings, run.State)</dd></div>
                 <div><dt>@Strings["Year"]</dt><dd>@run.Year / @run.Years</dd></div>
                 <div><dt>@Strings["AuctionNumber"]</dt><dd>@run.Auction / @run.AuctionsPerYear</dd></div>
-                <div><dt>@Strings["AdminTimeLeftInYear"]</dt><dd>@Display.Duration(run.TimeLeftInYear)</dd></div>
-                <div><dt>@Strings["AdminAuctionOpensIn"]</dt><dd>@Display.Duration(run.TimeToAuctionOpen)</dd></div>
-                <div><dt>@Strings["AdminAuctionClosesIn"]</dt><dd>@Display.Duration(run.TimeToAuctionClose)</dd></div>
+                @if (run.CountdownsApply)
+                {
+                    <div><dt>@Strings["AdminTimeLeftInYear"]</dt><dd>@Display.Duration(run.TimeLeftInYear)</dd></div>
+                    <div><dt>@Strings["AdminAuctionOpensIn"]</dt><dd>@Display.Duration(run.TimeToAuctionOpen)</dd></div>
+                    <div><dt>@Strings["AdminAuctionClosesIn"]</dt><dd>@Display.Duration(run.TimeToAuctionClose)</dd></div>
+                }
             </dl>
         </section>
 
@@ -36,7 +40,7 @@ else
                 {
                     <button class="button ghost" id="admin-pause" @onclick="PauseAsync">@Strings["AdminPause"]</button>
                 }
-                else if (run.State is "Paused" or "PausedAfterAuction" or "TradingHalted")
+                else if (run.CanResume)
                 {
                     <button class="button ghost" id="admin-resume" @onclick="ResumeAsync">@Strings["AdminResume"]</button>
                 }
@@ -62,70 +66,83 @@ else
                 }
             </div>
 
+            @if (run.YearIsOver)
+            {
+                <p class="notice notice-status" id="admin-year-over">@Strings["AdminYearOver"]</p>
+            }
+
             <label>
                 @Strings["AdminHaltWarn"]
                 <input id="admin-halt-warn" type="text" inputmode="decimal" min="0" @bind="_warnSeconds" @bind:culture="CultureInfo.CurrentCulture" />
             </label>
 
             <p>
+                @* The state is written out and the button says what pressing it does, so the two
+                   cannot be read as contradicting each other. *@
                 @Strings["AdminMessaging"]:
-                @if (run.MessagingEnabled)
-                {
-                    <span class="pill pill-inprofit">@Strings["AdminOn"]</span>
-                }
-                else
-                {
-                    <span class="pill pill-expired">@Strings["AdminOff"]</span>
-                }
+                <strong id="admin-messaging-state">@(run.MessagingEnabled ? Strings["AdminOn"] : Strings["AdminOff"])</strong>
                 <button class="button small-button" id="admin-messaging-toggle" @onclick="() => ToggleMessagingAsync(run)">
-                    @(run.MessagingEnabled ? Strings["AdminOff"] : Strings["AdminOn"])
+                    @(run.MessagingEnabled ? Strings["AdminSwitchOff"] : Strings["AdminSwitchOn"])
                 </button>
             </p>
+            @if (_messagingNotice is { } messaging)
+            {
+                <p class="notice @(messaging.IsError ? "notice-error" : "notice-status")" role="status">@messaging.Text</p>
+            }
         </section>
 
         <section class="card">
             <h2>@Strings["AdminIssueFine"]</h2>
-            <label>
+            <label for="fine-unit">
                 @Strings["UnitName"]
                 <select id="fine-unit" @bind="_fineUnitId">
                     @foreach (AdminUnitView unit in run.Units)
                     {
-                        <option value="@unit.Id">@unit.Name (@unit.Company)</option>
+                        <option value="@unit.Id">@unit.Label</option>
                     }
                 </select>
             </label>
-            <label>@Strings["AdminFineAmount"]<input id="fine-amount" type="text" inputmode="decimal" @bind="_fineAmount" @bind:culture="CultureInfo.CurrentCulture" /></label>
-            <label>@Strings["AdminFineDescription"]<input id="fine-description" type="text" @bind="_fineDescription" /></label>
+            <label for="fine-amount">@Strings["AdminFineAmount"]<input id="fine-amount" type="text" inputmode="decimal" @bind="_fineAmount" @bind:culture="CultureInfo.CurrentCulture" /></label>
+            <label for="fine-description">@Strings["AdminFineDescription"]<input id="fine-description" type="text" @bind="_fineDescription" /></label>
             <button class="button" @onclick="IssueFineAsync">@Strings["AdminIssueFine"]</button>
+            @if (_fineNotice is { } fine)
+            {
+                <p class="notice @(fine.IsError ? "notice-error" : "notice-status")" role="status">@fine.Text</p>
+            }
         </section>
 
         <section class="card">
             <h2>@Strings["AdminDisburseOffsets"]</h2>
-            <label>
-                @Strings["Company"]
-                <select id="offset-company" @bind="_offsetCompanyId">
-                    @foreach (AdminCompanyView company in run.Companies)
+            @* A unit, like the other three forms: offsets are handed to the company that owns it. *@
+            <label for="offset-unit">
+                @Strings["UnitName"]
+                <select id="offset-unit" @bind="_offsetUnitId">
+                    @foreach (AdminUnitView unit in run.Units)
                     {
-                        <option value="@company.Id">@company.Name</option>
+                        <option value="@unit.Id">@unit.Label</option>
                     }
                 </select>
             </label>
-            <label>@Strings["AdminOffsetVolume"]<input id="offset-volume" type="text" inputmode="decimal" @bind="_offsetVolume" @bind:culture="CultureInfo.CurrentCulture" /></label>
+            <label for="offset-volume">@Strings["AdminOffsetVolume"]<input id="offset-volume" type="text" inputmode="decimal" @bind="_offsetVolume" @bind:culture="CultureInfo.CurrentCulture" /></label>
             <button class="button" @onclick="DisburseAsync">@Strings["AdminDisburseOffsets"]</button>
+            @if (_offsetNotice is { } offsets)
+            {
+                <p class="notice @(offsets.IsError ? "notice-error" : "notice-status")" role="status">@offsets.Text</p>
+            }
         </section>
 
         <section class="card">
             <h2>@Strings["AdminAddAbatement"]</h2>
-            <label>
+            <label for="abatement-unit">
                 @Strings["UnitName"]
                 <select id="abatement-unit" @bind="_abatementUnitId">
                     @foreach (AdminUnitView unit in run.Units)
                     {
-                        <option value="@unit.Id">@unit.Name (@unit.Company)</option>
+                        <option value="@unit.Id">@unit.Label</option>
                     }
                 </select>
             </label>
-            <label>
+            <label for="abatement-option">
                 @Strings["AdminAbatementFor"]
                 <select id="abatement-option" @bind="_abatementIndex">
                     @foreach (AdminAbatementOptionView option in OptionsFor(run))
@@ -135,22 +152,61 @@ else
                 </select>
             </label>
             <button class="button" @onclick="AddAbatementAsync">@Strings["AdminAddAbatement"]</button>
+            @if (_abatementNotice is { } abatement)
+            {
+                <p class="notice @(abatement.IsError ? "notice-error" : "notice-status")" role="status">@abatement.Text</p>
+            }
         </section>
 
         <section class="card">
             <h2>@Strings["AdminShock"]</h2>
-            <label>
+            <label for="shock-unit">
                 @Strings["UnitName"]
                 <select id="shock-unit" @bind="_shockUnitId">
                     @foreach (AdminUnitView unit in run.Units)
                     {
-                        <option value="@unit.Id">@unit.Name (@unit.Company)</option>
+                        <option value="@unit.Id">@unit.Label</option>
                     }
                 </select>
             </label>
-            <label>@Strings["AdminShockYear"]<input id="shock-year" type="text" inputmode="decimal" min="1" max="@run.Years" @bind="_shockYear" @bind:culture="CultureInfo.CurrentCulture" /></label>
-            <label>@Strings["AdminShockTonnes"]<input id="shock-tonnes" type="text" inputmode="decimal" @bind="_shockTonnes" @bind:culture="CultureInfo.CurrentCulture" /></label>
+            <label for="shock-year">@Strings["AdminShockYear"]<input id="shock-year" type="text" inputmode="decimal" min="1" max="@run.Years" @bind="_shockYear" @bind:culture="CultureInfo.CurrentCulture" /></label>
+            <label for="shock-tonnes">@Strings["AdminShockTonnes"]<input id="shock-tonnes" type="text" inputmode="decimal" @bind="_shockTonnes" @bind:culture="CultureInfo.CurrentCulture" /></label>
             <button class="button" @onclick="ApplyShockAsync">@Strings["AdminApply"]</button>
+            @if (_shockNotice is { } shock)
+            {
+                <p class="notice @(shock.IsError ? "notice-error" : "notice-status")" role="status">@shock.Text</p>
+            }
+        </section>
+
+        <section class="card">
+            <h2>@Strings["AdminChangeRules"]</h2>
+            <p class="muted small">@Strings["AdminChangeRulesHint"]</p>
+            <label for="rules-floor">
+                @Strings["AuctionFloorPrice"]
+                <input id="rules-floor" type="text" inputmode="decimal" @bind="_floor" @bind:culture="CultureInfo.CurrentCulture" />
+            </label>
+            <label for="rules-ceiling">
+                @Strings["AuctionCeilingPrice"]
+                <input id="rules-ceiling" type="text" inputmode="decimal" @bind="_ceiling" @bind:culture="CultureInfo.CurrentCulture" />
+            </label>
+            <button class="button" id="admin-change-rules" @onclick="ChangeRulesAsync">@Strings["AdminChangeRules"]</button>
+            @if (run.RuleChanges.Count > 0)
+            {
+                <ul class="settings">
+                    @foreach (RuleChange change in run.RuleChanges.AsEnumerable().Reverse().Take(5))
+                    {
+                        <li>
+                            @Strings["Year_X", change.Year] &middot; @change.By &middot;
+                            @Strings["AuctionFloorPrice"] @Display.Price(change.OldFloor) &rarr; @Display.Price(change.NewFloor) &middot;
+                            @Strings["AuctionCeilingPrice"] @Display.Price(change.OldCeiling) &rarr; @Display.Price(change.NewCeiling)
+                        </li>
+                    }
+                </ul>
+            }
+            @if (_rulesNotice is { } rules)
+            {
+                <p class="notice @(rules.IsError ? "notice-error" : "notice-status")" role="status">@rules.Text</p>
+            }
         </section>
 
         <section class="card wide" tabindex="0">
@@ -197,6 +253,8 @@ else
                 <div><dt>@Strings["YearLength"]</dt><dd>@Display.Duration(run.Parameters.YearLength)</dd></div>
                 <div><dt>@Strings["AuctionDuration"]</dt><dd>@Display.Duration(run.Parameters.AuctionDuration)</dd></div>
                 <div><dt>@Strings["VolatilityBand"]</dt><dd>@Display.Percent(run.Parameters.VolatilityBand)</dd></div>
+                <div><dt>@Strings["GovernmentReserveToAuctionPercent"]</dt><dd>@Display.Percent(run.Parameters.GovernmentReserveToAuctionPercent)</dd></div>
+                <div><dt>@Strings["ForwardVintageShare"]</dt><dd>@Display.Percent(run.Parameters.ForwardVintageShare)</dd></div>
             </dl>
         </section>
     </div>
@@ -210,10 +268,18 @@ else
     private AdminRunDetail? Run => Snapshot?.RunId == SimulationId ? Snapshot?.Run : null;
 
     private double? _warnSeconds;
+    private ConsoleNotice? _messagingNotice;
+    private ConsoleNotice? _fineNotice;
+    private ConsoleNotice? _offsetNotice;
+    private ConsoleNotice? _abatementNotice;
+    private ConsoleNotice? _shockNotice;
+    private ConsoleNotice? _rulesNotice;
+    private decimal _floor;
+    private decimal _ceiling;
     private int _fineUnitId;
     private decimal _fineAmount = 10_000m;
     private string _fineDescription = string.Empty;
-    private int _offsetCompanyId;
+    private int _offsetUnitId;
     private decimal _offsetVolume = 1_000m;
     private int _abatementUnitId;
     private int _abatementIndex;
@@ -223,6 +289,41 @@ else
 
     private IReadOnlyList<AdminAbatementOptionView> OptionsFor(AdminRunDetail run) =>
         run.Units.FirstOrDefault(unit => unit.Id == _abatementUnitId)?.Opportunities ?? [];
+
+    /// <summary>
+    /// The forms open on the first unit and the first company, so a control that needs a choice
+    /// has one and the trainer is not looking at a blank box wondering whether it worked.
+    /// </summary>
+    protected override void OnParametersSet()
+    {
+        if (Run is not { } run || run.Units.Count == 0 || run.Companies.Count == 0)
+        {
+            return;
+        }
+
+        _fineUnitId = Selected(_fineUnitId, run.Units.Select(unit => unit.Id));
+        _abatementUnitId = Selected(_abatementUnitId, run.Units.Select(unit => unit.Id));
+        _shockUnitId = Selected(_shockUnitId, run.Units.Select(unit => unit.Id));
+        _offsetUnitId = Selected(_offsetUnitId, run.Units.Select(unit => unit.Id));
+
+        if (_floor <= 0m)
+        {
+            _floor = run.Parameters.AuctionFloorPrice;
+            _ceiling = run.Parameters.AuctionCeilingPrice;
+        }
+    }
+
+    private static int Selected(int chosen, IEnumerable<int> available) =>
+        available.Contains(chosen) ? chosen : available.First();
+
+    private static string UnitName(AdminRunDetail run, int unitId) =>
+        run.Units.FirstOrDefault(unit => unit.Id == unitId)?.Label ?? string.Empty;
+
+    private static string CompanyName(AdminRunDetail run, int companyId) =>
+        run.Companies.FirstOrDefault(company => company.Id == companyId)?.Name ?? string.Empty;
+
+    private static int CompanyOf(AdminRunDetail run, int unitId) =>
+        run.Units.FirstOrDefault(unit => unit.Id == unitId)?.CompanyId ?? 0;
 
     private Task BeginAsync(AdminRunDetail run) =>
         Context.ActAsync(session => session.BeginYearAsync(SimulationId), Strings["AdminYearStarted"]);
@@ -240,9 +341,10 @@ else
         Context.ActAsync(session => session.EndSimulationAsync(SimulationId), Strings["AdminSimulationEnded"]);
 
     private Task ToggleMessagingAsync(AdminRunDetail run) =>
-        Context.ActAsync(
+        ActAsync(
             session => session.SetMessagingAsync(SimulationId, !run.MessagingEnabled),
-            Strings["AdminMessagingSaved"]);
+            Strings["AdminMessagingSaved"],
+            notice => _messagingNotice = notice);
 
     private Task ToggleAutoTradeAsync(AdminUnitView unit) =>
         Context.ActAsync(session => session.SetAutoTradeAsync(SimulationId, unit.Id, !unit.AutoTrade));
@@ -256,23 +358,98 @@ else
             warn is null ? Strings["AdminHaltedStatus"] : Strings["AdminHaltWarned"]);
     }
 
-    private Task IssueFineAsync() =>
-        Context.ActAsync(
+    private Task IssueFineAsync()
+    {
+        if (Run is not { } run || _fineUnitId <= 0)
+        {
+            _fineNotice = new ConsoleNotice(Strings["AdminChooseUnit"], IsError: true);
+            return Task.CompletedTask;
+        }
+
+        if (string.IsNullOrWhiteSpace(_fineDescription))
+        {
+            _fineNotice = new ConsoleNotice(Strings["AdminFineNeedsDescription"], IsError: true);
+            return Task.CompletedTask;
+        }
+
+        return ActAsync(
             session => session.IssueFineAsync(SimulationId, _fineUnitId, _fineAmount, _fineDescription),
-            Strings["AdminFineIssued"]);
+            Strings["AdminFinedUnit", UnitName(run, _fineUnitId), Display.Money(_fineAmount)],
+            notice => _fineNotice = notice);
+    }
 
-    private Task DisburseAsync() =>
-        Context.ActAsync(
-            session => session.DisburseOffsetsAsync(SimulationId, _offsetCompanyId, _offsetVolume),
-            Strings["AdminOffsetsDisbursed"]);
+    private Task DisburseAsync()
+    {
+        if (Run is not { } run || _offsetUnitId <= 0 || CompanyOf(run, _offsetUnitId) <= 0)
+        {
+            _offsetNotice = new ConsoleNotice(Strings["AdminChooseUnit"], IsError: true);
+            return Task.CompletedTask;
+        }
 
-    private Task AddAbatementAsync() =>
-        Context.ActAsync(
+        if (_offsetVolume <= 0m)
+        {
+            _offsetNotice = new ConsoleNotice(Strings["AdminVolumeNeeded"], IsError: true);
+            return Task.CompletedTask;
+        }
+
+        return ActAsync(
+            session => session.DisburseOffsetsAsync(SimulationId, CompanyOf(run, _offsetUnitId), _offsetVolume),
+            Strings["AdminOffsetsGivenTo", Display.Tonnes(_offsetVolume), CompanyName(run, CompanyOf(run, _offsetUnitId))],
+            notice => _offsetNotice = notice);
+    }
+
+    private Task AddAbatementAsync()
+    {
+        if (Run is not { } run || _abatementUnitId <= 0 || OptionsFor(run).Count == 0)
+        {
+            _abatementNotice = new ConsoleNotice(Strings["AdminChooseUnit"], IsError: true);
+            return Task.CompletedTask;
+        }
+
+        AdminAbatementOptionView option = OptionsFor(run).First(candidate => candidate.Index == _abatementIndex);
+
+        return ActAsync(
             session => session.AddAbatementAsync(SimulationId, _abatementUnitId, _abatementIndex),
-            Strings["AdminAbatementAdded"]);
+            Strings["AdminAbatementCommittedFor", $"{option.Code} {option.Name}", UnitName(run, _abatementUnitId)],
+            notice => _abatementNotice = notice);
+    }
 
-    private Task ApplyShockAsync() =>
-        Context.ActAsync(
+    private Task ApplyShockAsync()
+    {
+        if (Run is not { } run || _shockUnitId <= 0)
+        {
+            _shockNotice = new ConsoleNotice(Strings["AdminChooseUnit"], IsError: true);
+            return Task.CompletedTask;
+        }
+
+        return ActAsync(
             session => session.ApplyShockAsync(SimulationId, _shockUnitId, _shockYear, _shockTonnes),
-            Strings["AdminShockApplied"]);
+            Strings["AdminShockAppliedToUnit", UnitName(run, _shockUnitId), _shockYear, Display.Tonnes(_shockTonnes)],
+            notice => _shockNotice = notice);
+    }
+
+    /// <summary>Moves the collar the year trades under; the market re-quotes at once.</summary>
+    private Task ChangeRulesAsync() =>
+        ActAsync(
+            session => session.ChangeRulesAsync(SimulationId, _floor, _ceiling),
+            Strings["AdminRulesChanged", Display.Price(_floor), Display.Price(_ceiling)],
+            notice => _rulesNotice = notice);
+
+    /// <summary>
+    /// Runs a control and reports what happened where it happened: the console's own notice band
+    /// sits at the top of the page, which is out of sight from a form halfway down it, and a
+    /// refused action used to leave the trainer nothing to read at all.
+    /// </summary>
+    private async Task ActAsync(Func<IAdminSession, Task> action, string success, Action<ConsoleNotice?> report)
+    {
+        report(null);
+        await Context.ActAsync(action, success);
+
+        report(Context.Snapshot.Error is { } error
+            ? new ConsoleNotice(error, IsError: true)
+            : new ConsoleNotice(success, IsError: false));
+    }
+
+    /// <summary>What a console form has to say for itself.</summary>
+    private sealed record ConsoleNotice(string Text, bool IsError);
 }

@@ -109,7 +109,7 @@ public sealed class ScenarioLoaderTests
         ParametersOf(simulation).OverdraftInterestRate.Should().Be(0.07m);
     }
 
-    private static Parameters ParametersOf(Simulation simulation) => simulation.TradingSystems.Single().Parameters;
+    private static Parameters ParametersOf(Simulation simulation) => simulation.Rules;
 
     [Fact]
     public void The_same_scenario_loaded_twice_produces_the_same_run()
@@ -153,7 +153,7 @@ public sealed class ScenarioLoaderTests
     public void Maps_the_parameters_block_onto_the_parameters_record()
     {
         Simulation simulation = ScenarioLoader.LoadJson(Valid, "test.json");
-        Parameters parameters = simulation.TradingSystems.Single().Parameters;
+        Parameters parameters = simulation.Rules;
 
         parameters.Cap.Should().Be(1_000_000m);
         parameters.AnnualCapReductionRate.Should().Be(0.03m);
@@ -314,7 +314,7 @@ public sealed class ScenarioLoaderTests
         simulation.Units.SelectMany(unit => unit.AbatementOptions)
             .Should().OnlyContain(option => option.AnnualReduction > 0m && option.LifetimeYears > 0);
         simulation.Companies.Should().OnlyContain(company => company.Units.Count > 0);
-        simulation.TradingSystems.Single().Parameters.Validate().Should().BeEmpty();
+        simulation.Rules.Validate().Should().BeEmpty();
 
         simulation.Players.Select(player => player.Name).Should().OnlyHaveUniqueItems();
         simulation.Units.Select(unit => unit.Name).Should().OnlyHaveUniqueItems();

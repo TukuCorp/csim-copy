@@ -15,6 +15,9 @@ public enum BotTrigger
 
     /// <summary>Around the middle of the year: work the secondary markets.</summary>
     Trade,
+
+    /// <summary>Later in the year: take the resting quotes off and re-quote at prices that trade.</summary>
+    TradeAgain,
 }
 
 /// <summary>One thing a bot did, or tried to do and could not.</summary>

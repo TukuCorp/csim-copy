@@ -125,11 +125,28 @@ public sealed class Simulation
 
     public IReadOnlyList<TradingSystem> TradingSystems { get; }
 
+    /// <summary>
+    /// The rules the run is played under, as they stand now. A simulation runs one trading system
+    /// today, and everything that reads a rule reads it from here: the clock, the auctions, the books,
+    /// the bots, the screens. The collar is the one part of it a live run may change, and that goes
+    /// through the run module rather than through a setter.
+    /// </summary>
+    public TradingSystem TradingSystem => TradingSystems.Single();
+
+    public Parameters Rules => TradingSystem.Parameters;
+
     public IReadOnlyList<Player> Players { get; }
 
     public IReadOnlyList<Company> Companies { get; }
 
     public IReadOnlyList<Unit> Units { get; }
+
+    /// <summary>
+    /// Bumped whenever an administrator changes a rule mid-run - the collar today. It is host
+    /// state rather than a scenario setting: it exists so the bots can tell that the ground has
+    /// moved under them and re-quote, and it is deliberately not part of a saved run.
+    /// </summary>
+    public int RulesRevision { get; set; }
 
     public IReadOnlyList<Sector> Sectors { get; }
 

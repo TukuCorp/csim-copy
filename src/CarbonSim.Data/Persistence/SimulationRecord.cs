@@ -80,6 +80,9 @@ public sealed class ParametersRecord
 
     public decimal GovernmentReserveToAuctionPercent { get; set; }
 
+    /// <summary>Share of the next year's volume a year's last auction sold forward.</summary>
+    public decimal ForwardVintageShare { get; set; }
+
     public decimal OverdraftInterestRate { get; set; }
 }
 

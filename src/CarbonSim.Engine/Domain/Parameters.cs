@@ -41,11 +41,16 @@ public sealed record Parameters
     /// <summary>Allowances debited from the next year's allocation per tonne of uncovered obligation.</summary>
     public required decimal PenaltyAllowanceDebit { get; init; }
 
-    /// <summary>Lowest price an auction may clear at.</summary>
-    public required decimal AuctionFloorPrice { get; init; }
+    /// <summary>
+    /// Lowest price an auction may clear at. The collar is the one part of the rules a live run may
+    /// move, so these two are settable - internally, by the run module - rather than init-only, and a
+    /// required member may not have a less visible setter. The scenario loader insists on both being
+    /// in the file, and Validate rejects a ceiling that is not above the floor.
+    /// </summary>
+    public decimal AuctionFloorPrice { get; internal set; }
 
-    /// <summary>Highest price an auction may clear at.</summary>
-    public required decimal AuctionCeilingPrice { get; init; }
+    /// <summary>Highest price an auction may clear at. See <see cref="AuctionFloorPrice"/>.</summary>
+    public decimal AuctionCeilingPrice { get; internal set; }
 
     /// <summary>Number of auctions held inside one virtual year.</summary>
     public required int AuctionsPerYear { get; init; }
@@ -71,6 +76,17 @@ public sealed record Parameters
     /// this setting existed.
     /// </summary>
     public decimal GovernmentReserveToAuctionPercent { get; init; }
+
+    /// <summary>What <see cref="ForwardVintageShare"/> is when a scenario says nothing about it.</summary>
+    public const decimal DefaultForwardVintageShare = 0.20m;
+
+    /// <summary>
+    /// Share of the next year's auctionable volume the last auction of a year offers as a forward
+    /// vintage (0.20 = a fifth). It is a setting of the run rather than an argument to the schedule
+    /// so that the host and every harness build the same run: the calibration measures a run that
+    /// sells forward, and a scenario that says nothing plays the calibrated run.
+    /// </summary>
+    public decimal ForwardVintageShare { get; init; } = DefaultForwardVintageShare;
 
     /// <summary>
     /// Returns one message per value that cannot be run, so an administrator sees every
@@ -176,6 +192,11 @@ public sealed record Parameters
                 "governmentReserveToAuctionPercent",
                 "must be between 0 and 1",
                 GovernmentReserveToAuctionPercent));
+        }
+
+        if (ForwardVintageShare is < 0m or > 1m)
+        {
+            errors.Add(Message("forwardVintageShare", "must be between 0 and 1", ForwardVintageShare));
         }
 
         return errors;

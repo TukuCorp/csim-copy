@@ -18,7 +18,8 @@ else
             <dl class="metrics">
                 <div><dt>@Strings["ForecastEmissions"]</dt><dd>@Display.Tonnes(view.Position.ForecastEmissions)</dd></div>
                 <div><dt>@Strings["FreeAllowancesThisYear"]</dt><dd>@Display.Tonnes(view.Position.FreeAllocation)</dd></div>
-                <div><dt>@Strings["CurrentPosition"]</dt><dd>@Display.Position(view.Position.Shortfall, Strings)</dd></div>
+                <div><dt>@Strings["AllowancesHeld"]</dt><dd>@Display.Tonnes(view.Position.Held)</dd></div>
+                <div><dt>@Strings["CurrentPosition"]</dt><dd>@Display.Position(view.Position, Strings)</dd></div>
                 <div><dt>@Strings["BankingLimit"]</dt><dd>@Display.Percent(view.System.BankingLimit)</dd></div>
                 <div><dt>@Strings["OffsetUsageLimit"]</dt><dd>@Display.Percent(view.System.OffsetUsageLimit)</dd></div>
             </dl>
