@@ -119,9 +119,7 @@ public sealed class AdminSession : IAdminSession
             return null;
         }
 
-        string path = Path.IsPathRooted(_options.ScenarioFile)
-            ? _options.ScenarioFile
-            : Path.Combine(_environment.ContentRootPath, _options.ScenarioFile);
+        string path = _options.ScenarioPath(_environment);
 
         if (!File.Exists(path))
         {

@@ -26,7 +26,6 @@ internal static class TestScenario
             AuctionsPerYear = 4,
             YearLength = TimeSpan.FromMinutes(20),
             AuctionDuration = TimeSpan.FromMinutes(3),
-            TradingOpenShareOfYear = 0.45m,
             VolatilityBand = 0.10m,
             OverdraftInterestRate = 0.07m,
             BausGrowthBySector =

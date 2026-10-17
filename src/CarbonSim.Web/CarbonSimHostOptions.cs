@@ -40,8 +40,33 @@ public sealed class CarbonSimHostOptions
     /// </summary>
     public string RegistrationPin { get; set; } = string.Empty;
 
-    /// <summary>The scenario whose human companies can be claimed, absolute or relative to the content root.</summary>
-    public string ScenarioFile { get; set; } = "../../scenarios/vietnam-2024.json";
+    /// <summary>
+    /// The scenario whose human companies can be claimed: absolute, or relative to the content root
+    /// and then to the app's own folder, which carries the shipped scenarios (see
+    /// <see cref="ScenarioPath"/>).
+    /// </summary>
+    public string ScenarioFile { get; set; } = "scenarios/vietnam-2024.json";
+
+    /// <summary>
+    /// Where <see cref="ScenarioFile"/> points. A relative path is tried against the content root
+    /// first, so an operator's own file beside appsettings wins, and then against the app's base
+    /// folder, where the build copies the shipped scenarios - which is what makes `dotnet run` from
+    /// the source tree and a published folder started from anywhere both find the same file.
+    /// </summary>
+    public string ScenarioPath(IHostEnvironment environment)
+    {
+        ArgumentNullException.ThrowIfNull(environment);
+
+        if (Path.IsPathRooted(ScenarioFile))
+        {
+            return ScenarioFile;
+        }
+
+        string underContentRoot = Path.GetFullPath(Path.Combine(environment.ContentRootPath, ScenarioFile));
+        string underApp = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, ScenarioFile));
+
+        return File.Exists(underContentRoot) || !File.Exists(underApp) ? underContentRoot : underApp;
+    }
 
     /// <summary>
     /// Development only: starts the configured scenario as a live run at boot so `dotnet run` shows

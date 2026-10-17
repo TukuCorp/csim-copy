@@ -103,7 +103,6 @@ public static class ScenarioLoader
         Require(problems, file.AuctionsPerYear, "auctionsPerYear");
         Require(problems, file.YearLengthMinutes, "yearLengthMinutes");
         Require(problems, file.AuctionDurationMinutes, "auctionDurationMinutes");
-        Require(problems, file.TradingOpenShareOfYear, "tradingOpenShareOfYear");
         Require(problems, file.VolatilityBand, "volatilityBand");
         Require(problems, file.OverdraftInterestRate, "overdraftInterestRate");
 
@@ -153,7 +152,6 @@ public static class ScenarioLoader
             AuctionsPerYear = file.AuctionsPerYear!.Value,
             YearLength = TimeSpan.FromMinutes((double)file.YearLengthMinutes!.Value),
             AuctionDuration = TimeSpan.FromMinutes((double)file.AuctionDurationMinutes!.Value),
-            TradingOpenShareOfYear = file.TradingOpenShareOfYear!.Value,
             VolatilityBand = file.VolatilityBand!.Value,
             OverdraftInterestRate = file.OverdraftInterestRate!.Value,
             GovernmentReserveToAuctionPercent = file.GovernmentReserveToAuctionPercent ?? 0m,

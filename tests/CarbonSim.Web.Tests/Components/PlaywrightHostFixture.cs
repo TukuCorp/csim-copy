@@ -17,7 +17,7 @@ internal sealed class PlaywrightFactAttribute : FactAttribute
         if (!BrowsersInstalled())
         {
             Skip = "Playwright browsers are not installed here. Install one with "
-                + "`pwsh tests/CarbonSim.Web.Tests/bin/Debug/net9.0/playwright.ps1 install chromium`.";
+                + "`pwsh tests/CarbonSim.Web.Tests/bin/Debug/net10.0/playwright.ps1 install chromium`.";
         }
     }
 
@@ -283,7 +283,7 @@ public sealed class PlaywrightHostFixture : IAsyncLifetime
     }
 
     /// <summary>Walks up from the test's own output folder to the folder holding the solution.</summary>
-    private static string RepositoryRoot()
+    internal static string RepositoryRoot()
     {
         DirectoryInfo? directory = new(AppContext.BaseDirectory);
 
@@ -296,7 +296,7 @@ public sealed class PlaywrightHostFixture : IAsyncLifetime
             ?? throw new InvalidOperationException("The repository root could not be found from the test output folder.");
     }
 
-    private static int FreePort()
+    internal static int FreePort()
     {
         TcpListener listener = new(IPAddress.Loopback, 0);
         listener.Start();

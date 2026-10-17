@@ -78,8 +78,6 @@ public sealed class DraftParameters
 
     public decimal? AuctionDurationMinutes { get; set; }
 
-    public decimal? TradingOpenShareOfYear { get; set; }
-
     public decimal? VolatilityBand { get; set; }
 
     public decimal? OverdraftInterestRate { get; set; }

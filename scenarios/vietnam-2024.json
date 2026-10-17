@@ -16,7 +16,6 @@
     "auctionsPerYear": 4,
     "yearLengthMinutes": 20,
     "auctionDurationMinutes": 2.25,
-    "tradingOpenShareOfYear": 0.45,
     "volatilityBand": 0.1,
     "governmentReserveToAuctionPercent": 0.0,
     "forwardVintageShare": 0.20,

@@ -74,8 +74,6 @@ public sealed class ParametersRecord
 
     public TimeSpan AuctionDuration { get; set; }
 
-    public decimal TradingOpenShareOfYear { get; set; }
-
     public decimal VolatilityBand { get; set; }
 
     public decimal GovernmentReserveToAuctionPercent { get; set; }

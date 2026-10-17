@@ -24,9 +24,7 @@ public sealed class ScenarioCompanyCatalog
                 $"'{CarbonSimHostOptions.SectionName}:ScenarioFile' must name a scenario file.");
         }
 
-        string path = Path.IsPathRooted(options.ScenarioFile)
-            ? options.ScenarioFile
-            : Path.Combine(environment.ContentRootPath, options.ScenarioFile);
+        string path = options.ScenarioPath(environment);
 
         _humanCompanies = new Lazy<IReadOnlyList<string>>(
             () => ReadHumanCompanies(path),

@@ -31,6 +31,7 @@ public sealed class PlayerSession : IPlayerSession
     private readonly SimulationRegistry _runs;
     private readonly IServiceScopeFactory _scopes;
     private readonly AuthenticationStateProvider _authentication;
+    private PlayerAccount? _account;
 
     public PlayerSession(
         SimulationRegistry runs,
@@ -192,10 +193,20 @@ public sealed class PlayerSession : IPlayerSession
             return null;
         }
 
+        // The session lives as long as one circuit, and the account it is signed in as does not
+        // change under it (the company is claimed once, at registration), so it is read once rather
+        // than on every once-a-second refresh.
+        if (_account?.Id == accountId)
+        {
+            return _account;
+        }
+
         using IServiceScope scope = _scopes.CreateScope();
         IAccountStore store = scope.ServiceProvider.GetRequiredService<IAccountStore>();
 
-        return await store.FindByIdAsync(accountId).ConfigureAwait(false);
+        _account = await store.FindByIdAsync(accountId).ConfigureAwait(false);
+
+        return _account;
     }
 
     private static RunSummary Summarise(HostedRun run)

@@ -29,7 +29,7 @@ a launch profile). The keys a trainer cares about:
 | Key | What it does |
 |---|---|
 | ConnectionString | The SQLite file the host keeps its accounts and saved exercises in. |
-| ScenarioFile | The scenario the console offers to build an exercise from, relative to the content root. Ship it as scenarios/vietnam-2024.json. |
+| ScenarioFile | The scenario the console offers to build an exercise from. The default, scenarios/vietnam-2024.json, is copied into every build, so it needs no setting. |
 | RegistrationPin | The PIN a player must quote to register. Empty closes registration. |
 | AdminEmail / AdminPassword | The bootstrap trainer account the host creates at boot. Leave empty and there is no way into the console. |
 | EmailSender | Log writes reset codes to the log; InMemory keeps them in the process. |
@@ -55,7 +55,8 @@ not have to guess. When you explain the collar from the deck, give it in the cur
 
 ### 2.2 Build the exercise
 
-1. Start the host (dotnet run --project src/CarbonSim.Web) and sign in with the trainer account.
+1. Start the host with `powershell -File scripts/run-demo.ps1` (docs/deployment.md, section 2). The
+   banner prints the trainer sign-in and the room PIN. Sign in with the trainer account.
 2. Open **New exercise** (/admin/setup). The screen loads the configured scenario into an editable
    draft: the exercise name and seed, the rules (cap, reduction rate, free allocation share, offset
    limit, banking limit, penalty, collar, auctions per year, year length, auction window, volatility
@@ -193,8 +194,9 @@ unit, so a spreadsheet reads them as numbers. The surrender status page
 
 ## 7. Recovery
 
-- **A run that is under way lives in memory.** The host saves it at each year end and after each
-  control, so a crash loses at most the current year. The saved copy appears under **Saved
+- **A run that is under way lives in memory.** The host saves it when the exercise is created and at
+  each year end, so a crash loses the current year and nothing before it; that year is played again
+  after the reload. The saved copy appears under **Saved
   exercises**; press **Load** to bring it back with its own clock, markets and bots. The live and
   saved copies of the same exercise are the same id, so loading a saved run that is still live is
   refused rather than overwriting it.

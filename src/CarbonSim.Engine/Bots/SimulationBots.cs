@@ -41,10 +41,7 @@ public sealed class SimulationBots
 
         foreach (Company company in simulation.Companies)
         {
-            List<Unit> units =
-            [
-                .. company.Units.Where(unit => company.Owner.Kind == PlayerKind.Ai || unit.AutoTrade),
-            ];
+            List<Unit> units = Automated(company);
 
             if (units.Count > 0)
             {
@@ -54,6 +51,46 @@ public sealed class SimulationBots
 
         return new SimulationBots(bots);
     }
+
+    /// <summary>
+    /// The fleet after AutoTrade switches have changed which units are automated. A company whose
+    /// automated units are unchanged keeps its bot - progress, trigger times and all - so only a
+    /// company that was switched draws from the seeded stream. A new bot plays at the fleet's
+    /// difficulty and starts from the price the company's old bot expected, if it had one.
+    /// </summary>
+    public static SimulationBots Refresh(Simulation simulation, SimulationBots? current)
+    {
+        ArgumentNullException.ThrowIfNull(simulation);
+
+        IReadOnlyList<ComplianceBot> existing = current?.Bots ?? [];
+        BotSettings settings = existing.Count > 0 ? existing[0].Settings : BotSettings.For(BotDifficulty.Normal);
+        List<ComplianceBot> bots = [];
+
+        foreach (Company company in simulation.Companies)
+        {
+            List<Unit> units = Automated(company);
+            ComplianceBot? kept = existing.FirstOrDefault(bot => bot.Company.Id == company.Id);
+
+            if (units.Count == 0)
+            {
+                continue;
+            }
+
+            bots.Add(kept is not null && kept.Units.Select(unit => unit.Id).SequenceEqual(units.Select(unit => unit.Id))
+                ? kept
+                : new ComplianceBot(
+                    company,
+                    units,
+                    kept?.Settings ?? settings,
+                    simulation.Random,
+                    kept?.ExpectedAllowancePrice ?? simulation.Rules.AuctionFloorPrice));
+        }
+
+        return new SimulationBots(bots);
+    }
+
+    private static List<Unit> Automated(Company company) =>
+        [.. company.Units.Where(unit => company.Owner.Kind == PlayerKind.Ai || unit.AutoTrade)];
 
     /// <summary>Gives every bot its turn for the time the clock is showing.</summary>
     public IReadOnlyList<BotAction> Act(Simulation simulation, SimulationClock clock, BotMarkets markets)

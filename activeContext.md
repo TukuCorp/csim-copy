@@ -1,13 +1,13 @@
 # activeContext — CarbonSim clone build plan
 
-Status: plan written 2026-09-15, awaiting go-ahead to start Phase 0.
-Owner decision still open: keep Blazor Server (assumed) or switch to React before Phase 3.
+Status: v1 phases 0-6, seven QA rounds and the architecture pass are done; current work is the internal demo section at the end.
+UI stack: Blazor Server, decided by building it (Phase 3).
 
 ## Definition of done for v1
 A trainer can run the Vietnam two-day agenda end to end: configure a trading system with ~240 units (about 40 human, rest bots), run 3–6 virtual years of 20 minutes with 4 auctions each, watch live prices, pause and shock the market, and show the system report and leaderboard, in English and Vietnamese, on one server. Behaviour passes the fidelity envelopes in `research/2026-09-13_bot-logic-and-numeric-fidelity-options.md` §6 and the click-through in `research/2026-09-13_carbonsim-video-insights.md`.
 
 ## Phase 0 — Environment and skeleton
-- [~] Install .NET 10 SDK; confirm `dotnet --version` is 10.x — **blocked: not installing (instruction). Machine has 9.0.312, so the solution targets `net9.0`.** `Directory.Build.props` holds the single `TargetFramework` line to flip when the SDK is installed
+- [x] Install .NET 10 SDK; confirm `dotnet --version` is 10.x - done 2026-10-17 (10.0.402), solution on net10.0
 - [x] Create `CarbonSim.sln` with Engine, Data, Web projects and two test projects; nullable + warnings-as-errors; EditorConfig (plus `Directory.Build.props`, `Directory.Packages.props`, `dotnet format` clean)
 - [x] `.gitignore` for .NET (bin/obj, .vs, *.user, SQLite files, test results)
 - [x] CI-free local gate: `dotnet build` zero warnings/errors and `dotnet test` green
@@ -87,7 +87,7 @@ Order follows the demo video; each screen has a bUnit test and a Playwright step
 
 ## Parallel track (non-code)
 - [ ] Send requests for the three Training Reports to ETP/UNOPS, VNEEC and Josh Margolis; ask VnEconomy programme about results sharing
-- [ ] Decide Blazor vs React before Phase 3 starts
+- [x] Decide Blazor vs React before Phase 3 starts - Blazor Server shipped
 - [ ] Watch for a licensing conversation with EDF if the clone is to be offered commercially in Vietnam
 
 ## Review / results
@@ -1296,3 +1296,91 @@ re-baselined one - Normal sha256
 b72aab2f2052454f89c4515c4a2c46b20d51e2c4e3bb450a0e8d31962cb4ade2 (4,998 actions) and Hard sha256
 2ca1ec100ec357719cd42dd72919e7e861c3a1e06ad2d734484084a69cd05136 (4,972). The process lesson - report
 green, or that a test bites, only after running the suite that follows the last edit - is in lessons.md.
+
+## Internal demo - close the gaps (2026-10-17)
+
+Source: reports/2026-10-16-internal-test-demo-gap-analysis.md. Docker is removed from the stack
+(user decision 2026-10-17); the demo route is a published build on one Windows box, started by a
+script, reached through a tunnel or the LAN.
+
+- [x] Remove Docker: delete Dockerfile, .dockerignore, docker-compose.yml; CLAUDE.md stack gains a
+      Deployment row (published build, no containers); deployment.md, handover.md updated
+- [x] GAP-03 scenario path from a publish folder: scenarios copied into the Web output, default
+      `scenarios/vietnam-2024.json`, one resolver (content root, then app base) for the three call sites;
+      test first
+- [x] GAP-03 forwarded headers (loopback proxies only) so a tunnel's https reaches the cookie; test first
+- [x] GAP-03 `appsettings.Demo.json` + `scripts/run-demo.ps1` (publish, generated credentials kept in
+      a gitignored data folder, bind address and port, timestamped log file)
+- [x] GAP-05 build stamp (version + commit, run id, seed) on the player and console shells; Blazor
+      error banner so a failed circuit says so instead of freezing; GitHub issue template for feedback
+- [x] GAP-06/09 automated rehearsal: E2E test runs the launcher from a real publish, signs the trainer in,
+      starts the year, kills the host, restarts it, and loads the saved exercise back
+- [x] GAP-12 cache the signed-in account on the scoped PlayerSession; test first
+- [x] GAP-13 tradingOpenShareOfYear derived from the auction window (no longer an input); migration
+- [x] GAP-14 AutoTrade changes only the switched company's bot; the rest of the fleet and the seeded
+      stream are untouched; test first
+- [x] GAP-10 CI workflow (build, format, test with Playwright) on windows-latest
+- [x] GAP-04/08/11 docs/tester-guide.md (access, tour, tasks, known limits, password resets)
+- [x] GAP-07 delete the .bak files, `*.bak` ignored, handover and this file's header refreshed
+- [x] Gate: build 0 warnings, full suite green after the last edit, format clean, the launcher run live
+- Not in scope: GAP-15 (.NET 10) - installing the SDK stays a user decision; the human dry run
+  (GAP-06) needs people, so the guide carries the checklist for it
+
+### Review - internal demo (2026-10-17)
+
+Built. Docker is gone (Dockerfile, .dockerignore, docker-compose.yml deleted; CLAUDE.md's stack has a
+Deployment row instead). `scripts/run-demo.ps1` publishes a Release build and runs it from publish/ in
+the new Demo environment (`appsettings.Demo.json`), keeping the database, generated credentials and a
+timestamped log per start in demo-data/ (gitignored). The shipped scenarios are copied into every
+build and `CarbonSimHostOptions.ScenarioPath` looks under the content root, then the app folder, for
+the three call sites that used to each resolve it. Forwarded headers are read from loopback proxies
+only, so a tunnel's https marks the cookie secure. Every run and console screen has a footer stamp
+(build with commit, run id, seed); App.razor carries the Blazor error banner in both languages.
+`PlayerSession` reads the signed-in account once per circuit instead of once a second.
+`Parameters.TradingOpenShareOfYear` is now derived from the auction window (migration
+`DeriveTradingOpenShare` drops the column; the key is gone from the scenario and fixtures).
+`SimulationBots.Refresh` replaces only the switched company's bot on an AutoTrade change, keeping
+every other bot and the seeded stream. Added .github/workflows/ci.yml, a Demo feedback issue
+template, docs/tester-guide.md, and rewrote deployment.md sections 1, 2, 5, 6 and 8, the runbook's
+start and recovery text, and handover sections 4-6. The two .bak files are deleted and `*.bak`
+ignored.
+
+Tests (each seen red first except the stamp tests, which failed to compile first and were then
+shown to bite by removing the stamp): ScenarioPathTests (500 before the fix), ForwardedHeadersTests
+(cookie not secure before), SharedViewCacheTests account case (3 scope reads, now 1),
+FleetRefreshTests (4, no Refresh before), ParametersTests derived share (0.45 stuck before), footer
+stamp in ShellTests and AdminScreensTests, and PublishedDemoTests: the launcher end to end with a real
+Release publish, a trainer closing year 1, a player registering with the generated PIN, the host
+killed, restarted with -NoPublish, the exercise loaded back and year 2 opened.
+
+Gate after the last code edit: build 0 warnings 0 errors; `dotnet format --verify-no-changes` clean
+(the old CHARSET note is gone, the migrations are LF without a BOM); `dotnet test CarbonSim.sln`
+Engine 285 passed + 2 skipped, Data 16 passed, Web 203 passed + 1 skipped (504 passed, 3 skipped, 0
+failed), Playwright real. The fidelity golden is unchanged. Live: the launcher published, applied all
+four migrations to a fresh database, created the trainer, served /sign-in 200 and the 37 companies,
+rendered the error banner, and the reset procedure in deployment.md section 8 worked (after a fix:
+the logged email spans lines, so the lookup needs `-Context 0,4`).
+
+Found and corrected on the way: the runbook and deployment notes said a run is saved "after each
+control"; it is saved at creation and at year end only, so a crash replays the year in progress. The
+docs now say so; no mid-year autosave was added, because a restored running clock would count the
+downtime. There is no password-reset page (the flow is API only); the operator procedure is
+documented and the page is next step 3 in handover.md.
+
+Not done: the CI workflow has not run on a hosted runner (nothing pushed); the human dry run in
+tester-guide.md section 9 needs people; GAP-15 (.NET 10) waits on installing the SDK. The stamp shows
+the commit of HEAD, so it will name f341aab until this work is committed.
+
+## Internal demo - finish (2026-10-17, second pass)
+
+User asked to install .NET 10, upgrade, and complete what remains.
+
+- [ ] Install the .NET 10 SDK (winget, side by side with 9)
+- [ ] Branch `internal-demo`; commit the demo work above as its own commit
+- [ ] Upgrade to net10.0: TargetFramework, the 9.x package pins, CI's dotnet-version, CLAUDE.md and docs;
+      gate green, golden unchanged
+- [ ] Password-reset page on the sign-in screen over the existing reset service; test first
+- [ ] Tunnel check: `tailscale serve` to the demo host, reached over the tailnet's https name, then turned off
+- [ ] Push the branch, open a PR, get CI green on the hosted runner
+- [ ] Tag the demo build once merged (merge to main needs the user's go-ahead)
+- Not doable here: the human dry run (needs people); EDF licensing; PostgreSQL against a live server

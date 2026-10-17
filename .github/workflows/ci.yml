@@ -1,0 +1,43 @@
+# The local gate, run on every push and pull request: zero-warning build, house style, and the
+# whole suite with the Playwright walks running for real. Windows, because that is the machine the
+# demo is hosted on and the launcher test drives Windows PowerShell.
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  gate:
+    runs-on: windows-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Restore
+        run: dotnet restore CarbonSim.sln
+
+      - name: Build
+        run: dotnet build CarbonSim.sln --no-restore -c Debug
+
+      - name: Format
+        run: dotnet format CarbonSim.sln --verify-no-changes --no-restore
+
+      - name: Install Chromium for Playwright
+        shell: pwsh
+        run: tests/CarbonSim.Web.Tests/bin/Debug/net10.0/playwright.ps1 install chromium
+
+      - name: Test
+        run: dotnet test CarbonSim.sln --no-build --logger trx --results-directory TestResults
+
+      - name: Keep test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: TestResults

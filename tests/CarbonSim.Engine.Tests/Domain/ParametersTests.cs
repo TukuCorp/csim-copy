@@ -21,13 +21,28 @@ public sealed class ParametersTests
         { "auctionsPerYear", parameters => parameters with { AuctionsPerYear = 0 } },
         { "yearLength", parameters => parameters with { YearLength = TimeSpan.Zero } },
         { "auctionDuration", parameters => parameters with { AuctionDuration = TimeSpan.FromMinutes(45) } },
-        { "tradingOpenShareOfYear", parameters => parameters with { TradingOpenShareOfYear = 0m } },
         { "volatilityBand", parameters => parameters with { VolatilityBand = 0m } },
         { "bausGrowthBySector", parameters => parameters with { BausGrowthBySector = [] } },
         { "bausGrowthBySector", parameters => parameters with { BausGrowthBySector = [new SectorBausGrowth("Power", 0.06m, 0.02m)] } },
         { "bausGrowthBySector", parameters => parameters with { BausGrowthBySector = [new SectorBausGrowth("Power", -2m, 0.02m)] } },
         { "forwardVintageShare", parameters => parameters with { ForwardVintageShare = 1.5m } },
     };
+
+    [Fact]
+    public void The_share_of_the_year_auctions_are_open_follows_the_auction_window()
+    {
+        Parameters parameters = TestScenario.GreenParameters() with
+        {
+            AuctionsPerYear = 4,
+            YearLength = TimeSpan.FromMinutes(20),
+            AuctionDuration = TimeSpan.FromMinutes(2.25),
+        };
+
+        // Four windows of 2.25 minutes in a 20-minute year: the clock opens the auction 45% of the
+        // time, and the figure the screens show is that, not a second setting that could disagree.
+        parameters.TradingOpenShareOfYear.Should().Be(0.45m);
+        (parameters with { AuctionDuration = TimeSpan.FromMinutes(1) }).TradingOpenShareOfYear.Should().Be(0.2m);
+    }
 
     [Fact]
     public void Scenario_parameters_for_the_vietnam_pilot_are_valid()

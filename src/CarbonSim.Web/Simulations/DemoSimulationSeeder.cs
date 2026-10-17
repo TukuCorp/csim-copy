@@ -34,9 +34,7 @@ public sealed class DemoSimulationSeeder : IHostedService
 
     public Task StartAsync(CancellationToken cancellationToken)
     {
-        string path = Path.IsPathRooted(_options.ScenarioFile)
-            ? _options.ScenarioFile
-            : Path.Combine(_environment.ContentRootPath, _options.ScenarioFile);
+        string path = _options.ScenarioPath(_environment);
 
         try
         {

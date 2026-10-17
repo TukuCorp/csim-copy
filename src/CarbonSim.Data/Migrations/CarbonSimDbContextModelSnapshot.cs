@@ -1041,9 +1041,6 @@ namespace CarbonSim.Data.Migrations
                     b.Property<decimal>("PenaltyPerTonne")
                         .HasColumnType("TEXT");
 
-                    b.Property<decimal>("TradingOpenShareOfYear")
-                        .HasColumnType("TEXT");
-
                     b.Property<decimal>("VolatilityBand")
                         .HasColumnType("TEXT");
 

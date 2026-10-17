@@ -3,9 +3,14 @@
   <ItemGroup>
     <!-- Sorting and paging for the history tables, as the stack decision records. -->
     <PackageReference Include="Microsoft.AspNetCore.Components.QuickGrid" />
-    <!-- PasswordHasher<PlayerAccount> only. The full Identity stack is not used: the host has its
-         own account table and its own notion of a player, and the engine's Player owns companies. -->
-    <PackageReference Include="Microsoft.Extensions.Identity.Core" />
+    <!-- PasswordHasher<PlayerAccount> comes from Microsoft.Extensions.Identity.Core, which is part
+         of the ASP.NET Core shared framework from .NET 10, so it needs no package reference. -->
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The shipped scenarios travel with the app, so a published folder needs nothing from the
+         source tree (CarbonSimHostOptions.ScenarioPath looks here after the content root). -->
+    <Content Include="..\..\scenarios\*.json" Link="scenarios\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>

@@ -62,7 +62,6 @@ internal static class LoadScenario
             "auctionsPerYear": {{AuctionsPerYear}},
             "yearLengthMinutes": {{yearLengthMinutes}},
             "auctionDurationMinutes": {{auctionMinutes.ToString("0.####", CultureInfo.InvariantCulture)}},
-            "tradingOpenShareOfYear": 0.45,
             "volatilityBand": 0.1,
             "overdraftInterestRate": 0.07,
             "bausGrowthBySector": [

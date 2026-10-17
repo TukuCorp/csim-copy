@@ -18,7 +18,7 @@ The original is proprietary and its terms forbid reverse engineering and derivat
 ## Tech stack (decided 2026-09-15)
 | Layer | Choice |
 |---|---|
-| Runtime | .NET 10 LTS (install with `winget install Microsoft.DotNet.SDK.10`; machine currently has 9.0.312, EOS Nov 2026) |
+| Runtime | .NET 10 LTS, SDK 10.0.402 (installed 2026-10-17 with `winget install Microsoft.DotNet.SDK.10`; 9.0.312 still present side by side) |
 | Language | C# 14, nullable enabled, warnings as errors |
 | Engine | `src/CarbonSim.Engine` — pure class library, no web/DB dependencies |
 | Persistence | EF Core 10; SQLite for dev/test and single-box training deployments; PostgreSQL provider kept switchable |
@@ -30,6 +30,7 @@ The original is proprietary and its terms forbid reverse engineering and derivat
 | Localisation | `.resx` resources keyed like the original catalog; culture cookie; English first, Vietnamese second |
 | Tests | xUnit + FluentAssertions; bUnit for Blazor components; Playwright for end-to-end |
 | Formatting | `dotnet format`; EditorConfig committed |
+| Deployment | `dotnet publish` output on one host, started by `scripts/run-demo.ps1`; no containers (Docker removed 2026-10-17) |
 
 ## Solution layout
 ```
@@ -61,6 +62,7 @@ dotnet build CarbonSim.sln
 dotnet test CarbonSim.sln
 dotnet run --project src/CarbonSim.Web
 dotnet format CarbonSim.sln
+powershell -File scripts/run-demo.ps1    # publish and start the internal demo host
 ```
 
 ## Domain vocabulary (short)

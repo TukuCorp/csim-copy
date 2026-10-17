@@ -1,0 +1,23 @@
+@inject IStringLocalizer<SharedStrings> Strings
+
+@* The line a tester copies into a report: the build, and on a run's screens the run and its seed,
+   which together are enough to find the code and replay the run. *@
+<footer class="stamp muted small">
+    <span>@Strings["StampBuild", BuildInfo.Version]</span>
+    @if (SimulationId is { } id)
+    {
+        <span>@Strings["StampRun", id.ToString("D")[..8]]</span>
+    }
+    @if (Seed is { } seed)
+    {
+        <span>@Strings["StampSeed", seed.ToString(CultureInfo.InvariantCulture)]</span>
+    }
+</footer>
+
+@code {
+    [Parameter]
+    public Guid? SimulationId { get; set; }
+
+    [Parameter]
+    public ulong? Seed { get; set; }
+}

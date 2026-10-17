@@ -28,6 +28,8 @@ internal static class SignInEndpoints
         endpoints.MapGet("/sign-in", PageAsync).AllowAnonymous();
         endpoints.MapPost("/api/accounts/sign-in-form", SignInAsync).AllowAnonymous();
         endpoints.MapPost("/api/accounts/register-form", RegisterAsync).AllowAnonymous();
+        endpoints.MapPost("/api/accounts/reset-request-form", RequestResetAsync).AllowAnonymous();
+        endpoints.MapPost("/api/accounts/reset-confirm-form", ConfirmResetAsync).AllowAnonymous();
         // Cast to Delegate so the result is written: taking only an HttpContext, this method would
         // otherwise bind as a RequestDelegate and its redirect would be dropped.
         endpoints.MapGet("/sign-out", (Delegate)SignOutAsync).AllowAnonymous();
@@ -38,6 +40,7 @@ internal static class SignInEndpoints
         ICompanyRoster roster,
         IStringLocalizer<SharedStrings> strings,
         string? error,
+        string? status,
         HttpContext context)
     {
         ArgumentNullException.ThrowIfNull(context);
@@ -65,6 +68,10 @@ internal static class SignInEndpoints
         {
             html.Append("<p class=\"notice notice-error\">").Append(Encode(error)).Append("</p>");
         }
+        else if (!string.IsNullOrWhiteSpace(status))
+        {
+            html.Append("<p class=\"notice notice-status\" role=\"status\">").Append(Encode(status)).Append("</p>");
+        }
 
         html.Append("<section class=\"card\"><h2>").Append(Encode(strings["SignIn"])).Append("</h2>")
             .Append("<form id=\"sign-in-form\" method=\"post\" action=\"/api/accounts/sign-in-form\">").Append(hidden)
@@ -89,6 +96,21 @@ internal static class SignInEndpoints
         html.Append("</select></label>")
             .Append(Field("registrationPin", strings["RegistrationPin"], "password", required: true))
             .Append("<button class=\"button\" type=\"submit\">").Append(Encode(strings["Register"])).Append("</button>")
+            .Append("</form></section>");
+
+        // Two steps on one card: ask for a code, then quote it with the new password. The first
+        // answer is the same whether or not the address has an account.
+        html.Append("<section class=\"card\"><h2>").Append(Encode(strings["ResetTitle"])).Append("</h2>")
+            .Append("<p class=\"muted\">").Append(Encode(strings["ResetHint"])).Append("</p>")
+            .Append("<form id=\"reset-request-form\" method=\"post\" action=\"/api/accounts/reset-request-form\">").Append(hidden)
+            .Append(Field("email", strings["Email"], "email", required: true))
+            .Append("<button class=\"button ghost\" type=\"submit\">").Append(Encode(strings["ResetRequest"])).Append("</button>")
+            .Append("</form>")
+            .Append("<form id=\"reset-confirm-form\" method=\"post\" action=\"/api/accounts/reset-confirm-form\">").Append(hidden)
+            .Append(Field("email", strings["Email"], "email", required: true))
+            .Append(Field("code", strings["ResetCode"], "text", required: true))
+            .Append(Field("newPassword", strings["NewPassword"], "password", required: true))
+            .Append("<button class=\"button\" type=\"submit\">").Append(Encode(strings["ResetConfirm"])).Append("</button>")
             .Append("</form></section>")
             .Append("</div></body></html>");
 
@@ -150,6 +172,37 @@ internal static class SignInEndpoints
         return Results.Redirect("/");
     }
 
+    private static async Task<IResult> RequestResetAsync(
+        PlayerAccountService accounts,
+        IStringLocalizer<SharedStrings> strings,
+        [FromForm] string? email)
+    {
+        await accounts
+            .RequestPasswordResetAsync(new PasswordResetRequest { Email = email ?? string.Empty })
+            .ConfigureAwait(false);
+
+        return Results.Redirect(WithStatus(strings["ResetCodeSent"]));
+    }
+
+    private static async Task<IResult> ConfirmResetAsync(
+        PlayerAccountService accounts,
+        IStringLocalizer<SharedStrings> strings,
+        [FromForm] string? email,
+        [FromForm] string? code,
+        [FromForm] string? newPassword)
+    {
+        AccountOutcome outcome = await accounts
+            .ConfirmPasswordResetAsync(new ConfirmPasswordResetRequest
+            {
+                Email = email ?? string.Empty,
+                Code = code ?? string.Empty,
+                NewPassword = newPassword ?? string.Empty,
+            })
+            .ConfigureAwait(false);
+
+        return Results.Redirect(outcome.Succeeded ? WithStatus(strings["ResetDone"]) : WithError(outcome.Message));
+    }
+
     private static async Task<IResult> SignOutAsync(HttpContext context)
     {
         ArgumentNullException.ThrowIfNull(context);
@@ -160,6 +213,8 @@ internal static class SignInEndpoints
     }
 
     private static string WithError(string message) => $"/sign-in?error={Uri.EscapeDataString(message)}";
+
+    private static string WithStatus(string message) => $"/sign-in?status={Uri.EscapeDataString(message)}";
 
     private static string Hidden(AntiforgeryTokenSet tokens) =>
         $"<input type=\"hidden\" name=\"{Encode(tokens.FormFieldName)}\" value=\"{Encode(tokens.RequestToken)}\" />";
