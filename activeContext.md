@@ -1375,12 +1375,27 @@ the commit of HEAD, so it will name f341aab until this work is committed.
 
 User asked to install .NET 10, upgrade, and complete what remains.
 
-- [ ] Install the .NET 10 SDK (winget, side by side with 9)
-- [ ] Branch `internal-demo`; commit the demo work above as its own commit
-- [ ] Upgrade to net10.0: TargetFramework, the 9.x package pins, CI's dotnet-version, CLAUDE.md and docs;
+- [x] Install the .NET 10 SDK (winget, side by side with 9)
+- [x] Branch `internal-demo`; commit the demo work above as its own commit
+- [x] Upgrade to net10.0: TargetFramework, the 9.x package pins, CI's dotnet-version, CLAUDE.md and docs;
       gate green, golden unchanged
-- [ ] Password-reset page on the sign-in screen over the existing reset service; test first
-- [ ] Tunnel check: `tailscale serve` to the demo host, reached over the tailnet's https name, then turned off
-- [ ] Push the branch, open a PR, get CI green on the hosted runner
-- [ ] Tag the demo build once merged (merge to main needs the user's go-ahead)
+- [x] Password-reset page on the sign-in screen over the existing reset service; test first
+- [x] Tunnel check: `tailscale serve` to the demo host, reached over the tailnet (http on 8080; https
+      needs HTTPS certificates enabled on the tailnet), then turned off
+- [x] Push the branch, open a PR, get CI green on the hosted runner
+- [x] Tag the demo build once merged (merge to main needs the user's go-ahead)
 - Not doable here: the human dry run (needs people); EDF licensing; PostgreSQL against a live server
+
+### Review
+
+- .NET 10 SDK 10.0.402 installed; the solution targets net10.0 with EF Core 10.0.13, Npgsql 10.0.3,
+  dotnet-ef 10.0.13. The Identity.Core reference went (shared framework); AngleSharp pinned to 1.8.5
+  for GHSA-pgww-w46g-26qg. No pending EF model changes; the fidelity golden is byte-identical.
+- Local gate: build 0 warnings, format clean, 507 passed, 3 skipped, 0 failed
+  (reports/verify-20261017-1420.md, reports/verify-20261017-1440.md).
+- PR #1 (internal-demo) passed CI on windows-latest and was merged to main as f3a6623 with the
+  user's go-ahead; main is tagged `demo-internal-1`.
+- Tailscale serve works over http on the tailnet name; the https route hangs until HTTPS
+  certificates are enabled in the tailnet admin console (docs/deployment.md section 5).
+- Still open: the operator dry run in docs/tester-guide.md section 9, EDF licensing, PostgreSQL
+  against a live server.
