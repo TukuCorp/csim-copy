@@ -7,7 +7,7 @@ UI stack: Blazor Server, decided by building it (Phase 3).
 A trainer can run the Vietnam two-day agenda end to end: configure a trading system with ~240 units (about 40 human, rest bots), run 3–6 virtual years of 20 minutes with 4 auctions each, watch live prices, pause and shock the market, and show the system report and leaderboard, in English and Vietnamese, on one server. Behaviour passes the fidelity envelopes in `research/2026-09-13_bot-logic-and-numeric-fidelity-options.md` §6 and the click-through in `research/2026-09-13_carbonsim-video-insights.md`.
 
 ## Phase 0 — Environment and skeleton
-- [~] Install .NET 10 SDK; confirm `dotnet --version` is 10.x — **blocked: not installing (instruction). Machine has 9.0.312, so the solution targets `net9.0`.** `Directory.Build.props` holds the single `TargetFramework` line to flip when the SDK is installed
+- [x] Install .NET 10 SDK; confirm `dotnet --version` is 10.x - done 2026-10-17 (10.0.402), solution on net10.0
 - [x] Create `CarbonSim.sln` with Engine, Data, Web projects and two test projects; nullable + warnings-as-errors; EditorConfig (plus `Directory.Build.props`, `Directory.Packages.props`, `dotnet format` clean)
 - [x] `.gitignore` for .NET (bin/obj, .vs, *.user, SQLite files, test results)
 - [x] CI-free local gate: `dotnet build` zero warnings/errors and `dotnet test` green

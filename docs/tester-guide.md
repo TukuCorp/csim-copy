@@ -109,8 +109,9 @@ screenshot helps. If you cannot use GitHub, send the same fields to the trainer.
   Reload. Your company's state is kept on the server, so nothing is lost.
 - **"Reconnecting" over the page** means the network dropped. It usually recovers on its own. If it
   does not, reload.
-- **You forgot your password.** There is no reset page yet. Tell the operator, who resets it for
-  you (docs/deployment.md, "Resetting a tester's password").
+- **You forgot your password.** Use **Forgot your password?** on the sign-in page and press "Send
+  me a code". The demo sends no email, so ask the operator for the code (it is in the host log),
+  then enter it there with your new password.
 - **Everything stopped for everyone.** The host went down. Wait for the operator to restart it and
   the trainer to load the exercise back.
 

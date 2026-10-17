@@ -117,15 +117,24 @@ scratch database and confirm it starts before pointing it at the real one.
 The project ships no container image (Docker was dropped on 2026-10-17). Testers reach the one host
 in one of three ways:
 
-- **A tunnel (recommended).** Run the host on 127.0.0.1 and put a tunnel in front of it, for
-  example `tailscale serve --bg 5080` for colleagues on the tailnet, or
-  `cloudflared tunnel --url http://127.0.0.1:5080` for a public https address. Both terminate TLS,
-  pass WebSockets, and connect from this machine, so the host trusts their forwarded headers (see
-  section 6). The tunnel's own access control is the first gate and the PIN is the second.
+- **A tunnel (recommended).** Run the host on 127.0.0.1 and put a tunnel in front of it. Both
+  options below pass WebSockets and connect from this machine, so the host trusts their forwarded
+  headers (see section 6). The tunnel's own access control is the first gate and the PIN is the
+  second.
+  - Tailscale, for colleagues on the tailnet (installed on the demo box). Share the machine with
+    them in the Tailscale admin console, then run
+    `tailscale serve --bg --http=8080 http://127.0.0.1:5080` and hand out
+    `http://<machine>.<tailnet>.ts.net:8080/`. Traffic is encrypted by Tailscale itself. For an
+    https address, enable HTTPS certificates in the admin console (DNS page) and use
+    `tailscale serve --bg 5080` instead; until certificates are enabled that command waits
+    indefinitely. Turn it off afterwards with `tailscale serve --http=8080 off` (or `reset`).
+    Checked 2026-10-17: the sign-in page and a live Blazor screen both worked through the tailnet name.
+  - Cloudflare, for a public https address: `cloudflared tunnel --url http://127.0.0.1:5080`
+    (not installed on the demo box).
 - **The office LAN.** Start with `-Bind 0.0.0.0` and allow the port through Windows Firewall
   (`New-NetFirewallRule -DisplayName CarbonSim -Direction Inbound -Protocol TCP -LocalPort 5080 -Action Allow`,
   from an elevated prompt). Traffic is plain HTTP, so use this only on a network you trust.
-- **A VM.** Install the .NET 9 runtime, copy the publish folder and the script's environment
+- **A VM.** Install the .NET 10 runtime, copy the publish folder and the script's environment
   variables across, and use either route above.
 
 Keep the box awake for the session: turn off sleep and defer Windows Update restarts.
@@ -189,17 +198,13 @@ See the trainer runbook Recovery section for what a trainer sees after a restart
 
 ## 8. Resetting a tester's password
 
-The host has the reset flow as an API only; there is no reset page yet. With EmailSender set to Log
-(the Demo default) the code goes to the host log. From the demo box:
+The sign-in page has a **Forgot your password?** card: the tester asks for a code, then enters it
+with a new password. With EmailSender set to Log (the Demo default) nothing is mailed; the code goes
+to the host log. Find it for the tester from the demo box:
 
-    $base = 'http://127.0.0.1:5080'
-    $email = 'tester@example.com'
-    Invoke-RestMethod -Method Post -Uri "$base/api/accounts/password-reset/request" -ContentType 'application/json' -Body (@{ email = $email } | ConvertTo-Json)
-    Select-String -Path demo-data\logs\*.log -Pattern $email -Context 0,4 | Select-Object -Last 1
+    Select-String -Path demo-data\logs\*.log -Pattern 'tester@example.com' -Context 0,4 | Select-Object -Last 1
 
 The message is logged over several lines; the six-digit code is on the last of them ("Your
-verification code is ..."). Set the new password with it and give the password to the tester:
-
-    Invoke-RestMethod -Method Post -Uri "$base/api/accounts/password-reset/confirm" -ContentType 'application/json' -Body (@{ email = $email; code = '123456'; newPassword = 'a-new-password' } | ConvertTo-Json)
-
-The code expires after ResetCodeLifetimeMinutes and closes after ResetCodeMaxAttempts wrong tries.
+verification code is ..."). It expires after ResetCodeLifetimeMinutes and closes after
+ResetCodeMaxAttempts wrong tries. The same flow is available as JSON under
+/api/accounts/password-reset/request and /confirm.

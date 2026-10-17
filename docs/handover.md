@@ -89,9 +89,8 @@ which in production is a hosted service ticking once a second.
     dotnet run --project src/CarbonSim.Web          # development, localhost only
     powershell -File scripts/run-demo.ps1           # the internal demo host
 
-The solution targets net9.0. Directory.Build.props holds the single TargetFramework line, which is
-the one place to change when the .NET 10 SDK is installed. .github/workflows/ci.yml runs the same
-gate (build, format, test with Playwright) on windows-latest.
+The solution targets net10.0 (LTS, supported to November 2028); Directory.Build.props holds the
+single TargetFramework line. .github/workflows/ci.yml runs the same gate (build, format, test with Playwright) on windows-latest.
 
 The full load run is opt-in (about twenty minutes of real time):
 
@@ -115,9 +114,6 @@ scenario. Nothing is hand-tuned to pass.
 **A crash loses the year in progress.** Runs are saved when created and at each year end. A reload
 replays that year; the pending notice queues are not saved, so one auction notice may repeat.
 
-**No password-reset page.** The reset flow exists as an API; deployment.md section 8 is the operator
-procedure.
-
 **Single display currency per deployment.** Display.Currency is ambient host state; two languages
 wanting different currencies on one box is not supported (one currency, two languages is).
 
@@ -135,8 +131,6 @@ an exercise is built.
 1. Run the human dry run in docs/tester-guide.md section 9 on the demo box, then the internal
    session; file findings with the Demo feedback issue template.
 2. Push the branch so .github/workflows/ci.yml runs once and is proven on a hosted runner.
-3. Add a password-reset page on top of the existing API.
-4. Split a bot's plan from its execution (architecture candidate 6), with the golden as the net.
-5. Verify the PostgreSQL path against a real server before any multi-box deployment.
-6. Install the .NET 10 SDK and flip TargetFramework before .NET 9 support ends (November 2026).
-7. Settle the licensing question with EDF before any use outside the company.
+3. Split a bot's plan from its execution (architecture candidate 6), with the golden as the net.
+4. Verify the PostgreSQL path against a real server before any multi-box deployment.
+5. Settle the licensing question with EDF before any use outside the company.

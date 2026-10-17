@@ -410,4 +410,12 @@
   <data name="StampSeed" xml:space="preserve"><value>Seed {0}</value></data>
   <data name="ErrorBanner" xml:space="preserve"><value>This page lost its link to the server after an error. Reload it to carry on: your company's position is kept on the server.</value></data>
   <data name="ErrorReload" xml:space="preserve"><value>Reload</value></data>
+  <data name="ResetTitle" xml:space="preserve"><value>Forgot your password?</value></data>
+  <data name="ResetHint" xml:space="preserve"><value>Ask for a code, then enter it here with a new password.</value></data>
+  <data name="ResetRequest" xml:space="preserve"><value>Send me a code</value></data>
+  <data name="ResetCode" xml:space="preserve"><value>Code</value></data>
+  <data name="NewPassword" xml:space="preserve"><value>New password</value></data>
+  <data name="ResetConfirm" xml:space="preserve"><value>Set the new password</value></data>
+  <data name="ResetCodeSent" xml:space="preserve"><value>If that address has an account, a code is on its way. Enter it below with your new password.</value></data>
+  <data name="ResetDone" xml:space="preserve"><value>Your password is changed. Sign in with the new one.</value></data>
 </root>
