@@ -25,7 +25,6 @@ public sealed class ScenarioLoaderTests
             "auctionsPerYear": 4,
             "yearLengthMinutes": 20,
             "auctionDurationMinutes": 3,
-            "tradingOpenShareOfYear": 0.45,
             "volatilityBand": 0.10,
             "overdraftInterestRate": 0.07,
             "bausGrowthBySector": [
@@ -164,7 +163,7 @@ public sealed class ScenarioLoaderTests
         parameters.AuctionsPerYear.Should().Be(4);
         parameters.YearLength.Should().Be(TimeSpan.FromMinutes(20));
         parameters.AuctionDuration.Should().Be(TimeSpan.FromMinutes(3));
-        parameters.TradingOpenShareOfYear.Should().Be(0.45m);
+        parameters.TradingOpenShareOfYear.Should().Be(0.60m);
         parameters.VolatilityBand.Should().Be(0.10m);
         parameters.Years.Should().Be(3);
         parameters.BausGrowthBySector.Should().Equal(

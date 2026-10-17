@@ -66,7 +66,6 @@ public sealed record ParametersSnapshot(
     int AuctionsPerYear,
     TimeSpan YearLength,
     TimeSpan AuctionDuration,
-    decimal TradingOpenShareOfYear,
     decimal VolatilityBand,
     decimal OverdraftInterestRate,
     decimal GovernmentReserveToAuctionPercent,

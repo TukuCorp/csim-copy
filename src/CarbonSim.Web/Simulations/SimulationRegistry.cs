@@ -245,13 +245,12 @@ public sealed class SimulationRegistry
     }
 
     /// <summary>
-    /// Replaces a run's bot fleet after an AutoTrade switch has changed which units are
-    /// automated. The fleet is rebuilt from scratch, so a bot's own progress is dropped and the
-    /// trigger times are drawn again; an administrator flipping the switch accepts that.
+    /// Brings a run's bot fleet in line after an AutoTrade switch has changed which units are
+    /// automated. Only the switched company's bot changes; every other bot keeps its progress.
     /// </summary>
     internal static void RebuildBots(HostedRun run)
     {
-        SimulationBots fleet = SimulationBots.Create(run.Simulation);
+        SimulationBots fleet = SimulationBots.Refresh(run.Simulation, run.Bots);
 
         run.Bots = fleet.Bots.Count == 0 ? null : fleet;
     }

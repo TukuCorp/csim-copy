@@ -1,0 +1,70 @@
+name: Demo feedback
+description: Something you hit while playing the internal demo - a bug, a confusing screen, or a number that looks wrong.
+title: "[demo] "
+labels: ["demo-feedback"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for testing. Before you file, check the "Known limits" list in docs/tester-guide.md - those are deliberate.
+  - type: input
+    id: stamp
+    attributes:
+      label: Build stamp
+      description: Copy the line at the bottom of the page (Build ... Run ... Seed ...).
+      placeholder: Build 1.0.0+abc1234   Run 1a2b3c4d   Seed 20240916
+    validations:
+      required: true
+  - type: dropdown
+    id: role
+    attributes:
+      label: You were playing as
+      options:
+        - Player (a company)
+        - Trainer (the console)
+    validations:
+      required: true
+  - type: input
+    id: screen
+    attributes:
+      label: Screen
+      description: The page you were on, e.g. Allowance auction, Exchange, OTC, Surrender and banking, or a console page.
+    validations:
+      required: true
+  - type: input
+    id: when
+    attributes:
+      label: When
+      description: Your local time, and the virtual year and auction from the progress strip.
+      placeholder: 14:32, year 2, auction 3
+    validations:
+      required: true
+  - type: textarea
+    id: did
+    attributes:
+      label: What you did
+      description: The steps, in order, with the numbers you typed.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected, and what you got
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Screenshot or anything else
+      description: Paste a screenshot if you have one. Say which language the page was in if it was Vietnamese.
+  - type: dropdown
+    id: severity
+    attributes:
+      label: How much did it get in your way?
+      options:
+        - Blocked me - I could not carry on
+        - Wrong - a number or result looks incorrect
+        - Confusing - it worked but I could not tell what happened
+        - Polish
+    validations:
+      required: true

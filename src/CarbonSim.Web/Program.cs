@@ -15,6 +15,7 @@ using CarbonSim.Web.Player;
 using CarbonSim.Web.Simulations;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Localization;
 
@@ -174,6 +175,14 @@ builder.Services
 WebApplication app = builder.Build();
 
 await DatabaseInitializer.InitializeAsync(app.Services, hostOptions).ConfigureAwait(false);
+
+// A tunnel or reverse proxy on this machine terminates TLS and forwards plain HTTP; its word on the
+// scheme is what marks the sign-in cookie secure. The defaults trust loopback proxies only, so a
+// remote caller sending the same headers is ignored.
+app.UseForwardedHeaders(new ForwardedHeadersOptions
+{
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto,
+});
 
 app.UseRequestLocalization();
 app.UseStaticFiles();

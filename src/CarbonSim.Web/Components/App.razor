@@ -12,6 +12,12 @@
 </head>
 <body>
     <Routes @rendermode="InteractiveServer" />
+    @* Blazor shows this when the server side of the page fails, so a broken screen says so and
+       offers a reload instead of sitting frozen. *@
+    <div id="blazor-error-ui" role="alert">
+        <span>@Strings["ErrorBanner"]</span>
+        <a href="" class="reload">@Strings["ErrorReload"]</a>
+    </div>
     <script src="lib/echarts/echarts.min.js"></script>
     <script src="_framework/blazor.web.js"></script>
 </body>

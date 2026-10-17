@@ -405,4 +405,9 @@
   <data name="DisplayCurrency" xml:space="preserve"><value>Display currency</value></data>
   <data name="VndPerUsdRate" xml:space="preserve"><value>VND per USD</value></data>
   <data name="SetupPercentHint" xml:space="preserve"><value>Type a percentage: 3 and 3% both mean three hundredths.</value></data>
+  <data name="StampBuild" xml:space="preserve"><value>Build {0}</value></data>
+  <data name="StampRun" xml:space="preserve"><value>Run {0}</value></data>
+  <data name="StampSeed" xml:space="preserve"><value>Seed {0}</value></data>
+  <data name="ErrorBanner" xml:space="preserve"><value>This page lost its link to the server after an error. Reload it to carry on: your company's position is kept on the server.</value></data>
+  <data name="ErrorReload" xml:space="preserve"><value>Reload</value></data>
 </root>

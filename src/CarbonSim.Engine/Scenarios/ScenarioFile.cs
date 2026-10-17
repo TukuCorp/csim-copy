@@ -46,8 +46,6 @@ internal sealed class ParametersFile
 
     public decimal? AuctionDurationMinutes { get; set; }
 
-    public decimal? TradingOpenShareOfYear { get; set; }
-
     public decimal? VolatilityBand { get; set; }
 
     /// <summary>Yearly interest on a negative balance, as a fraction.</summary>

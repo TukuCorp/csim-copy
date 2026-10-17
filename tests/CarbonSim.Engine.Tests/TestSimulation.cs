@@ -56,7 +56,6 @@ internal static class TestSimulation
             AuctionsPerYear = auctionsPerYear,
             YearLength = TimeSpan.FromMinutes(20),
             AuctionDuration = auctionDuration ?? TimeSpan.FromMinutes(3),
-            TradingOpenShareOfYear = 0.60m,
             VolatilityBand = 0.10m,
             OverdraftInterestRate = 0.07m,
             GovernmentReserveToAuctionPercent = governmentReserveToAuctionPercent,

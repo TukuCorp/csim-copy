@@ -1,4 +1,5 @@
 using Bunit;
+using CarbonSim.Web;
 using CarbonSim.Web.Admin;
 using CarbonSim.Web.Components.Admin;
 using CarbonSim.Web.Resources;
@@ -193,6 +194,16 @@ public sealed class AdminScreensTests : AdminScreenTestContext
         Session.Draft.Parameters.AnnualCapReductionRate.Should().Be(0.03m);
         page.Find("#setup-free").Change("90%");
         Session.Draft.Parameters.FreeAllocationShare.Should().Be(0.9m);
+    }
+
+    [Fact]
+    public void The_console_says_which_build_it_is()
+    {
+        IRenderedComponent<AdminLayout> layout = RenderComponent<AdminLayout>(parameters =>
+            parameters.Add(component => component.Body, builder => { }));
+
+        // A tester's report is tied to a build by the stamp they copy out of the page footer.
+        layout.Find("footer.stamp").TextContent.Should().Contain(BuildInfo.Version);
     }
 
     [Fact]

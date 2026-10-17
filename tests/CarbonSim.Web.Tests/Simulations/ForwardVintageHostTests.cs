@@ -57,7 +57,6 @@ public sealed class ForwardVintageHostTests : IClassFixture<SimulationTestHost>
             "auctionsPerYear": 2,
             "yearLengthMinutes": 20,
             "auctionDurationMinutes": 3,
-            "tradingOpenShareOfYear": 0.6,
             "volatilityBand": 0.1,
             "overdraftInterestRate": 0.07,
             "forwardVintageShare": 0.20,

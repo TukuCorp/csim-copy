@@ -12,20 +12,47 @@ and no external queue; a hosted service drives the simulation clock in-process. 
 (CarbonSim.Engine) is a plain class library with no web or database dependency, and the database
 access (CarbonSim.Data) sits underneath the host.
 
-The host keeps live runs in memory. It writes a run to the database when the year closes and after
-each administrator control, so a crash loses at most the year in progress; the saved copy is loaded
-back from the console **Saved exercises** list. Plan for a host restart between sessions, not during
-one.
+The host keeps live runs in memory. It writes a run to the database when the exercise is created and
+when each year closes, so a crash loses the year in progress and nothing before it. The trainer
+loads the saved copy back from the console's **Saved exercises** list and plays that year again.
+Plan for a host restart between sessions, not during one.
 
-## 2. Running without a container
+## 2. Running the host
 
-    dotnet build CarbonSim.sln
+### The internal demo (one Windows box)
+
+    powershell -File scripts/run-demo.ps1
+
+The script publishes a Release build to publish/, then starts it from that folder in the Demo
+environment (src/CarbonSim.Web/appsettings.Demo.json: migrations applied, reset codes written to the
+log, timestamped single-line logging, no seeded exercise). Everything the session keeps lives in
+demo-data/, which git ignores:
+
+| File | What it is |
+|---|---|
+| demo-data/carbonsim.sqlite | Accounts, claimed companies and saved exercises |
+| demo-data/credentials.local.json | The trainer sign-in and the registration PIN. Generated on the first run; delete it to issue new ones |
+| demo-data/logs/host-*.log | One log per start, also echoed to the console |
+
+The banner prints the address, the trainer sign-in and the PIN. Stop the host with Ctrl+C. Start it
+again with `-NoPublish` to keep the same build and data. Other switches: `-Port` (default 5080),
+`-Bind` (default 127.0.0.1; use 0.0.0.0 to serve the LAN), `-DataDir` and `-PublishDir`.
+`Get-Help scripts/run-demo.ps1 -Full` lists them.
+
+tests/CarbonSim.Web.Tests/Components/PublishedDemoTests.cs runs this script end to end: a real
+publish, a trainer closing year 1, a player registering with the generated PIN, a killed host, a
+restart with -NoPublish, and the exercise loaded back into year 2.
+
+### Development
+
     dotnet run --project src/CarbonSim.Web
 
-The default configuration binds HTTP on the port in src/CarbonSim.Web/Properties/launchSettings.json
-(or ASPNETCORE_URLS). Put the settings below in appsettings.json, in environment variables, or in
-user secrets. Environment variables with a double underscore override the JSON, for example
-CarbonSim__ConnectionString.
+This binds http://localhost:5003 in the Development environment, with a known PIN and admin account
+(appsettings.Development.json) and the scenario seeded at boot. Do not share that address: its
+credentials are in the repository.
+
+Settings come from appsettings.json, then appsettings.{Environment}.json, then environment
+variables. A double underscore separates the levels, for example CarbonSim__ConnectionString.
 
 ## 3. Configuration reference
 
@@ -36,7 +63,7 @@ Everything the host reads is under the **CarbonSim** section.
 | ConnectionString | Data Source=carbonsim.sqlite | The application database. SQLite takes a file path; PostgreSQL takes a libpq connection string. |
 | Provider | Sqlite | Which engine opens the connection string: Sqlite or Postgres. Unknown values stop the host at start-up. |
 | Schema | Migrate | Migrate applies the shipped migrations (SQLite only). FromModel builds the schema from the model and keeps no migration history, which is what PostgreSQL uses. |
-| ScenarioFile | ../../scenarios/vietnam-2024.json | The scenario whose human companies may be claimed. Absolute, or relative to the content root. |
+| ScenarioFile | scenarios/vietnam-2024.json | The scenario whose human companies may be claimed. Absolute, or relative: the host looks under the content root first, then in its own folder, where the build copies the shipped scenarios. |
 | RegistrationPin | (empty) | The PIN a visitor must quote to register. Empty closes registration, so a deployment that forgets to set it cannot be registered against. |
 | AdminEmail / AdminPassword | (empty) | A bootstrap administrator created at start-up. Empty disables it. Use these to get into the console the first time. |
 | EmailSender | Log | How password-reset codes are delivered: Log writes them to the host log, InMemory keeps them in memory for a demo or test. |
@@ -85,32 +112,23 @@ never sees a provider name), and the model scripts as PostgreSQL SQL, which the 
 a real PostgreSQL instance here. The first PostgreSQL deployment should run the host once against a
 scratch database and confirm it starts before pointing it at the real one.
 
-## 5. Containers
+## 5. Reaching the demo from other machines
 
-Dockerfile is a multi-stage build: the .NET 9 SDK restores and publishes, and the ASP.NET 9 runtime
-image runs the published app as the image unprivileged app user. The scenarios folder is copied in
-beside the app, and /data is the one writable place; the container listens on 8080.
+The project ships no container image (Docker was dropped on 2026-10-17). Testers reach the one host
+in one of three ways:
 
-docker-compose.yml brings up the host with SQLite in a named volume. The optional postgres profile
-adds a PostgreSQL 17 server beside it.
+- **A tunnel (recommended).** Run the host on 127.0.0.1 and put a tunnel in front of it, for
+  example `tailscale serve --bg 5080` for colleagues on the tailnet, or
+  `cloudflared tunnel --url http://127.0.0.1:5080` for a public https address. Both terminate TLS,
+  pass WebSockets, and connect from this machine, so the host trusts their forwarded headers (see
+  section 6). The tunnel's own access control is the first gate and the PIN is the second.
+- **The office LAN.** Start with `-Bind 0.0.0.0` and allow the port through Windows Firewall
+  (`New-NetFirewallRule -DisplayName CarbonSim -Direction Inbound -Protocol TCP -LocalPort 5080 -Action Allow`,
+  from an elevated prompt). Traffic is plain HTTP, so use this only on a network you trust.
+- **A VM.** Install the .NET 9 runtime, copy the publish folder and the script's environment
+  variables across, and use either route above.
 
-    # SQLite, one box
-    $env:CARBONSIM_PIN = "the-room-pin"
-    $env:CARBONSIM_ADMIN_EMAIL = "trainer@example.com"
-    $env:CARBONSIM_ADMIN_PASSWORD = "a-strong-password"
-    docker compose up --build
-
-    # PostgreSQL
-    $env:CARBONSIM_DB_PASSWORD = "a-strong-db-password"
-    $env:CARBONSIM_PROVIDER = "Postgres"
-    $env:CARBONSIM_SCHEMA = "FromModel"
-    $env:CARBONSIM_CONNECTION = "Host=postgres;Database=carbonsim;Username=carbonsim;Password=a-strong-db-password"
-    docker compose --profile postgres up --build
-
-**Not built here.** Docker is not installed on the machine this was prepared on, so the image was not
-built or run and /sign-in was not hit through it. The files are written to the standard shape
-(multi-stage, non-root, runtime image, a single exposed port) but the first build should be verified
-where Docker exists. `docker compose config` is a safe first check.
+Keep the box awake for the session: turn off sleep and defer Windows Update restarts.
 
 ## 6. TLS and a reverse proxy
 
@@ -119,9 +137,11 @@ balancer). Two things matter beyond the certificate:
 
 - **WebSockets.** The player screens and the hub hold long-lived connections. The proxy must allow the
   HTTP Upgrade for SignalR and set generous read and idle timeouts (minutes, not 30 seconds).
-- **Forwarded headers.** If the proxy terminates TLS, forward X-Forwarded-Proto and X-Forwarded-For so
-  redirects and links use https. The host cookie is HttpOnly and SameSite=Lax; a secure-cookie flag is
-  the proxy job, by forwarding https.
+- **Forwarded headers.** The host reads X-Forwarded-Proto and X-Forwarded-For from a proxy on this
+  machine (loopback) only, so a tunnel or a local nginx that terminates TLS gets the sign-in cookie
+  marked secure, and a remote caller sending the same headers is ignored
+  (tests/CarbonSim.Web.Tests/ForwardedHeadersTests.cs). A proxy on another machine is not trusted;
+  add it to ForwardedHeadersOptions.KnownProxies in Program.cs first.
 
 A minimal nginx location for /hubs is a standard proxy with the Upgrade and Connection headers; the
 Blazor circuit needs the same treatment.
@@ -142,8 +162,8 @@ leaderboard and clock match. That test is the proof the copy is usable, not just
 
 To restore:
 
-1. Stop the host (the saved run is written at year end and after each control; the live year is lost
-   either way).
+1. Stop the host (the run is saved when it is created and at each year end; the year in progress is
+   lost either way).
 2. Keep the old file: Move-Item carbonsim.sqlite carbonsim.before-restore.sqlite.
 3. Put the backup in its place: Copy-Item backup\carbonsim-2026-10-04.sqlite carbonsim.sqlite.
 4. Start the host and load the saved exercise from **Saved exercises**.
@@ -167,3 +187,19 @@ The database holds the accounts (people, hashed passwords, claimed companies) an
 does not hold live in-memory runs, so a restore recovers the last saved year, not the year in progress.
 See the trainer runbook Recovery section for what a trainer sees after a restart.
 
+## 8. Resetting a tester's password
+
+The host has the reset flow as an API only; there is no reset page yet. With EmailSender set to Log
+(the Demo default) the code goes to the host log. From the demo box:
+
+    $base = 'http://127.0.0.1:5080'
+    $email = 'tester@example.com'
+    Invoke-RestMethod -Method Post -Uri "$base/api/accounts/password-reset/request" -ContentType 'application/json' -Body (@{ email = $email } | ConvertTo-Json)
+    Select-String -Path demo-data\logs\*.log -Pattern $email -Context 0,4 | Select-Object -Last 1
+
+The message is logged over several lines; the six-digit code is on the last of them ("Your
+verification code is ..."). Set the new password with it and give the password to the tester:
+
+    Invoke-RestMethod -Method Post -Uri "$base/api/accounts/password-reset/confirm" -ContentType 'application/json' -Body (@{ email = $email; code = '123456'; newPassword = 'a-new-password' } | ConvertTo-Json)
+
+The code expires after ResetCodeLifetimeMinutes and closes after ResetCodeMaxAttempts wrong tries.

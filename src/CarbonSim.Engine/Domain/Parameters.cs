@@ -61,8 +61,14 @@ public sealed record Parameters
     /// <summary>Wall-clock length of a single auction window.</summary>
     public required TimeSpan AuctionDuration { get; init; }
 
-    /// <summary>Share of the year during which auctions are open (0.45 = 45%).</summary>
-    public required decimal TradingOpenShareOfYear { get; init; }
+    /// <summary>
+    /// Share of the year during which auctions are open (0.45 = 45%). It is what the clock does -
+    /// one window of <see cref="AuctionDuration"/> per auction - rather than a setting of its own,
+    /// so the figure a screen shows cannot drift from the windows players actually get.
+    /// </summary>
+    public decimal TradingOpenShareOfYear => YearLength > TimeSpan.Zero
+        ? (decimal)(AuctionDuration.TotalMinutes * AuctionsPerYear / YearLength.TotalMinutes)
+        : 0m;
 
     /// <summary>How far a trade may move from the last price before it is rejected (0.10 = +/-10%).</summary>
     public required decimal VolatilityBand { get; init; }
@@ -169,11 +175,6 @@ public sealed record Parameters
             errors.Add(string.Create(
                 CultureInfo.InvariantCulture,
                 $"auctionDuration must be shorter than yearLength (was {AuctionDuration} against {YearLength})."));
-        }
-
-        if (TradingOpenShareOfYear is <= 0m or > 1m)
-        {
-            errors.Add(Message("tradingOpenShareOfYear", "must be greater than 0 and at most 1", TradingOpenShareOfYear));
         }
 
         if (VolatilityBand is <= 0m or > 1m)

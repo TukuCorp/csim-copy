@@ -1,4 +1,5 @@
 using Bunit;
+using CarbonSim.Web;
 using CarbonSim.Web.Components.Layout;
 using CarbonSim.Web.Components.Shared;
 using CarbonSim.Web.Player;
@@ -29,6 +30,21 @@ public sealed class ShellTests : ScreenTestContext
         layout.Markup.Should().Contain("Section progress");
         layout.Markup.Should().Contain("Allowance auction");
         layout.FindAll("nav.nav a").Should().HaveCount(11);
+    }
+
+    [Fact]
+    public void The_run_footer_names_the_build_the_run_and_its_seed()
+    {
+        Navigate($"/run/{SimulationId:D}/dashboard");
+
+        IRenderedComponent<MainLayout> layout = RenderComponent<MainLayout>(parameters => parameters
+            .Add(component => component.Body, (RenderFragment)(_ => { })));
+
+        // Everything a bug report needs to find and replay the run: which build, which run, which seed.
+        string stamp = layout.Find("footer.stamp").TextContent;
+        stamp.Should().Contain(BuildInfo.Version);
+        stamp.Should().Contain(SimulationId.ToString("D")[..8]);
+        stamp.Should().Contain(View.Seed.ToString(System.Globalization.CultureInfo.InvariantCulture));
     }
 
     [Fact]

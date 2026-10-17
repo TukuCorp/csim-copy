@@ -361,7 +361,7 @@ public sealed class SimulationClockService : BackgroundService
             cancellationToken: cancellationToken);
 
     /// <summary>
-    /// Turns a unit's AutoTrade switch on or off and rebuilds the run's bot fleet, which is what
+    /// Turns a unit's AutoTrade switch on or off and refreshes that company's bot, which is what
     /// makes a human unit begin (or stop) trading for itself mid-run.
     /// </summary>
     public Task SetAutoTradeAsync(

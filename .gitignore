@@ -44,3 +44,10 @@ appsettings.Development.local.json
 Thumbs.db
 Desktop.ini
 .DS_Store
+
+## Internal demo: the published build and the session's data (database, generated credentials, logs)
+publish/
+demo-data/
+
+## Editor and hand-made backups
+*.bak

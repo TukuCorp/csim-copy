@@ -190,3 +190,19 @@ earlier run is not evidence for the tree as it stands.
 **Rule.** Run the suite, and re-run the bite proof, AFTER the last edit, and quote that run. If the last
 edit came after the run, the claim is not evidence; give the counts from the run that followed the final
 change.
+
+## 11. Size the delivery route to the target, not to the artifacts already in the repo (2026-10-17)
+
+**What happened.** The internal-demo gap analysis rated the broken Dockerfile CRITICAL and put it on
+day one of the sprint, because a Dockerfile existed and was broken. The user asked "why we need
+docker" and then removed it from the stack: an internal demo on a box we control needs a published
+build, a launcher and a tunnel, and nothing a container adds.
+
+**Why the reading was wrong.** "There is a deployment artifact and it is broken" was read as "the
+target depends on it". The target - colleagues reaching one instance in their browsers - was never
+checked against what the container actually buys (portability to hosts without .NET, image
+reproducibility), none of which an internal session needs.
+
+**Rule.** In a gap analysis or plan, rate an existing artifact's defect by whether the stated target
+needs that artifact, and name the simplest route that meets the target first. If an artifact is only
+needed on some routes, say so and rate it for the recommended route, not the worst case.

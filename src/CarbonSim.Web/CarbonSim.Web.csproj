@@ -9,6 +9,12 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- The shipped scenarios travel with the app, so a published folder needs nothing from the
+         source tree (CarbonSimHostOptions.ScenarioPath looks here after the content root). -->
+    <Content Include="..\..\scenarios\*.json" Link="scenarios\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\CarbonSim.Engine\CarbonSim.Engine.csproj" />
     <ProjectReference Include="..\CarbonSim.Data\CarbonSim.Data.csproj" />
   </ItemGroup>

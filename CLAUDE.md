@@ -30,6 +30,7 @@ The original is proprietary and its terms forbid reverse engineering and derivat
 | Localisation | `.resx` resources keyed like the original catalog; culture cookie; English first, Vietnamese second |
 | Tests | xUnit + FluentAssertions; bUnit for Blazor components; Playwright for end-to-end |
 | Formatting | `dotnet format`; EditorConfig committed |
+| Deployment | `dotnet publish` output on one host, started by `scripts/run-demo.ps1`; no containers (Docker removed 2026-10-17) |
 
 ## Solution layout
 ```
@@ -61,6 +62,7 @@ dotnet build CarbonSim.sln
 dotnet test CarbonSim.sln
 dotnet run --project src/CarbonSim.Web
 dotnet format CarbonSim.sln
+powershell -File scripts/run-demo.ps1    # publish and start the internal demo host
 ```
 
 ## Domain vocabulary (short)

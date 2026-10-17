@@ -59,12 +59,51 @@ public sealed class SharedViewCacheTests : IClassFixture<SimulationTestHost>
         (run.SharedBuilds - afterRedRiver).Should().BeGreaterThan(1);
     }
 
+    [Fact]
+    public async Task A_screen_refresh_does_not_read_the_signed_in_account_again()
+    {
+        SimulationRegistry runs = _host.Server.Services.GetRequiredService<SimulationRegistry>();
+        Guid id = runs.Start(TestRunFactory.Build());
+        await _host.CreateDriver().StartAsync(id);
+        SignedIn delta = await _host.SignInAsync(TestRunFactory.DeltaCompany);
+        CountingScopeFactory scopes = new(_host.Server.Services.GetRequiredService<IServiceScopeFactory>());
+        PlayerSession session = new(runs, scopes, new FixedAuthenticationStateProvider(delta.AccountId));
+
+        for (int refresh = 0; refresh < 3; refresh++)
+        {
+            (await session.ForPlayerAsync(id)).Should().NotBeNull();
+        }
+
+        // A circuit's account does not change under it - the company is claimed once, at
+        // registration - so one database read serves every refresh the circuit makes.
+        scopes.Created.Should().Be(1);
+    }
+
     private PlayerSession Session(int accountId)
     {
         return new PlayerSession(
             _host.Server.Services.GetRequiredService<SimulationRegistry>(),
             _host.Server.Services.GetRequiredService<IServiceScopeFactory>(),
             new FixedAuthenticationStateProvider(accountId));
+    }
+
+    /// <summary>Counts the scopes a session opens; each is one trip to the account table.</summary>
+    private sealed class CountingScopeFactory : IServiceScopeFactory
+    {
+        private readonly IServiceScopeFactory _inner;
+
+        public CountingScopeFactory(IServiceScopeFactory inner)
+        {
+            _inner = inner;
+        }
+
+        public int Created { get; private set; }
+
+        public IServiceScope CreateScope()
+        {
+            Created++;
+            return _inner.CreateScope();
+        }
     }
 
     /// <summary>Signs a session in without a Blazor circuit: the account id a real cookie carries.</summary>
