@@ -3,7 +3,7 @@
   <!-- Shared settings for every project. Changing TargetFramework here is the single
        place to switch the solution to the .NET 10 SDK once it is installed. -->
   <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>

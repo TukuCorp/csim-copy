@@ -7,6 +7,9 @@
 
   <ItemGroup>
     <PackageReference Include="bunit" />
+    <!-- bUnit 1.40 asks for AngleSharp 1.2.0 or later; 1.2.0 carries GHSA-pgww-w46g-26qg (fixed in
+         1.5.0), so the patched release is referenced directly. -->
+    <PackageReference Include="AngleSharp" />
     <PackageReference Include="coverlet.collector" />
     <PackageReference Include="FluentAssertions" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />

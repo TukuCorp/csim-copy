@@ -18,7 +18,7 @@ The original is proprietary and its terms forbid reverse engineering and derivat
 ## Tech stack (decided 2026-09-15)
 | Layer | Choice |
 |---|---|
-| Runtime | .NET 10 LTS (install with `winget install Microsoft.DotNet.SDK.10`; machine currently has 9.0.312, EOS Nov 2026) |
+| Runtime | .NET 10 LTS, SDK 10.0.402 (installed 2026-10-17 with `winget install Microsoft.DotNet.SDK.10`; 9.0.312 still present side by side) |
 | Language | C# 14, nullable enabled, warnings as errors |
 | Engine | `src/CarbonSim.Engine` — pure class library, no web/DB dependencies |
 | Persistence | EF Core 10; SQLite for dev/test and single-box training deployments; PostgreSQL provider kept switchable |

@@ -17,7 +17,7 @@ internal sealed class PlaywrightFactAttribute : FactAttribute
         if (!BrowsersInstalled())
         {
             Skip = "Playwright browsers are not installed here. Install one with "
-                + "`pwsh tests/CarbonSim.Web.Tests/bin/Debug/net9.0/playwright.ps1 install chromium`.";
+                + "`pwsh tests/CarbonSim.Web.Tests/bin/Debug/net10.0/playwright.ps1 install chromium`.";
         }
     }
 
