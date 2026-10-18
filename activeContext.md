@@ -1,4 +1,4 @@
-﻿# activeContext — CarbonSim clone build plan
+# activeContext — CarbonSim clone build plan
 
 Status: v1 phases 0-6, seven QA rounds and the architecture pass are done; current work is the internal demo section at the end.
 UI stack: Blazor Server, decided by building it (Phase 3).
