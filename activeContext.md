@@ -1,4 +1,4 @@
-# activeContext — CarbonSim clone build plan
+﻿# activeContext — CarbonSim clone build plan
 
 Status: v1 phases 0-6, seven QA rounds and the architecture pass are done; current work is the internal demo section at the end.
 UI stack: Blazor Server, decided by building it (Phase 3).
@@ -1408,7 +1408,7 @@ User asked for a final senior/principal review, improvements where possible, the
 - [x] Triage: fix real defects and clear simplifications; leave golden-moving changes out unless a defect
 - [x] Each fix test-first where it changes behaviour
 - [x] Gate: build 0 warnings, format clean, full suite green, golden unchanged; /verify
-- [ ] Commit and push main; CI green
+- [x] Commit and push main; CI green (566164d, run 39116949340)
 
 ### Review
 
