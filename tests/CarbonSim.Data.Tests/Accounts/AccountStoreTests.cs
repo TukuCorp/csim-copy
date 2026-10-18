@@ -59,6 +59,50 @@ public sealed class AccountStoreTests
     }
 
     [Fact]
+    public async Task Claims_racing_for_one_company_give_one_account_and_refuse_the_rest()
+    {
+        using SqliteTestDatabase database = new();
+
+        // Each claim on its own context, as each request has its own; all of them pass the "is it
+        // taken" check before any insert lands, so the unique index is what decides.
+        // SQLite answers synchronously, so each claim gets a thread of its own to overlap at all.
+        PlayerAccount?[] claims = await Task.WhenAll(Enumerable.Range(1, 16).Select(index => Task.Run(async () =>
+        {
+            await using CarbonSimDbContext context = database.CreateContext();
+            EfAccountStore store = new(context);
+
+            return await store.CreateAsync($"racer{index}@example.com", $"Racer {index}", "hash", AccountRole.Player, "Công ty Điện lực Bình Minh");
+        })));
+
+        claims.Should().ContainSingle(claim => claim != null, "a company is played by one person");
+    }
+
+    [Fact]
+    public async Task Reset_attempts_racing_each_other_cannot_share_a_try()
+    {
+        using SqliteTestDatabase database = new();
+        int accountId;
+
+        await using (CarbonSimDbContext context = database.CreateContext())
+        {
+            EfAccountStore store = new(context);
+            accountId = (await store.CreateAsync("player@example.com", "Player", "hash-1", AccountRole.Player))!.Id;
+            await store.SetResetCodeAsync(accountId, "code-hash", DateTimeOffset.UtcNow.AddMinutes(15));
+        }
+
+        int?[] tries = await Task.WhenAll(Enumerable.Range(1, 16).Select(_ => Task.Run(async () =>
+        {
+            await using CarbonSimDbContext context = database.CreateContext();
+            return await new EfAccountStore(context).ClaimResetAttemptAsync(accountId, maxAttempts: 5);
+        })));
+
+        tries.Count(attempt => attempt != null).Should().Be(5, "a lost or shared try is a free guess at the code");
+
+        await using CarbonSimDbContext reader = database.CreateContext();
+        (await new EfAccountStore(reader).FindByIdAsync(accountId))!.ResetCodeAttempts.Should().Be(5);
+    }
+
+    [Fact]
     public async Task An_open_reset_records_its_code_its_expiry_and_its_failed_attempts()
     {
         using SqliteTestDatabase database = new();
@@ -75,8 +119,9 @@ public sealed class AccountStoreTests
         afterSet.ResetCodeExpiresAtUtc.Should().BeCloseTo(expires, TimeSpan.FromSeconds(1));
         afterSet.ResetCodeAttempts.Should().Be(0);
 
-        (await store.RecordFailedResetAttemptAsync(account.Id)).Should().Be(1);
-        (await store.RecordFailedResetAttemptAsync(account.Id)).Should().Be(2);
+        (await store.ClaimResetAttemptAsync(account.Id, maxAttempts: 2)).Should().Be(1);
+        (await store.ClaimResetAttemptAsync(account.Id, maxAttempts: 2)).Should().Be(2);
+        (await store.ClaimResetAttemptAsync(account.Id, maxAttempts: 2)).Should().BeNull("the reset has no tries left");
     }
 
     [Fact]
@@ -88,7 +133,7 @@ public sealed class AccountStoreTests
 
         PlayerAccount account = (await store.CreateAsync("player@example.com", "Player", "hash-1", AccountRole.Player))!;
         await store.SetResetCodeAsync(account.Id, "code-hash", DateTimeOffset.UtcNow.AddMinutes(15));
-        await store.RecordFailedResetAttemptAsync(account.Id);
+        await store.ClaimResetAttemptAsync(account.Id, maxAttempts: 5);
 
         (await store.SetPasswordAsync(account.Id, "hash-2")).Should().BeTrue();
 

@@ -46,12 +46,16 @@ public sealed class PlayerContext
         await LoadAsync(id);
     }
 
-    /// <summary>Re-reads the run for whoever is signed in.</summary>
+    /// <summary>
+    /// Re-reads the run for whoever is signed in. What the last control reported stays until the
+    /// player dismisses it: the shell refreshes every second, faster than anyone reads a refusal.
+    /// </summary>
     public async Task RefreshAsync()
     {
         if (Snapshot.SimulationId is { } simulationId)
         {
-            await LoadAsync(simulationId);
+            PlayerView? view = await _session.ForPlayerAsync(simulationId).ConfigureAwait(false);
+            Update(Snapshot with { View = view });
         }
     }
 

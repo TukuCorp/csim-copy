@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using CarbonSim.Engine.Domain;
 using CarbonSim.Web.Simulations;
 using FluentAssertions;
@@ -13,8 +14,9 @@ internal sealed record HubEvent(string Method, object?[] Args);
 public sealed class AuctionBroadcastTests : IClassFixture<SimulationTestHost>, IAsyncLifetime
 {
     private readonly SimulationTestHost _host;
-    private readonly List<HubEvent> _first = [];
-    private readonly List<HubEvent> _second = [];
+    // Written from the connections' callback threads while the test reads them.
+    private readonly ConcurrentQueue<HubEvent> _first = new();
+    private readonly ConcurrentQueue<HubEvent> _second = new();
     private HubConnection? _firstConnection;
     private HubConnection? _secondConnection;
     private SignedIn _delta = null!;
@@ -71,7 +73,9 @@ public sealed class AuctionBroadcastTests : IClassFixture<SimulationTestHost>, I
         _host.FakeTime.Advance(TimeSpan.FromMinutes(2));
         await driver.TickAsync(_simulationId);
 
-        for (int attempt = 0; attempt < 50 && !_first.Any(@event => @event.Method == "AuctionCleared"); attempt++)
+        // Each connection hears the hub in the order it spoke, so once both have the clear, both
+        // have everything the window said before it.
+        for (int attempt = 0; attempt < 50 && !(HasCleared(_first) && HasCleared(_second)); attempt++)
         {
             await Task.Delay(TimeSpan.FromMilliseconds(100));
         }
@@ -93,24 +97,26 @@ public sealed class AuctionBroadcastTests : IClassFixture<SimulationTestHost>, I
         _second.Should().ContainSingle(@event => @event.Method == "AuctionClosing");
     }
 
-    private HubConnection Connection(string cookie, List<HubEvent> seen)
+    private HubConnection Connection(string cookie, ConcurrentQueue<HubEvent> seen)
     {
         HubConnection connection = _host.CreateHubBuilder(cookie).Build();
 
         connection.On<int, int, decimal?, decimal, decimal>(
             "AuctionCleared",
-            (year, sequence, price, sold, offered) => { seen.Add(new HubEvent("AuctionCleared", [year, sequence, price, sold, offered])); });
+            (year, sequence, price, sold, offered) => { seen.Enqueue(new HubEvent("AuctionCleared", [year, sequence, price, sold, offered])); });
         connection.On<int, int, decimal>(
             "AuctionOpened",
-            (year, sequence, offered) => { seen.Add(new HubEvent("AuctionOpened", [year, sequence, offered])); });
+            (year, sequence, offered) => { seen.Enqueue(new HubEvent("AuctionOpened", [year, sequence, offered])); });
         connection.On<int, int, TimeSpan>(
             "AuctionClosing",
-            (year, sequence, left) => { seen.Add(new HubEvent("AuctionClosing", [year, sequence, left])); });
+            (year, sequence, left) => { seen.Enqueue(new HubEvent("AuctionClosing", [year, sequence, left])); });
 
         return connection;
     }
 
-    private static AuctionCleared Cleared(List<HubEvent> seen)
+    private static bool HasCleared(IEnumerable<HubEvent> seen) => seen.Any(@event => @event.Method == "AuctionCleared");
+
+    private static AuctionCleared Cleared(IEnumerable<HubEvent> seen)
     {
         HubEvent cleared = seen.Should().ContainSingle(@event => @event.Method == "AuctionCleared").Subject;
 

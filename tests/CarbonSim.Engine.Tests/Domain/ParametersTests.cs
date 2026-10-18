@@ -17,6 +17,7 @@ public sealed class ParametersTests
         { "penaltyPerTonne", parameters => parameters with { PenaltyPerTonne = -1m } },
         { "penaltyAllowanceDebit", parameters => parameters with { PenaltyAllowanceDebit = -1m } },
         { "auctionFloorPrice", parameters => parameters with { AuctionFloorPrice = -1m } },
+        { "auctionFloorPrice", parameters => parameters with { AuctionFloorPrice = 0m } },
         { "auctionCeilingPrice", parameters => parameters with { AuctionCeilingPrice = 100_000m } },
         { "auctionsPerYear", parameters => parameters with { AuctionsPerYear = 0 } },
         { "yearLength", parameters => parameters with { YearLength = TimeSpan.Zero } },

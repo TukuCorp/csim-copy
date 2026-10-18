@@ -190,8 +190,9 @@ public sealed class SimulationRun
 
     /// <summary>
     /// Closes the year: the clock ends it, the auction window that is still open is cleared first so
-    /// the bids the room already committed are honoured rather than silently thrown away, and then
-    /// compliance is reconciled and the books are closed. The clock has to have halted trading
+    /// the bids the room already committed are honoured rather than silently thrown away, any auction
+    /// the year never reached is cleared empty, and then compliance is reconciled and the books are
+    /// closed. The clock has to have halted trading
     /// already, which is the administrator's step and not this one's.
     /// </summary>
     public RunResult EndYear()
@@ -212,6 +213,14 @@ public sealed class SimulationRun
 
             _clearedSinceAnnounced[closed] = open;
             _pendingNotices.Add(closed);
+        }
+
+        // A year halted early never reached its later windows. Their lots were drawn from the
+        // government when the schedule was built, so clearing them (unbid) puts the volume back in
+        // the reserve rather than leaving it in auctions that will never run.
+        foreach (Auction unrun in Auctions.Auctions.Where(auction => auction.Year == Simulation.CurrentYear && !auction.IsCleared))
+        {
+            unrun.Clear();
         }
 
         Simulation.Compliance.Reconcile(Simulation.CurrentYear);
@@ -235,9 +244,9 @@ public sealed class SimulationRun
         decimal newFloor = floor ?? oldFloor;
         decimal newCeiling = ceiling ?? oldCeiling;
 
-        if (newFloor < 0m)
+        if (newFloor <= 0m)
         {
-            throw new ArgumentOutOfRangeException(nameof(floor), newFloor, "An auction floor cannot be negative.");
+            throw new ArgumentOutOfRangeException(nameof(floor), newFloor, "An auction floor has to be greater than zero.");
         }
 
         if (newCeiling <= newFloor)

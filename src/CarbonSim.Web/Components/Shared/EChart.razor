@@ -1,5 +1,6 @@
 @inject ICharts Charts
 @inject ILogger<EChart> Log
+@implements IAsyncDisposable
 
 @* A canvas is opaque to a screen reader, so the chart is announced by its description and the
    same figures are always on the page beside it as text or a table. *@
@@ -16,16 +17,39 @@
 
     private ElementReference _element;
 
+    // The shell re-renders every second; drawing an unchanged option again replays the chart's
+    // animation each tick, so only a changed option is sent to the browser.
+    private string? _drawn;
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
+        if (Option == _drawn)
+        {
+            return;
+        }
+
         try
         {
             await Charts.RenderAsync(_element, Option);
+            _drawn = Option;
         }
         catch (JSException exception)
         {
             // A chart that cannot be drawn must not take the player's screen down with it.
             Log.LogError(exception, "A chart could not be drawn.");
+        }
+    }
+
+    // The interop already absorbs a circuit that has gone; a JavaScript error is all that is left.
+    public async ValueTask DisposeAsync()
+    {
+        try
+        {
+            await Charts.DisposeAsync(_element);
+        }
+        catch (JSException exception)
+        {
+            Log.LogWarning(exception, "A chart could not be taken down.");
         }
     }
 }

@@ -246,22 +246,23 @@ internal sealed class PlayerAccountService(
             return AccountOutcome.Refused(AccountProblem.ResetCodeRejected, NoOpenResetMessage);
         }
 
-        if (found.ResetCodeAttempts >= _options.ResetCodeMaxAttempts)
-        {
-            await _store.ClearResetCodeAsync(found.Id, cancellationToken).ConfigureAwait(false);
-            return AccountOutcome.Refused(AccountProblem.ResetCodeRejected, TooManyAttemptsMessage);
-        }
-
         if (expiresAtUtc <= DateTimeOffset.UtcNow)
         {
             await _store.ClearResetCodeAsync(found.Id, cancellationToken).ConfigureAwait(false);
             return AccountOutcome.Refused(AccountProblem.ResetCodeRejected, "That code has expired. Request a new one.");
         }
 
+        // The try is taken before the code is checked, so a burst of guesses cannot all slip in
+        // under the limit while each one is still being verified.
+        if (await _store.ClaimResetAttemptAsync(found.Id, _options.ResetCodeMaxAttempts, cancellationToken).ConfigureAwait(false)
+            is not int attempts)
+        {
+            await _store.ClearResetCodeAsync(found.Id, cancellationToken).ConfigureAwait(false);
+            return AccountOutcome.Refused(AccountProblem.ResetCodeRejected, TooManyAttemptsMessage);
+        }
+
         if (_passwordHasher.VerifyHashedPassword(found, codeHash, request.Code) == PasswordVerificationResult.Failed)
         {
-            int attempts = await _store.RecordFailedResetAttemptAsync(found.Id, cancellationToken).ConfigureAwait(false);
-
             if (attempts >= _options.ResetCodeMaxAttempts)
             {
                 await _store.ClearResetCodeAsync(found.Id, cancellationToken).ConfigureAwait(false);

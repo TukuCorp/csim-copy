@@ -73,8 +73,16 @@ public sealed class AdminContext
         await LoadAsync(runId);
     }
 
-    /// <summary>Re-reads the console picture.</summary>
-    public Task RefreshAsync() => LoadAsync(RunId);
+    /// <summary>
+    /// Re-reads the console picture, keeping what the last control reported: the console refreshes
+    /// every second, faster than anyone reads a refusal.
+    /// </summary>
+    public async Task RefreshAsync()
+    {
+        AdminSnapshot loaded = await _session.SnapshotAsync(RunId).ConfigureAwait(false);
+        Snapshot = loaded with { Error = Snapshot.Error, Status = Snapshot.Status };
+        Changed?.Invoke();
+    }
 
     /// <summary>Points at another run, for the runs list's Open control.</summary>
     public Task SelectAsync(Guid? runId)

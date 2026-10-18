@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Globalization;
 using CarbonSim.Engine.Domain;
 using CarbonSim.Web.Simulations;
@@ -16,7 +17,8 @@ namespace CarbonSim.Web.Tests.Simulations;
 public sealed class BotFillBroadcastTests : IClassFixture<SimulationTestHost>, IAsyncLifetime
 {
     private readonly SimulationTestHost _host;
-    private readonly List<HubEvent> _events = [];
+    // Written from the connection's callback thread while the test reads it.
+    private readonly ConcurrentQueue<HubEvent> _events = new();
     private HubConnection? _connection;
     private SignedIn _delta = null!;
     private Guid _simulationId;
@@ -38,8 +40,11 @@ public sealed class BotFillBroadcastTests : IClassFixture<SimulationTestHost>, I
             "TradeExecuted",
             (channel, product, price, volume, buyer, seller) =>
             {
-                _events.Add(new HubEvent("TradeExecuted", [channel, product, price, volume, buyer, seller]));
+                _events.Enqueue(new HubEvent("TradeExecuted", [channel, product, price, volume, buyer, seller]));
             });
+        _connection.On<string, int, int, bool>(
+            "MarketStateChanged",
+            (state, year, auction, open) => _events.Enqueue(new HubEvent("MarketStateChanged", [state, year, auction, open])));
 
         await _connection.StartAsync();
         await _connection.InvokeAsync("JoinSimulation", _simulationId);
@@ -77,9 +82,17 @@ public sealed class BotFillBroadcastTests : IClassFixture<SimulationTestHost>, I
 
         // A later player order that does not trade must not re-announce the bot's fill. It has to
         // be inside the volatility band, which is anchored on the price the bots traded at.
+        // The pause that follows is heard after anything the order sent, so waiting for it is
+        // what makes "nothing more arrived" a real check rather than a guess at a delay.
         await runs.PlaceOrderAsync(_simulationId, _delta.Actor, 1, "Vintage 1", "Buy", "Limit", 1m, 100m);
-        await Task.Delay(TimeSpan.FromMilliseconds(200));
+        await driver.PauseAsync(_simulationId);
 
+        for (int attempt = 0; attempt < 300 && !_events.Any(@event => @event.Method == "MarketStateChanged" && (string)@event.Args[0]! == "Paused"); attempt++)
+        {
+            await Task.Delay(TimeSpan.FromMilliseconds(100));
+        }
+
+        _events.Should().Contain(@event => @event.Method == "MarketStateChanged" && (string)@event.Args[0]! == "Paused");
         ExchangeFills().Should().ContainSingle();
     }
 

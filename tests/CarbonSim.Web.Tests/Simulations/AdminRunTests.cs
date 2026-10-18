@@ -172,6 +172,21 @@ public sealed class AdminRunTests : IClassFixture<SimulationTestHost>
         runs.Run(created).Simulation.Name.Should().Be("Hub test run");
     }
 
+    [Fact]
+    public async Task Loading_a_run_that_is_already_live_is_refused_and_keeps_its_progress()
+    {
+        SimulationClockService driver = _host.CreateDriver();
+        SimulationRegistry runs = Registry();
+        string json = TestRunFactory.ScenarioJson.Replace("\"seed\": 7", "\"seed\": 7301", StringComparison.Ordinal);
+        Guid created = await driver.CreateRunAsync(json, "admin-load-live-check");
+        HostedRun live = runs.Run(created);
+
+        Func<Task> load = () => driver.LoadRunAsync(created);
+
+        await load.Should().ThrowAsync<InvalidOperationException>("the saved copy is older than the run being played");
+        runs.Run(created).Should().BeSameAs(live);
+    }
+
     private SimulationRegistry Registry() => _host.Server.Services.GetRequiredService<SimulationRegistry>();
 
     private HostedRun Run(Guid id) => Registry().Run(id);

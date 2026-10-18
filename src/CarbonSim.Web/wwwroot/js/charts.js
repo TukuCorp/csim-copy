@@ -16,15 +16,21 @@ export function render(element, optionJson) {
     chart.setOption(JSON.parse(optionJson), true);
     chart.resize();
 
-    if (!element.dataset.carbonResizeBound) {
-        element.dataset.carbonResizeBound = "true";
-        window.addEventListener("resize", () => chartFor(element).resize());
+    // One handler per element, kept on it so dispose can take it off the window again.
+    if (!element.carbonResize) {
+        element.carbonResize = () => echarts.getInstanceByDom(element)?.resize();
+        window.addEventListener("resize", element.carbonResize);
     }
 }
 
 export function dispose(element) {
     if (!element || typeof echarts === "undefined") {
         return;
+    }
+
+    if (element.carbonResize) {
+        window.removeEventListener("resize", element.carbonResize);
+        delete element.carbonResize;
     }
 
     const chart = echarts.getInstanceByDom(element);

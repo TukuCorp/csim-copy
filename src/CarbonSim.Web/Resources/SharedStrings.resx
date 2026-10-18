@@ -120,7 +120,6 @@
   <data name="CapitalCost" xml:space="preserve"><value>Capital cost</value></data>
   <data name="VintagesThisAuction" xml:space="preserve"><value>Vintages this auction</value></data>
   <data name="AllowancesToBeAuctionedThisYear" xml:space="preserve"><value>Allowances on offer this year</value></data>
-  <data name="AllowancesStillToBeAuctionedThisYear" xml:space="preserve"><value>Still to be auctioned</value></data>
   <data name="AuctionHasEnded" xml:space="preserve"><value>The auction has ended</value></data>
   <data name="Won" xml:space="preserve"><value>Won</value></data>
   <data name="Paid" xml:space="preserve"><value>Paid</value></data>
@@ -133,7 +132,6 @@
   <data name="TargetVolume" xml:space="preserve"><value>Target volume</value></data>
   <data name="TargetPrice" xml:space="preserve"><value>Target price</value></data>
   <data name="StopPrice" xml:space="preserve"><value>Stop price</value></data>
-  <data name="PartialFillsAccepted" xml:space="preserve"><value>Partial fills accepted</value></data>
   <data name="ImmediateOrCancel" xml:space="preserve"><value>Immediate or cancel</value></data>
   <data name="Buy" xml:space="preserve"><value>Buy</value></data>
   <data name="Sell" xml:space="preserve"><value>Sell</value></data>
@@ -206,7 +204,6 @@
   <data name="DisplayName" xml:space="preserve"><value>Display name</value></data>
   <data name="RegistrationPin" xml:space="preserve"><value>Registration PIN</value></data>
   <data name="Register" xml:space="preserve"><value>Register and claim a company</value></data>
-  <data name="SignInPrompt" xml:space="preserve"><value>Sign in to play.</value></data>
   <data name="NoCompany" xml:space="preserve"><value>This account has not claimed a company in this simulation.</value></data>
   <data name="NoSimulations" xml:space="preserve"><value>No simulation is running yet.</value></data>
   <data name="Language" xml:space="preserve"><value>Language</value></data>
@@ -224,7 +221,6 @@
   <data name="AdminSwitchOff" xml:space="preserve"><value>Switch messaging off</value></data>
   <data name="AdminSwitchOn" xml:space="preserve"><value>Switch messaging on</value></data>
   <data name="AdminChooseUnit" xml:space="preserve"><value>Choose a unit first.</value></data>
-  <data name="AdminChooseCompany" xml:space="preserve"><value>Choose a company first.</value></data>
   <data name="AdminFineNeedsDescription" xml:space="preserve"><value>A fine needs a description.</value></data>
   <data name="AdminVolumeNeeded" xml:space="preserve"><value>Enter a volume greater than zero.</value></data>
   <data name="AdminFinedUnit" xml:space="preserve"><value>Fined {0} {1}</value></data>
@@ -234,7 +230,6 @@
   <data name="OrderFilled" xml:space="preserve"><value>Filled {0} at {1}</value></data>
   <data name="OrderPartlyFilled" xml:space="preserve"><value>Filled {0}, {1} still resting at {2}</value></data>
   <data name="OrderResting" xml:space="preserve"><value>Resting: {0} at {1}</value></data>
-  <data name="OrderRejected" xml:space="preserve"><value>The order was not accepted.</value></data>
   <data name="OrderSent" xml:space="preserve"><value>Order sent.</value></data>
   <data name="AverageAllowancePriceAllChannels" xml:space="preserve"><value>Average allowance price (all channels)</value></data>
   <data name="AuctionAveragePrice" xml:space="preserve"><value>Auction average price</value></data>
@@ -292,7 +287,6 @@
   <data name="PriceChartHint" xml:space="preserve"><value>Clearing and traded prices by vintage and for offsets.</value></data>
   <data name="Long" xml:space="preserve"><value>Long</value></data>
   <data name="Short" xml:space="preserve"><value>Short</value></data>
-  <data name="PositionLegend" xml:space="preserve"><value>Free allocation and shortfall for the year.</value></data>
   <data name="OpenOrders" xml:space="preserve"><value>Open orders</value></data>
   <data name="Side" xml:space="preserve"><value>Side</value></data>
   <data name="Filled" xml:space="preserve"><value>Filled</value></data>
@@ -301,7 +295,6 @@
   <data name="Seller" xml:space="preserve"><value>Seller</value></data>
   <data name="Channel" xml:space="preserve"><value>Channel</value></data>
   <data name="Product" xml:space="preserve"><value>Product</value></data>
-  <data name="Quantity" xml:space="preserve"><value>Quantity</value></data>
   <data name="NoRows" xml:space="preserve"><value>Nothing to show yet.</value></data>
   <data name="Share" xml:space="preserve"><value>Share</value></data>
   <data name="Average" xml:space="preserve"><value>Average</value></data>
@@ -333,13 +326,10 @@
   <data name="AdminPause" xml:space="preserve"><value>Pause the clock</value></data>
   <data name="AdminResume" xml:space="preserve"><value>Let the clock run</value></data>
   <data name="AdminHalt" xml:space="preserve"><value>Halt trading</value></data>
-  <data name="AdminHaltNow" xml:space="preserve"><value>Halt now</value></data>
   <data name="AdminHaltWarn" xml:space="preserve"><value>Warn seconds before halting (leave blank to halt at once)</value></data>
   <data name="AdminEndYear" xml:space="preserve"><value>Close the year</value></data>
   <data name="AdminEndSimulation" xml:space="preserve"><value>End the exercise</value></data>
   <data name="AdminMessaging" xml:space="preserve"><value>Player messaging</value></data>
-  <data name="AdminMessagingAllowed" xml:space="preserve"><value>Players may post messages.</value></data>
-  <data name="AdminMessagingBlocked" xml:space="preserve"><value>Messaging is switched off.</value></data>
   <data name="AdminIssueFine" xml:space="preserve"><value>Fine a unit</value></data>
   <data name="AdminFineAmount" xml:space="preserve"><value>Fine amount</value></data>
   <data name="AdminFineDescription" xml:space="preserve"><value>Reason for the fine</value></data>
@@ -370,7 +360,6 @@
   <data name="AdminCompaniesOnOffer" xml:space="preserve"><value>Companies the scenario defines</value></data>
   <data name="AdminCreateRun" xml:space="preserve"><value>Create the exercise</value></data>
   <data name="AdminOpen" xml:space="preserve"><value>Open</value></data>
-  <data name="AdminCreated" xml:space="preserve"><value>Exercise created.</value></data>
   <data name="AdminLoaded" xml:space="preserve"><value>Exercise loaded.</value></data>
   <data name="AdminDeleted" xml:space="preserve"><value>Exercise deleted.</value></data>
   <data name="AdminYearStarted" xml:space="preserve"><value>The year has begun.</value></data>
@@ -380,9 +369,6 @@
   <data name="AdminHaltWarned" xml:space="preserve"><value>Trading will halt after the warning.</value></data>
   <data name="AdminHaltedStatus" xml:space="preserve"><value>Trading has halted.</value></data>
   <data name="AdminSimulationEnded" xml:space="preserve"><value>The exercise has ended.</value></data>
-  <data name="AdminFineIssued" xml:space="preserve"><value>The fine has been issued.</value></data>
-  <data name="AdminOffsetsDisbursed" xml:space="preserve"><value>The offsets have been handed out.</value></data>
-  <data name="AdminAbatementAdded" xml:space="preserve"><value>The abatement has been added.</value></data>
   <data name="AdminShockApplied" xml:space="preserve"><value>The modification has been applied.</value></data>
   <data name="AdminMessagingSaved" xml:space="preserve"><value>The messaging setting has been saved.</value></data>
   <data name="AdminRegistrationSaved" xml:space="preserve"><value>The registration settings have been saved.</value></data>
@@ -397,8 +383,6 @@
   <data name="AdminPriceReport" xml:space="preserve"><value>Average traded price by year</value></data>
   <data name="AdminCompanyReport" xml:space="preserve"><value>Company report</value></data>
   <data name="AdminUnitReport" xml:space="preserve"><value>Unit report</value></data>
-  <data name="AdminGovernmentRevenue" xml:space="preserve"><value>Government revenue</value></data>
-  <data name="AdminGovernmentReserve" xml:space="preserve"><value>Government reserve</value></data>
   <data name="AdminSelectRunHint" xml:space="preserve"><value>Choose an exercise to see its console.</value></data>
   <data name="AdminShockYear" xml:space="preserve"><value>Year to change</value></data>
   <data name="AdminAbatementFor" xml:space="preserve"><value>Abatement for the chosen unit</value></data>

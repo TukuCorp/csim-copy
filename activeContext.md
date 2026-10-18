@@ -1399,3 +1399,31 @@ User asked to install .NET 10, upgrade, and complete what remains.
   certificates are enabled in the tailnet admin console (docs/deployment.md section 5).
 - Still open: the operator dry run in docs/tester-guide.md section 9, EDF licensing, PostgreSQL
   against a live server.
+
+## Final review pass (2026-10-18)
+
+User asked for a final senior/principal review, improvements where possible, then commit and push main.
+
+- [x] Review Engine, Data and Web in parallel (read-only reviewers; verified findings with file:line)
+- [x] Triage: fix real defects and clear simplifications; leave golden-moving changes out unless a defect
+- [x] Each fix test-first where it changes behaviour
+- [x] Gate: build 0 warnings, format clean, full suite green, golden unchanged; /verify
+- [ ] Commit and push main; CI green
+
+### Review
+
+Full write-up: reports/2026-10-18-final-review.md. Seventeen defects fixed, each with a test that
+failed first: exchange cash escrow (market/stop buys overspending, a stop buy's leaked escrow), a
+ceiling-only collar change wiping the book, the released-orders count, an early year end stranding
+its later auctions, a zero floor, repeated bid ids, a stale timed halt, Load over a live run, the
+reset-attempt and registration races, a failed save swallowing the broadcast, notices wiped by the
+refresh, a refresh loop dying on one error, the front door never refreshing, chart disposal, and two
+racy broadcast tests. Dead code, 16 unused resource keys and a stale skip reason removed; CI actions
+on Node 24 majors.
+
+Gate: build 0 warnings, format clean, 526 passed, 3 skipped, 0 failed; golden unchanged.
+
+Open, by decision: three bot/compliance fixes that move the golden (escrow at year end, abatement
+horizon, double offset buy) for one calibration round; and hardening the internal demo does not need
+(rate limiting, session invalidation on reset, OTC privacy on the hub, timing enumeration, sector
+order on reload, untranslated enum text, unbounded chat).

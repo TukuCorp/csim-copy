@@ -4,6 +4,7 @@
 @inject AdminContext Context
 @inject AdminContextOptions Options
 @inject IStringLocalizer<SharedStrings> Strings
+@inject ILogger<AdminLayout> Log
 
 @* The interactive marker mirrors MainLayout: absent while the page is only prerendered. *@
 @if (!Context.Snapshot.IsAdministrator)
@@ -99,7 +100,16 @@ else
 
             while (await timer.WaitForNextTickAsync(cancellationToken))
             {
-                await InvokeAsync(Context.RefreshAsync);
+                try
+                {
+                    await InvokeAsync(Context.RefreshAsync);
+                }
+                catch (Exception exception) when (exception is not OperationCanceledException)
+                {
+                    // One failed read (a run removed under the screen, a database hiccup) must not
+                    // freeze the screen for good; the next tick tries again.
+                    Log.LogWarning(exception, "The screen refresh failed; trying again on the next tick.");
+                }
             }
         }
         catch (OperationCanceledException)

@@ -306,6 +306,20 @@ public sealed class SimulationClockTests
     }
 
     [Fact]
+    public void An_immediate_halt_replaces_a_warned_one_so_resuming_does_not_halt_again()
+    {
+        (Simulation simulation, TestTimeProvider time, SimulationClock clock) = Build();
+        clock.Start();
+        clock.RequestHalt(TimeSpan.FromSeconds(30));
+        clock.RequestHalt();
+
+        clock.Resume();
+        Advance(time, clock, TimeSpan.FromSeconds(31));
+
+        simulation.State.Should().Be(SimulationState.Running, "the warned halt was overtaken by the immediate one");
+    }
+
+    [Fact]
     public void Trading_can_be_resumed_after_a_halt()
     {
         (Simulation simulation, TestTimeProvider time, SimulationClock clock) = Build();

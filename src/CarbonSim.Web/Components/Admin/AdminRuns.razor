@@ -84,7 +84,10 @@
                                 </td>
                                 <td>@saved.CurrentYear</td>
                                 <td>
-                                    <button class="button small-button" @onclick="() => LoadAsync(saved)">@Strings["AdminLoad"]</button>
+                                    @if (!saved.Live)
+                                    {
+                                        <button class="button small-button" @onclick="() => LoadAsync(saved)">@Strings["AdminLoad"]</button>
+                                    }
                                     <button class="button ghost small-button" @onclick="() => DeleteAsync(saved)">@Strings["AdminDelete"]</button>
                                 </td>
                             </tr>

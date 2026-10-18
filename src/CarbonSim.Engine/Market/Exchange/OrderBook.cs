@@ -41,14 +41,10 @@ public sealed class OrderBook
         _simulation = simulation;
         _ids = ids;
         Product = product;
-        ReferencePrice = referencePrice;
         LastTradePrice = referencePrice;
     }
 
     public Product Product { get; }
-
-    /// <summary>The price the band was anchored to before anything traded (the auction floor).</summary>
-    public decimal ReferencePrice { get; }
 
     public decimal VolatilityBand => _simulation.Rules.VolatilityBand;
 
@@ -86,7 +82,11 @@ public sealed class OrderBook
     /// </remarks>
     public void FollowRules(decimal floor, decimal ceiling)
     {
-        Reanchor(floor);
+        ReleasedOutsideTheRules = 0;
+
+        // The market keeps trading where it was unless the new collar leaves that price outside it:
+        // a raised floor lifts the anchor, a cut ceiling lowers it, and a move elsewhere changes nothing.
+        Reanchor(Math.Clamp(LastTradePrice, floor, ceiling));
 
         Order[] outside =
         [
@@ -106,7 +106,7 @@ public sealed class OrderBook
         Cross();
     }
 
-    /// <summary>How many orders the last change of the rules took off this book.</summary>
+    /// <summary>How many orders the latest change of the rules took off this book.</summary>
     public int ReleasedOutsideTheRules { get; private set; }
 
     /// <summary>
@@ -282,13 +282,9 @@ public sealed class OrderBook
                     break;
                 }
 
-                Match(order, limit: null);
+                Match(order, limit: SpendCap(order));
                 CancelRemainder(order);
-
-                if (order.Remaining <= 0m)
-                {
-                    ReleaseUnusedCash(order);
-                }
+                ReleaseUnusedCash(order);
 
                 break;
 
@@ -446,6 +442,14 @@ public sealed class OrderBook
         }
     }
 
+    /// <summary>
+    /// The most an order without a price may pay a tonne: what it set aside at the top of the band
+    /// when it was placed. The band follows each leg upwards, so without this cap a buy walking a
+    /// thin book could reach offers above the money it promised.
+    /// </summary>
+    private static decimal? SpendCap(Order order) =>
+        order.Side == OrderSide.Buy && order.Remaining > 0m ? order.EscrowedCash / order.Remaining : null;
+
     private IEnumerable<Order> OppositeSide(Order incoming) => incoming.Side == OrderSide.Buy
         ? _resting.Where(order => order.Side == OrderSide.Sell && order.Kind != OrderKind.StopLoss)
             .OrderBy(order => order.Price).ThenBy(order => order.Id)
@@ -512,8 +516,9 @@ public sealed class OrderBook
                 continue;
             }
 
-            Match(triggered, limit: null);
+            Match(triggered, limit: SpendCap(triggered));
             CancelRemainder(triggered);
+            ReleaseUnusedCash(triggered);
         }
     }
 
@@ -543,8 +548,6 @@ public sealed class OrderBook
         ReleaseUnusedCash(order);
         order.Status = OrderStatus.Cancelled;
     }
-
-    private bool IsWithinBand(decimal price) => IsWithinBand(LastTradePrice, price);
 
     private bool IsWithinBand(decimal referencePrice, decimal price) =>
         price >= referencePrice * (1m - VolatilityBand) && price <= referencePrice * (1m + VolatilityBand);

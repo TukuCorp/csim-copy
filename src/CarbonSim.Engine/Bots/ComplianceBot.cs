@@ -349,7 +349,6 @@ public sealed class ComplianceBot
         // the lots the compliance year can actually surrender, so a bot never bids for the same
         // tonnes twice.
         AuctionLot[] current = [.. auction.Lots.Where(lot => lot.Vintage <= year)];
-        AuctionLot[] forward = [.. auction.Lots.Where(lot => lot.Vintage > year)];
 
         foreach (AuctionLot lot in current)
         {

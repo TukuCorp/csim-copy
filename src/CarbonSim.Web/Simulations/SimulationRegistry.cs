@@ -1,3 +1,4 @@
+using System.Runtime.ExceptionServices;
 using CarbonSim.Engine.Bots;
 using CarbonSim.Engine.Clock;
 using CarbonSim.Engine.Domain;
@@ -543,6 +544,7 @@ public sealed class SimulationRegistry
         HostedRun run = Run(simulationId);
         RunResult facts;
         Announcement announcement;
+        ExceptionDispatchInfo? saveFailed = null;
 
         await run.Gate.WaitAsync(cancellationToken).ConfigureAwait(false);
 
@@ -556,7 +558,16 @@ public sealed class SimulationRegistry
 
             if (save is not null)
             {
-                await save(run).ConfigureAwait(false);
+                try
+                {
+                    await save(run).ConfigureAwait(false);
+                }
+                catch (Exception exception)
+                {
+                    // The change has happened whether or not it was saved, so the room still hears
+                    // it; the caller is told the save failed once the broadcast is out.
+                    saveFailed = ExceptionDispatchInfo.Capture(exception);
+                }
             }
         }
         finally
@@ -565,6 +576,7 @@ public sealed class SimulationRegistry
         }
 
         await BroadcastAsync(simulationId, announcement).ConfigureAwait(false);
+        saveFailed?.Throw();
 
         return facts;
     }

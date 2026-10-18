@@ -1,6 +1,9 @@
 @page "/"
 @inject IStringLocalizer<SharedStrings> Strings
 @inject IPlayerSession Session
+@inject PlayerViewOptions ViewOptions
+@inject ILogger<Waiting> Log
+@implements IDisposable
 
 <PageTitle>@Strings["AppTitle"]</PageTitle>
 
@@ -76,9 +79,59 @@
     /// <summary>True while every exercise on offer is still waiting for its first year.</summary>
     private bool WaitingForStart => _runs.All(run => run.State == "Pending");
 
+    private readonly CancellationTokenSource _stop = new();
+
     protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync();
+
+        if (ViewOptions.RefreshInterval is { } interval)
+        {
+            _ = WatchAsync(interval, _stop.Token);
+        }
+    }
+
+    public void Dispose()
+    {
+        _stop.Cancel();
+        _stop.Dispose();
+    }
+
+    private async Task LoadAsync()
     {
         _runs = await Session.RunsAsync();
         Door = await Session.FrontDoorAsync();
+    }
+
+    /// <summary>
+    /// The room waits here while the trainer sets the exercise up, so the screen looks again on the
+    /// shell's refresh rather than waiting for someone to reload it.
+    /// </summary>
+    private async Task WatchAsync(TimeSpan interval, CancellationToken cancellationToken)
+    {
+        try
+        {
+            using PeriodicTimer timer = new(interval);
+
+            while (await timer.WaitForNextTickAsync(cancellationToken))
+            {
+                try
+                {
+                    await InvokeAsync(async () =>
+                    {
+                        await LoadAsync();
+                        StateHasChanged();
+                    });
+                }
+                catch (Exception exception) when (exception is not OperationCanceledException)
+                {
+                    Log.LogWarning(exception, "The front door could not refresh; trying again on the next tick.");
+                }
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // The page is going away.
+        }
     }
 }

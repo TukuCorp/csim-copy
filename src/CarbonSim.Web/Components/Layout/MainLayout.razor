@@ -4,6 +4,7 @@
 @inject PlayerContext Context
 @inject PlayerViewOptions ViewOptions
 @inject IStringLocalizer<SharedStrings> Strings
+@inject ILogger<MainLayout> Log
 
 @* data-interactive is true only in the interactive render, never in the prerendered HTML, so a
    client can tell when the circuit is listening before it types or clicks. See RendererInfo. *@
@@ -102,7 +103,16 @@ else
 
             while (await timer.WaitForNextTickAsync(cancellationToken))
             {
-                await InvokeAsync(Context.RefreshAsync);
+                try
+                {
+                    await InvokeAsync(Context.RefreshAsync);
+                }
+                catch (Exception exception) when (exception is not OperationCanceledException)
+                {
+                    // One failed read (a run removed under the screen, a database hiccup) must not
+                    // freeze the screen for good; the next tick tries again.
+                    Log.LogWarning(exception, "The screen refresh failed; trying again on the next tick.");
+                }
             }
         }
         catch (OperationCanceledException)

@@ -144,9 +144,10 @@ public sealed record Parameters
             errors.Add(Message("penaltyAllowanceDebit", "must not be negative", PenaltyAllowanceDebit));
         }
 
-        if (AuctionFloorPrice < 0m)
+        // The exchange anchors its volatility band on the floor, and a band around zero is empty.
+        if (AuctionFloorPrice <= 0m)
         {
-            errors.Add(Message("auctionFloorPrice", "must not be negative", AuctionFloorPrice));
+            errors.Add(Message("auctionFloorPrice", "must be greater than zero", AuctionFloorPrice));
         }
 
         if (AuctionCeilingPrice <= AuctionFloorPrice)

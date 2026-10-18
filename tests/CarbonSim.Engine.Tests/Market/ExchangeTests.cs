@@ -420,4 +420,44 @@ public sealed class ExchangeTests
         buy.Status.Should().Be(OrderStatus.Filled);
         exchange.Book(Vintage1).OpenOrders.Should().BeEmpty();
     }
+
+    [Fact]
+    public void A_stop_buy_that_fills_completely_hands_back_the_cash_it_did_not_spend()
+    {
+        (Simulation simulation, Exchange exchange) = Build();
+        Company stopOwner = simulation.FindCompany(3);
+        exchange.Place(Order(simulation, 1, OrderSide.Sell, 50m, price: 100m));
+        exchange.Place(Order(simulation, 2, OrderSide.Sell, 50m, price: 105m));
+
+        // The stop sets aside the top of the band (110 a tonne) and then fills at 105.
+        Order stop = exchange.Place(Order(simulation, 3, OrderSide.Buy, 50m, kind: OrderKind.StopLoss, stopPrice: 100m));
+        exchange.Place(Order(simulation, 4, OrderSide.Buy, 50m, kind: OrderKind.Market));
+
+        stop.Status.Should().Be(OrderStatus.Filled);
+        simulation.Cash.Escrowed(stopOwner).Should().Be(0m, "a finished order keeps nothing aside");
+    }
+
+    [Fact]
+    public void A_market_buy_never_pays_more_a_tonne_than_it_set_aside()
+    {
+        (Simulation simulation, Exchange exchange) = Build();
+        Company buyer = simulation.FindCompany(3);
+
+        // Trade at 110 so an offer can rest at 121, then trade back down to 100: the band is now
+        // 90..110 and a market buy sets aside 110 a tonne, but the 121 offer is still resting.
+        exchange.Place(Order(simulation, 1, OrderSide.Sell, 1m, price: 110m));
+        exchange.Place(Order(simulation, 4, OrderSide.Buy, 1m, price: 110m));
+        Order high = exchange.Place(Order(simulation, 1, OrderSide.Sell, 10m, price: 121m));
+        exchange.Place(Order(simulation, 1, OrderSide.Sell, 1m, price: 100m));
+        exchange.Place(Order(simulation, 4, OrderSide.Buy, 1m, price: 100m));
+        exchange.Place(Order(simulation, 1, OrderSide.Sell, 1m, price: 110m));
+
+        Order buy = exchange.Place(Order(simulation, 3, OrderSide.Buy, 11m, kind: OrderKind.Market));
+
+        buy.FilledVolume.Should().Be(1m, "the 121 offer is above the 110 a tonne the order set aside");
+        buy.Status.Should().Be(OrderStatus.Cancelled);
+        high.Remaining.Should().Be(10m);
+        simulation.Cash.Escrowed(buyer).Should().Be(0m);
+        simulation.Ledger.Available(buyer, Vintage1).Should().Be(1m);
+    }
 }

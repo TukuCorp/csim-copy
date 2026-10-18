@@ -263,6 +263,8 @@ public sealed class SimulationClock
 
         if (warnLead is null || warnLead <= TimeSpan.Zero)
         {
+            // A warned halt still pending is overtaken by this one, or it would halt again on resume.
+            _haltAt = null;
             Freeze();
             _simulation.State = SimulationState.TradingHalted;
 

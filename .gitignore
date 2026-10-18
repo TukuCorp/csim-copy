@@ -51,3 +51,6 @@ demo-data/
 
 ## Editor and hand-made backups
 *.bak
+
+# /verify verdict files stay out of commits
+reports/verify-*.md

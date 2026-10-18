@@ -131,7 +131,9 @@ public sealed class Auction
         // A bid is a promise to pay at a price nobody knows yet, so the money is set aside now.
         _simulation.Cash.Escrow(unit.Company, price * volume);
 
-        _bids.Add(new AuctionBid(_bids.Count + 1, unit, vintage, price, volume));
+        // Ids follow the highest one issued, not the count: a collar change can release bids.
+        int id = _bids.Count == 0 ? 1 : _bids.Max(bid => bid.Id) + 1;
+        _bids.Add(new AuctionBid(id, unit, vintage, price, volume));
     }
 
     /// <summary>

@@ -120,7 +120,6 @@
   <data name="CapitalCost" xml:space="preserve"><value>Chi phí vốn</value></data>
   <data name="VintagesThisAuction" xml:space="preserve"><value>Các thời hạn trong phiên này</value></data>
   <data name="AllowancesToBeAuctionedThisYear" xml:space="preserve"><value>Hạn ngạch đưa ra đấu giá trong năm</value></data>
-  <data name="AllowancesStillToBeAuctionedThisYear" xml:space="preserve"><value>Còn phải đấu giá</value></data>
   <data name="AuctionHasEnded" xml:space="preserve"><value>Phiên đấu giá đã kết thúc</value></data>
   <data name="Won" xml:space="preserve"><value>Trúng</value></data>
   <data name="Paid" xml:space="preserve"><value>Đã trả</value></data>
@@ -133,7 +132,6 @@
   <data name="TargetVolume" xml:space="preserve"><value>Khối lượng</value></data>
   <data name="TargetPrice" xml:space="preserve"><value>Giá</value></data>
   <data name="StopPrice" xml:space="preserve"><value>Giá cắt lỗ</value></data>
-  <data name="PartialFillsAccepted" xml:space="preserve"><value>Chấp nhận khớp một phần</value></data>
   <data name="ImmediateOrCancel" xml:space="preserve"><value>Khớp ngay hoặc hủy</value></data>
   <data name="Buy" xml:space="preserve"><value>Mua</value></data>
   <data name="Sell" xml:space="preserve"><value>Bán</value></data>
@@ -206,7 +204,6 @@
   <data name="DisplayName" xml:space="preserve"><value>Tên hiển thị</value></data>
   <data name="RegistrationPin" xml:space="preserve"><value>Mã PIN đăng ký</value></data>
   <data name="Register" xml:space="preserve"><value>Đăng ký và nhận một công ty</value></data>
-  <data name="SignInPrompt" xml:space="preserve"><value>Đăng nhập để chơi.</value></data>
   <data name="NoCompany" xml:space="preserve"><value>Tài khoản này chưa nhận công ty nào trong mô phỏng.</value></data>
   <data name="NoSimulations" xml:space="preserve"><value>Chưa có mô phỏng nào đang chạy.</value></data>
   <data name="Language" xml:space="preserve"><value>Ngôn ngữ</value></data>
@@ -223,7 +220,6 @@
   <data name="AdminSwitchOff" xml:space="preserve"><value>Tắt nhắn tin</value></data>
   <data name="AdminSwitchOn" xml:space="preserve"><value>Bật nhắn tin</value></data>
   <data name="AdminChooseUnit" xml:space="preserve"><value>Hãy chọn một đơn vị trước.</value></data>
-  <data name="AdminChooseCompany" xml:space="preserve"><value>Hãy chọn một công ty trước.</value></data>
   <data name="AdminFineNeedsDescription" xml:space="preserve"><value>Khoản phạt cần có mô tả.</value></data>
   <data name="AdminVolumeNeeded" xml:space="preserve"><value>Nhập khối lượng lớn hơn không.</value></data>
   <data name="AdminFinedUnit" xml:space="preserve"><value>Đã phạt {0} {1}</value></data>
@@ -233,7 +229,6 @@
   <data name="OrderFilled" xml:space="preserve"><value>Đã khớp {0} ở giá {1}</value></data>
   <data name="OrderPartlyFilled" xml:space="preserve"><value>Đã khớp {0}, còn {1} đang chờ ở giá {2}</value></data>
   <data name="OrderResting" xml:space="preserve"><value>Đang chờ khớp: {0} ở giá {1}</value></data>
-  <data name="OrderRejected" xml:space="preserve"><value>Lệnh không được chấp nhận.</value></data>
   <data name="OrderSent" xml:space="preserve"><value>Đã gửi lệnh.</value></data>
   <data name="AverageAllowancePriceAllChannels" xml:space="preserve"><value>Giá hạn ngạch trung bình (mọi kênh)</value></data>
   <data name="AuctionAveragePrice" xml:space="preserve"><value>Giá đấu giá trung bình</value></data>
@@ -285,7 +280,6 @@
   <data name="PriceChartHint" xml:space="preserve"><value>Giá khớp và giá giao dịch theo thời hạn và tín chỉ bù trừ.</value></data>
   <data name="Long" xml:space="preserve"><value>Thừa</value></data>
   <data name="Short" xml:space="preserve"><value>Thiếu</value></data>
-  <data name="PositionLegend" xml:space="preserve"><value>Hạn ngạch miễn phí và phần thiếu hụt của năm.</value></data>
   <data name="OpenOrders" xml:space="preserve"><value>Lệnh đang mở</value></data>
   <data name="Side" xml:space="preserve"><value>Chiều</value></data>
   <data name="Filled" xml:space="preserve"><value>Đã khớp</value></data>
@@ -294,7 +288,6 @@
   <data name="Seller" xml:space="preserve"><value>Người bán</value></data>
   <data name="Channel" xml:space="preserve"><value>Kênh</value></data>
   <data name="Product" xml:space="preserve"><value>Sản phẩm</value></data>
-  <data name="Quantity" xml:space="preserve"><value>Số lượng</value></data>
   <data name="NoRows" xml:space="preserve"><value>Chưa có gì để hiển thị.</value></data>
   <data name="Share" xml:space="preserve"><value>Tỷ lệ</value></data>
   <data name="Average" xml:space="preserve"><value>Trung bình</value></data>
@@ -326,13 +319,10 @@
   <data name="AdminPause" xml:space="preserve"><value>Tạm dừng đồng hồ</value></data>
   <data name="AdminResume" xml:space="preserve"><value>Cho đồng hồ chạy</value></data>
   <data name="AdminHalt" xml:space="preserve"><value>Dừng giao dịch</value></data>
-  <data name="AdminHaltNow" xml:space="preserve"><value>Dừng ngay</value></data>
   <data name="AdminHaltWarn" xml:space="preserve"><value>Số giây cảnh báo trước khi dừng (để trống để dừng ngay)</value></data>
   <data name="AdminEndYear" xml:space="preserve"><value>Kết thúc năm</value></data>
   <data name="AdminEndSimulation" xml:space="preserve"><value>Kết thúc bài tập</value></data>
   <data name="AdminMessaging" xml:space="preserve"><value>Tin nhắn của người chơi</value></data>
-  <data name="AdminMessagingAllowed" xml:space="preserve"><value>Người chơi được gửi tin nhắn.</value></data>
-  <data name="AdminMessagingBlocked" xml:space="preserve"><value>Tính năng tin nhắn đã tắt.</value></data>
   <data name="AdminIssueFine" xml:space="preserve"><value>Phạt một đơn vị</value></data>
   <data name="AdminFineAmount" xml:space="preserve"><value>Số tiền phạt</value></data>
   <data name="AdminFineDescription" xml:space="preserve"><value>Lý do phạt</value></data>
@@ -363,7 +353,6 @@
   <data name="AdminCompaniesOnOffer" xml:space="preserve"><value>Các công ty do kịch bản định nghĩa</value></data>
   <data name="AdminCreateRun" xml:space="preserve"><value>Tạo bài tập</value></data>
   <data name="AdminOpen" xml:space="preserve"><value>Mở</value></data>
-  <data name="AdminCreated" xml:space="preserve"><value>Đã tạo bài tập.</value></data>
   <data name="AdminLoaded" xml:space="preserve"><value>Đã tải bài tập.</value></data>
   <data name="AdminDeleted" xml:space="preserve"><value>Đã xóa bài tập.</value></data>
   <data name="AdminYearStarted" xml:space="preserve"><value>Năm đã bắt đầu.</value></data>
@@ -373,9 +362,6 @@
   <data name="AdminHaltWarned" xml:space="preserve"><value>Giao dịch sẽ dừng sau cảnh báo.</value></data>
   <data name="AdminHaltedStatus" xml:space="preserve"><value>Giao dịch đã dừng.</value></data>
   <data name="AdminSimulationEnded" xml:space="preserve"><value>Bài tập đã kết thúc.</value></data>
-  <data name="AdminFineIssued" xml:space="preserve"><value>Đã ban hành hình phạt.</value></data>
-  <data name="AdminOffsetsDisbursed" xml:space="preserve"><value>Đã cấp tín chỉ bù trừ.</value></data>
-  <data name="AdminAbatementAdded" xml:space="preserve"><value>Đã thêm biện pháp giảm phát thải.</value></data>
   <data name="AdminShockApplied" xml:space="preserve"><value>Đã áp dụng điều chỉnh.</value></data>
   <data name="AdminMessagingSaved" xml:space="preserve"><value>Đã lưu thiết lập tin nhắn.</value></data>
   <data name="AdminRegistrationSaved" xml:space="preserve"><value>Đã lưu thiết lập đăng ký.</value></data>
@@ -390,8 +376,6 @@
   <data name="AdminPriceReport" xml:space="preserve"><value>Giá giao dịch trung bình theo năm</value></data>
   <data name="AdminCompanyReport" xml:space="preserve"><value>Báo cáo công ty</value></data>
   <data name="AdminUnitReport" xml:space="preserve"><value>Báo cáo đơn vị</value></data>
-  <data name="AdminGovernmentRevenue" xml:space="preserve"><value>Doanh thu của chính phủ</value></data>
-  <data name="AdminGovernmentReserve" xml:space="preserve"><value>Dự trữ của chính phủ</value></data>
   <data name="AdminSelectRunHint" xml:space="preserve"><value>Chọn một bài tập để xem bảng điều khiển.</value></data>
   <data name="AdminShockYear" xml:space="preserve"><value>Năm cần điều chỉnh</value></data>
   <data name="AdminAbatementFor" xml:space="preserve"><value>Biện pháp giảm phát thải cho đơn vị đã chọn</value></data>

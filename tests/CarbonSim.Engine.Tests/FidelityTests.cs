@@ -75,7 +75,7 @@ public sealed class FidelityTests
         measured.Companies.Should().Be(242);
     }
 
-    [Fact(Skip = "measured after building the reserve-to-auction mechanism: offering the whole reserve again at the start of the next year (governmentReserveToAuctionPercent 1.0) lifts the supply the run used to retire and takes the Normal shortfall from 23.8 Mt to 21.8 Mt (with the rest of the scenario rebalanced as well, to 3.7 Mt), but every auction is then under-subscribed and the price path collapses (year 3 clears 126-146 instead of 200 or more; the per-auction variant is worse, sitting on the floor at 101-104). The price path needs exactly what the mechanism hands back: a year only clears above the floor when its auction is over-subscribed, and full compliance needs the fleet to be able to buy its position. Both can only hold if the fleet carries stock across years (banking), which it does not, so the shipped scenario leaves the share at 0.0 and this envelope stays open.")]
+    [Fact(Skip = "calibration limit, measured (activeContext.md, QA round 5 grid): no setting of the shipped scenario reaches full compliance. The final year's obligation outgrows everything the scenario can supply while keeping the price path rising; the best grid row reaches 527 of 726 company-years (73%) and the shipped one 294 of 726. The other envelopes hold, so this one stays open as the documented limit.")]
     public void Envelope_one_every_bot_complies_and_nobody_pays_a_penalty()
     {
         Measured.PenaltyCount.Should().Be(0);

@@ -185,6 +185,29 @@ public sealed class FeedbackScreensTests : ScreenTestContext
     }
 
     [Fact]
+    public async Task A_notice_stays_through_the_refresh_until_it_is_dismissed()
+    {
+        Navigate($"/run/{SimulationId:D}/auction");
+
+        IRenderedComponent<MainLayout> layout = RenderComponent<MainLayout>(parameters => parameters
+            .Add(component => component.Body, (RenderFragment)(_ => { })));
+        PlayerContext context = Services.GetRequiredService<PlayerContext>();
+        string placed = Localizer(Services)["PlaceBid"].Value;
+
+        await layout.InvokeAsync(() => context.ActAsync(session => session.PlaceBidAsync(SimulationId, 1, 1, 104m, 1_000m), placed));
+
+        // The shell re-reads the run every second; that must not wipe what the control said.
+        await layout.InvokeAsync(context.RefreshAsync);
+
+        context.Snapshot.Status.Should().Be(placed);
+        layout.Find(".notice").TextContent.Should().Contain(placed);
+
+        await layout.InvokeAsync(context.ClearNotice);
+
+        layout.FindAll(".notice").Should().BeEmpty();
+    }
+
+    [Fact]
     public void A_settled_year_reads_as_compliant_and_has_nothing_left_to_count_down()
     {
         View = View with

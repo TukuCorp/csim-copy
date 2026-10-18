@@ -39,19 +39,12 @@ public sealed class SimulationClockService : BackgroundService
         _log = log ?? throw new ArgumentNullException(nameof(log));
     }
 
-    /// <summary>Advances one run once: clock, auction clears, bots, then the run's own events.</summary>
-    public async Task TickAsync(Guid simulationId, CancellationToken cancellationToken = default)
-    {
-        try
-        {
-            await ApplyAsync(simulationId, run => run.Module.Advance(), cancellationToken: cancellationToken).ConfigureAwait(false);
-        }
-        catch (Exception exception)
-        {
-            _log.LogError(exception, "Simulation {SimulationId} tick failed.", simulationId);
-            throw;
-        }
-    }
+    /// <summary>
+    /// Advances one run once: clock, auction clears, bots, then the run's own events. A failure is
+    /// logged once, by the background loop; a caller driving the tick by hand gets the exception.
+    /// </summary>
+    public Task TickAsync(Guid simulationId, CancellationToken cancellationToken = default) =>
+        ApplyAsync(simulationId, run => run.Module.Advance(), cancellationToken: cancellationToken);
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -424,6 +417,13 @@ public sealed class SimulationClockService : BackgroundService
         SimulationRegistry runs = scope.ServiceProvider.GetRequiredService<SimulationRegistry>();
         ISimulationRepository store = scope.ServiceProvider.GetRequiredService<ISimulationRepository>();
         TimeProvider time = scope.ServiceProvider.GetRequiredService<TimeProvider>();
+
+        // The saved copy dates from creation or the last year end, so loading it over a live run would
+        // throw away everything played since. Loading is for bringing a run back after a restart.
+        if (runs.Contains(simulationId))
+        {
+            throw new InvalidOperationException("This exercise is already running; loading its saved copy would lose the play since it was saved.");
+        }
 
         SimulationSnapshot snapshot = await store.LoadAsync(simulationId, cancellationToken).ConfigureAwait(false)
             ?? throw new InvalidOperationException($"There is no saved simulation {simulationId}.");

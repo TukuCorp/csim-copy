@@ -1,5 +1,6 @@
 using CarbonSim.Data.Accounts;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 
 namespace CarbonSim.Data.Accounts;
 
@@ -83,7 +84,24 @@ public sealed class EfAccountStore(CarbonSimDbContext context) : IAccountStore
         };
 
         _context.Accounts.Add(created);
-        await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+
+        try
+        {
+            await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        }
+        catch (DbUpdateException)
+        {
+            _context.Entry(created).State = EntityState.Detached;
+
+            // Another registration for the address or the company landed between the checks above
+            // and this insert, and the unique index refused this one: the same answer as the checks.
+            if (await IsTakenAsync(normalized, company, cancellationToken).ConfigureAwait(false))
+            {
+                return null;
+            }
+
+            throw;
+        }
 
         return created;
     }
@@ -135,24 +153,39 @@ public sealed class EfAccountStore(CarbonSimDbContext context) : IAccountStore
             cancellationToken);
     }
 
-    public async Task<int> RecordFailedResetAttemptAsync(
+    public async Task<int?> ClaimResetAttemptAsync(
         int accountId,
+        int maxAttempts,
         CancellationToken cancellationToken = default)
     {
-        PlayerAccount? account = await _context
-            .Accounts.SingleOrDefaultAsync(candidate => candidate.Id == accountId, cancellationToken)
+        int claimed = await _context.Accounts
+            .Where(account => account.Id == accountId && account.ResetCodeHash != null && account.ResetCodeAttempts < maxAttempts)
+            .ExecuteUpdateAsync(set => set.SetProperty(account => account.ResetCodeAttempts, account => account.ResetCodeAttempts + 1), cancellationToken)
             .ConfigureAwait(false);
 
-        if (account is null)
+        if (claimed == 0)
         {
-            return 0;
+            return null;
         }
 
-        account.ResetCodeAttempts++;
-        await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        // The update went straight to the database, so a copy this context is tracking is now stale;
+        // without the reload, a later edit through it would write the old count back.
+        foreach (EntityEntry<PlayerAccount> tracked in _context.ChangeTracker.Entries<PlayerAccount>().Where(entry => entry.Entity.Id == accountId).ToList())
+        {
+            await tracked.ReloadAsync(cancellationToken).ConfigureAwait(false);
+        }
 
-        return account.ResetCodeAttempts;
+        return await _context.Accounts.AsNoTracking()
+            .Where(account => account.Id == accountId)
+            .Select(account => account.ResetCodeAttempts)
+            .SingleAsync(cancellationToken)
+            .ConfigureAwait(false);
     }
+
+    private async Task<bool> IsTakenAsync(string email, string? company, CancellationToken cancellationToken) =>
+        await _context.Accounts.AsNoTracking()
+            .AnyAsync(account => account.Email == email || (company != null && account.CompanyName == company), cancellationToken)
+            .ConfigureAwait(false);
 
     private async Task<bool> EditAsync(
         int accountId,

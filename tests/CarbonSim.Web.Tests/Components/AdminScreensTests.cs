@@ -36,6 +36,18 @@ public sealed class AdminScreensTests : AdminScreenTestContext
         IRenderedComponent<AdminRuns> page = RenderComponent<AdminRuns>(parameters => parameters.AddCascadingValue(Snapshot));
 
         page.Markup.Should().Contain("Vietnam pilot");
+        page.FindAll("button").Should().NotContain(
+            button => button.TextContent.Contains("Load", StringComparison.Ordinal),
+            "loading the saved copy over a live run would throw away what was played since");
+    }
+
+    [Fact]
+    public void A_saved_exercise_that_is_not_running_can_be_loaded()
+    {
+        Snapshot = Snapshot with { Saved = [new AdminSavedRun(Guid.NewGuid(), "Last week's pilot", "YearEnded", 2, false)] };
+
+        IRenderedComponent<AdminRuns> page = RenderComponent<AdminRuns>(parameters => parameters.AddCascadingValue(Snapshot));
+
         page.FindAll("button").Should().Contain(button => button.TextContent.Contains("Load", StringComparison.Ordinal));
     }
 

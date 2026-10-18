@@ -32,8 +32,24 @@ public sealed class StubPlayerSession : IPlayerSession
     public Task<FrontDoorView> FrontDoorAsync(CancellationToken cancellationToken = default) =>
         Task.FromResult(FrontDoor);
 
-    public Task<PlayerView?> ForPlayerAsync(Guid simulationId, CancellationToken cancellationToken = default) =>
-        Task.FromResult(View);
+    /// <summary>How many times the run was read, so a test can see the shell's refresh going on.</summary>
+    public int Reads { get; private set; }
+
+    /// <summary>Set to make the next read fail, the way a run deleted under the screen would.</summary>
+    public Exception? FailNextRead { get; set; }
+
+    public Task<PlayerView?> ForPlayerAsync(Guid simulationId, CancellationToken cancellationToken = default)
+    {
+        Reads++;
+
+        if (FailNextRead is { } failure)
+        {
+            FailNextRead = null;
+            throw failure;
+        }
+
+        return Task.FromResult(View);
+    }
 
     public Task PlaceBidAsync(Guid simulationId, int unitId, int vintage, decimal price, decimal volume, CancellationToken cancellationToken = default)
     {
@@ -90,7 +106,14 @@ public sealed class RecordingCharts : ICharts
         return Task.CompletedTask;
     }
 
-    public Task DisposeAsync(ElementReference element) => Task.CompletedTask;
+    /// <summary>How many charts were taken down, so a test can see a chart cleaned up after itself.</summary>
+    public int Disposed { get; private set; }
+
+    public Task DisposeAsync(ElementReference element)
+    {
+        Disposed++;
+        return Task.CompletedTask;
+    }
 }
 
 /// <summary>
@@ -108,7 +131,7 @@ public abstract class ScreenTestContext : TestContext
         Services.AddLocalization();
         Services.AddSingleton<IPlayerSession>(Session);
         Services.AddSingleton<ICharts>(Charts);
-        Services.AddSingleton(new PlayerViewOptions { RefreshInterval = null });
+        Services.AddSingleton(new PlayerViewOptions { RefreshInterval = RefreshInterval });
         Services.AddSingleton(provider =>
         {
             PlayerContext context = new(
@@ -127,6 +150,9 @@ public abstract class ScreenTestContext : TestContext
         // the connected circuit does.
         Renderer.SetRendererInfo(new RendererInfo("Server", isInteractive: true));
     }
+
+    /// <summary>The shell's refresh; off, so a screen renders once, unless a test is about the refresh.</summary>
+    protected virtual TimeSpan? RefreshInterval => null;
 
     protected StubPlayerSession Session { get; } = new();
 

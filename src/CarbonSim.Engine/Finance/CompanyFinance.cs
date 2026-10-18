@@ -19,9 +19,6 @@ public sealed class CompanyFinance
         _simulation = simulation;
     }
 
-    /// <summary>Money on hand plus what the credit line still allows.</summary>
-    public decimal AvailableCapital(Company company) => _simulation.Cash.Available(company);
-
     /// <summary>How much of the credit line is left; it shrinks once the company is in the red.</summary>
     public decimal AvailableOverdraft(Company company)
     {

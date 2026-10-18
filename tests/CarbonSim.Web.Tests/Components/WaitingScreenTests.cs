@@ -79,7 +79,7 @@ public sealed class WaitingScreenTests : ScreenTestContext
         page.FindAll("a").Should().Contain(link => link.TextContent.Trim() == Localizer(Services)["OpenSimulation"].Value);
     }
 
-    private static RunSummary Summary() => new(
+    internal static RunSummary Summary() => new(
         RunId,
         "Vietnam ETS Pilot 2024",
         "Pending",

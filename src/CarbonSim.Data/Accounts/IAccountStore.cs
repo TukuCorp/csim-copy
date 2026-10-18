@@ -43,6 +43,10 @@ public interface IAccountStore
     /// <summary>Closes any open reset, whether it was used, expired or abandoned.</summary>
     Task<bool> ClearResetCodeAsync(int accountId, CancellationToken cancellationToken = default);
 
-    /// <summary>Counts a wrong code and returns how many this open reset has now seen.</summary>
-    Task<int> RecordFailedResetAttemptAsync(int accountId, CancellationToken cancellationToken = default);
+    /// <summary>
+    /// Takes one try at the open reset's code before the code is checked, and returns which try it
+    /// is, or null when the reset has no tries left. The claim is one conditional update, so
+    /// requests racing each other cannot share a try.
+    /// </summary>
+    Task<int?> ClaimResetAttemptAsync(int accountId, int maxAttempts, CancellationToken cancellationToken = default);
 }

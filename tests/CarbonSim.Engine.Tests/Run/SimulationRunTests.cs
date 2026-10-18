@@ -1,6 +1,7 @@
 using CarbonSim.Engine.Clock;
 using CarbonSim.Engine.Domain;
 using CarbonSim.Engine.Market;
+using CarbonSim.Engine.Market.Exchange;
 using CarbonSim.Engine.Run;
 using FluentAssertions;
 
@@ -165,5 +166,79 @@ public sealed class SimulationRunTests
 
         clearing.Should().Throw<InvalidOperationException>()
             .WithMessage("*outside the collar*", "settling it would fail deep in the cash ledger instead");
+    }
+
+    [Fact]
+    public void Closing_the_year_early_clears_every_auction_left_in_it()
+    {
+        (SimulationRun run, _) = Started();
+
+        // Halted in the first section, before any window opened: none of the year's auctions ran.
+        run.RequestHalt();
+        run.EndYear();
+
+        run.Auctions.Auctions.Where(auction => auction.Year == 1)
+            .Should().OnlyContain(auction => auction.IsCleared, "an auction left open would keep its lots out of the reserve");
+    }
+
+    [Fact]
+    public void A_floor_of_zero_is_refused_before_anything_moves()
+    {
+        (SimulationRun run, _) = Started();
+        decimal floor = run.Simulation.Rules.AuctionFloorPrice;
+        int revision = run.Simulation.RulesRevision;
+
+        Action toZero = () => run.ChangeCollar(0m, null);
+
+        toZero.Should().Throw<ArgumentOutOfRangeException>("a book cannot be anchored on a price of zero");
+        run.Simulation.Rules.AuctionFloorPrice.Should().Be(floor);
+        run.Simulation.RulesRevision.Should().Be(revision);
+    }
+
+    [Fact]
+    public void A_collar_change_counts_only_the_orders_it_released()
+    {
+        (SimulationRun run, _) = Started();
+        Product vintage1 = Product.Allowance(1);
+        run.Simulation.Ledger.Grant(run.Simulation.FindCompany(1), vintage1, 1_000m);
+        run.PlaceOrder(new OrderRequest(run.Simulation.FindUnit(1), vintage1, OrderSide.Sell, OrderKind.Limit, 100m, 95m));
+
+        run.ChangeCollar(105m, null).Collar!.OrdersReleased.Should().Be(1, "a floor of 105 cannot hold an offer at 95");
+
+        run.ChangeCollar(null, 280m).Collar!.OrdersReleased.Should().Be(0, "nothing was left outside the second change");
+    }
+
+    [Fact]
+    public void A_bid_placed_after_a_release_gets_an_id_of_its_own()
+    {
+        (SimulationRun run, TestTimeProvider time) = Started();
+        time.Advance(TimeSpan.FromMinutes(3));
+        run.Advance();
+        Unit unit = run.Simulation.FindUnit(1);
+        run.Bid(unit, 1, 120m, 1_000m);
+        run.Bid(unit, 1, 150m, 1_000m);
+
+        run.ChangeCollar(140m, null);
+        run.Bid(unit, 1, 160m, 1_000m);
+
+        run.Auctions.ForSection(1, 1).Bids.Select(bid => bid.Id).Should().OnlyHaveUniqueItems();
+    }
+
+    [Fact]
+    public void Moving_only_the_ceiling_leaves_the_market_where_it_was_trading()
+    {
+        (SimulationRun run, _) = Started();
+        Product vintage1 = Product.Allowance(1);
+        run.Simulation.Ledger.Grant(run.Simulation.FindCompany(1), vintage1, 1_000m);
+        run.PlaceOrder(new OrderRequest(run.Simulation.FindUnit(1), vintage1, OrderSide.Sell, OrderKind.Limit, 10m, 108m));
+        run.PlaceOrder(new OrderRequest(run.Simulation.FindUnit(4), vintage1, OrderSide.Buy, OrderKind.Limit, 10m, 108m));
+
+        // Trading at 108, the band is 97.2..118.8, so an offer at 115 can rest.
+        Order offer = run.PlaceOrder(new OrderRequest(run.Simulation.FindUnit(1), vintage1, OrderSide.Sell, OrderKind.Limit, 10m, 115m)).Order!;
+
+        run.ChangeCollar(null, 280m);
+
+        run.Exchange.Book(vintage1).LastTradePrice.Should().Be(108m, "the floor did not move, so neither does the market");
+        offer.Status.Should().Be(OrderStatus.Open);
     }
 }
