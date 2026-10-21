@@ -131,6 +131,15 @@ in one of three ways:
     Checked 2026-10-17: the sign-in page and a live Blazor screen both worked through the tailnet name.
   - Cloudflare, for a public https address: `cloudflared tunnel --url http://127.0.0.1:5080`
     (not installed on the demo box).
+- **A hosted runner, for a link that does not need this machine.** `.github/workflows/hosted-demo.yml`
+  publishes the build on a GitHub-hosted Ubuntu runner, starts it in the Demo environment and puts a
+  Cloudflare quick tunnel in front of it. It runs for up to 5.5 hours, then the runner and everything
+  on it (accounts, exercises) are gone. Set the `DEMO_ADMIN_PASSWORD` and `DEMO_REGISTRATION_PIN`
+  repository secrets once, then push to the `hosted-demo` branch or re-run the workflow. The
+  `https://<name>.trycloudflare.com` address changes on every run and appears as an annotation on the
+  run page and in its summary. The repository is public, so the run log is too. The host's own log
+  (which carries password-reset codes) is printed only after the host has stopped, so resets cannot
+  be served during a hosted session.
 - **The office LAN.** Start with `-Bind 0.0.0.0` and allow the port through Windows Firewall
   (`New-NetFirewallRule -DisplayName CarbonSim -Direction Inbound -Protocol TCP -LocalPort 5080 -Action Allow`,
   from an elevated prompt). Traffic is plain HTTP, so use this only on a network you trust.

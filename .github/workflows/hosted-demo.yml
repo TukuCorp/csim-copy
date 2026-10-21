@@ -1,0 +1,109 @@
+# A public link to the internal demo for a few hours, with nobody's laptop in the loop: a hosted
+# runner publishes the build, runs it in the Demo environment as scripts/run-demo.ps1 would, and puts
+# a Cloudflare quick tunnel (https, WebSockets, no account) in front of it. The address changes on
+# every run and is posted as an annotation on the run page. Push to this branch, or re-run the job,
+# for a fresh session; nothing carries over between runs.
+#
+# The trainer password and registration PIN come from the DEMO_ADMIN_PASSWORD and
+# DEMO_REGISTRATION_PIN repository secrets. This repository is public, so its run logs are too: the
+# host writes password-reset codes to its log, so that log is printed only once the host has stopped.
+name: hosted-demo
+
+on:
+  push:
+    branches: [hosted-demo]
+  workflow_dispatch:
+    inputs:
+      hours:
+        description: Hours to keep the demo up (at most 5.5)
+        default: '5.5'
+
+concurrency:
+  group: hosted-demo
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  serve:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    env:
+      ASPNETCORE_ENVIRONMENT: Demo
+      ASPNETCORE_URLS: http://127.0.0.1:5080
+      CarbonSim__ConnectionString: Data Source=${{ github.workspace }}/demo-data/carbonsim.sqlite
+      CarbonSim__AdminEmail: trainer@carbonsim.demo
+      CarbonSim__AdminPassword: ${{ secrets.DEMO_ADMIN_PASSWORD }}
+      CarbonSim__RegistrationPin: ${{ secrets.DEMO_REGISTRATION_PIN }}
+      HOURS: ${{ inputs.hours || '5.5' }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Publish
+        run: dotnet publish src/CarbonSim.Web/CarbonSim.Web.csproj -c Release -o publish --nologo
+
+      - name: Start the host
+        run: |
+          if [ -z "$CarbonSim__AdminPassword" ] || [ -z "$CarbonSim__RegistrationPin" ]; then
+            echo "::error::Set the DEMO_ADMIN_PASSWORD and DEMO_REGISTRATION_PIN repository secrets."
+            exit 1
+          fi
+          mkdir -p demo-data
+          cd publish
+          nohup dotnet CarbonSim.Web.dll > ../demo-data/host.log 2>&1 &
+          echo $! > ../demo-data/host.pid
+          for _ in $(seq 60); do
+            curl -fsS -o /dev/null http://127.0.0.1:5080/sign-in && exit 0
+            sleep 2
+          done
+          echo "::error::The host did not answer on /sign-in."
+          exit 1
+
+      - name: Open the tunnel
+        run: |
+          curl -fsSL -o cloudflared https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64
+          chmod +x cloudflared
+          nohup ./cloudflared tunnel --no-autoupdate --url http://127.0.0.1:5080 > demo-data/tunnel.log 2>&1 &
+          url=''
+          for _ in $(seq 60); do
+            url=$(grep -o 'https://[a-z0-9-]*\.trycloudflare\.com' demo-data/tunnel.log | head -n 1)
+            [ -n "$url" ] && break
+            sleep 2
+          done
+          if [ -z "$url" ]; then
+            cat demo-data/tunnel.log
+            echo "::error::The tunnel gave no address."
+            exit 1
+          fi
+          # A new quick-tunnel name takes a little while to resolve.
+          for _ in $(seq 60); do
+            curl -fsS -o /dev/null "$url/sign-in" && break
+            sleep 5
+          done
+          curl -fsS -o /dev/null "$url/sign-in"
+          until=$(date -u -d "+$(awk "BEGIN { print int($HOURS * 60) }") minutes" '+%H:%M UTC')
+          echo "::notice title=CarbonSim demo is up::$url (until about $until)"
+          echo "### CarbonSim demo: $url (until about $until)" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Keep the demo up
+        run: |
+          end=$(( $(date +%s) + $(awk "BEGIN { print int($HOURS * 3600) }") ))
+          while [ "$(date +%s)" -lt "$end" ]; do
+            if ! kill -0 "$(cat demo-data/host.pid)" 2>/dev/null; then
+              echo "::error::The host stopped."
+              exit 1
+            fi
+            sleep 60
+          done
+
+      - name: Stop the host and print its log
+        if: always()
+        run: |
+          [ -f demo-data/host.pid ] && kill "$(cat demo-data/host.pid)" 2>/dev/null || true
+          sleep 2
+          [ -f demo-data/host.log ] && cat demo-data/host.log || true

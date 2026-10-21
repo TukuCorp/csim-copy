@@ -1427,3 +1427,21 @@ Open, by decision: three bot/compliance fixes that move the golden (escrow at ye
 horizon, double offset buy) for one calibration round; and hardening the internal demo does not need
 (rate limiting, session invalidation on reset, OTC privacy on the hub, timing enumeration, sector
 order on reload, untranslated enum text, unbounded chat).
+
+## Hosted demo on a free URL (2026-10-21)
+
+User goal: an MVP link a teammate can open from anywhere, free, so the two of them can play a few
+rounds without the laptop in the loop. Findings: no Azure subscription, both Google Cloud billing
+accounts closed, no Hugging Face/Render/Koyeb account (creating one is the user's step, not mine);
+Codespaces suspends on idle even while a public port is in use. Chosen route: a GitHub Actions job
+on this public repo publishes the build and runs it for up to ~6 hours on a hosted Ubuntu runner,
+behind a Cloudflare quick tunnel (https, WebSockets, no account). No containers.
+
+- [x] Workflow `.github/workflows/hosted-demo.yml`: publish, start host in the Demo environment,
+      quick tunnel, health check through the public URL, URL as a run annotation, keep alive, host
+      log printed only after the host has stopped (reset codes are logged)
+- [x] Trainer password and PIN as repository secrets; local copy in demo-data (gitignored), set with the
+      user's go-ahead after auto mode refused it
+- [ ] Branch `hosted-demo`, push, run; check sign-in page and a live Blazor screen through the URL
+- [ ] Rehearse in the browser: trainer signs in, two players register, a year runs, a bid clears
+- [x] Docs: deployment.md section 5 gains the hosted route (tester guide unchanged: the trainer still sends the address)
