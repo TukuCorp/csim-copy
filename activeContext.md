@@ -1461,3 +1461,8 @@ host the user did not name). Credentials are in demo-data/hosted-credentials.loc
 (gitignored). The run-page annotation is not readable through the API until the job ends, so the
 address is read from the live step log. Pushing to `hosted-demo` restarts the session with a new
 address, so this review stays local until the session is over.
+
+Swarm playtest (local, two Codex lanes on opencode-go/minimax-m3.1-flash-free): briefs in
+reports/playtest/. Stopped after about a minute: the machine had ~1 GB free and Claude Code reaped the
+local host for memory, so both lanes reported partial with no game observations. Rerun it with ~3 GB
+free, or as a scripted job on a runner. The user opened the public link to sign in; the outcome was not reported.

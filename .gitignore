@@ -54,3 +54,6 @@ demo-data/
 
 # /verify verdict files stay out of commits
 reports/verify-*.md
+
+## Swarm playtest scratch
+reports/playtest/_playtest/
