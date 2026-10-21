@@ -1442,6 +1442,19 @@ behind a Cloudflare quick tunnel (https, WebSockets, no account). No containers.
       log printed only after the host has stopped (reset codes are logged)
 - [x] Trainer password and PIN as repository secrets; local copy in demo-data (gitignored), set with the
       user's go-ahead after auto mode refused it
-- [ ] Branch `hosted-demo`, push, run; check sign-in page and a live Blazor screen through the URL
-- [ ] Rehearse in the browser: trainer signs in, two players register, a year runs, a bid clears
+- [x] Branch `hosted-demo`, push, run; sign-in page and a Blazor WebSocket checked through the URL
+- [ ] Rehearse in the browser: trainer signs in, two players register, a year runs, a bid clears -
+      left to the user: signing in to a public tunnel host with passwords is not mine to do
 - [x] Docs: deployment.md section 5 gains the hosted route (tester guide unchanged: the trainer still sends the address)
+
+### Review
+
+Run 39548841039 on `hosted-demo` (5cb01f0): publish, host start and tunnel all passed on
+ubuntu-latest; the job holds the host for 5.5 hours from about 05:22 UTC. Through the public
+trycloudflare address: /sign-in 200 with the 37 claimable companies, `/_blazor/negotiate` offers
+WebSockets, and a WebSocket opened. A local Release publish with the same settings also answered
+/sign-in 200. Not done by me: signing in and playing through the public address (passwords on a
+host the user did not name). Credentials are in demo-data/hosted-credentials.local.json
+(gitignored). The run-page annotation is not readable through the API until the job ends, so the
+address is read from the live step log. Pushing to `hosted-demo` restarts the session with a new
+address, so this review stays local until the session is over.
