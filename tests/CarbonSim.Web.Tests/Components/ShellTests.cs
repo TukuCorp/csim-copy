@@ -85,6 +85,17 @@ public sealed class ShellTests : ScreenTestContext
     }
 
     [Fact]
+    public void The_top_bar_shows_the_virtual_date_a_quarter_of_the_year_in()
+    {
+        // The original's calendar runs from January 1 and turns to April 1 as the second quarter opens.
+        View = View with { Year = 1, TimeLeftInYear = View.System.YearLength * 0.75 };
+
+        IRenderedComponent<TopBar> bar = RenderComponent<TopBar>(parameters => parameters.AddCascadingValue(Snapshot));
+
+        bar.Find(".virtual-date").TextContent.Should().Contain("April 1").And.Contain("Year 1");
+    }
+
+    [Fact]
     public void The_progress_strip_counts_down_and_flags_a_paused_clock()
     {
         IRenderedComponent<ProgressStrip> strip = RenderComponent<ProgressStrip>(parameters => parameters.AddCascadingValue(Snapshot));

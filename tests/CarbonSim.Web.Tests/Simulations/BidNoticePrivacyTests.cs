@@ -35,7 +35,7 @@ public sealed class BidNoticePrivacyTests : IClassFixture<SimulationTestHost>
         await driver.StartAsync(id);
 
         // Delta bids inside the collar, then the trainer raises the floor above it.
-        _host.FakeTime.Advance(TimeSpan.FromMinutes(3));
+        _host.FakeTime.Advance(TimeSpan.FromMinutes(1));
         await driver.TickAsync(id);
         await runs.BidAtAuctionAsync(id, delta.Actor, 1, 1, 120m, 10_000m);
         await driver.ChangeRulesAsync(id, 140m, null);

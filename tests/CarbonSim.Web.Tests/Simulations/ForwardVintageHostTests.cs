@@ -28,17 +28,16 @@ public sealed class ForwardVintageHostTests : IClassFixture<SimulationTestHost>
         SimulationRegistry runs = _host.Server.Services.GetRequiredService<SimulationRegistry>();
         Simulation simulation = ScenarioLoader.LoadJson(Scenario, "forward-vintage-host");
         Guid id = runs.Start(simulation);
-        Auction lastOfYearOne = runs.Run(id).Auctions.ForSection(1, 2);
+        Auction[] yearOne = [runs.Run(id).Auctions.ForSection(1, 1), runs.Run(id).Auctions.ForSection(1, 2)];
 
-        lastOfYearOne.Lots.Should().HaveCount(2, "the year's last auction sells the next vintage early");
-        lastOfYearOne.Lots[0].Vintage.Should().Be(1);
-        lastOfYearOne.Lots[1].Vintage.Should().Be(2);
-        lastOfYearOne.Lots[1].IsForward.Should().BeTrue();
-        lastOfYearOne.Lots[1].Volume.Should().Be(
+        yearOne.Should().OnlyContain(
+            auction => auction.Lots.Count == 2 && auction.Lots[1].Vintage == 2 && auction.Lots[1].IsForward,
+            "each of the year's auctions sells part of the next vintage early");
+        yearOne.Sum(auction => auction.Lots[1].Volume).Should().Be(
             Math.Round(0.20m * simulation.Allocation.AuctionableVolumeForYear(2), 0, MidpointRounding.AwayFromZero));
     }
 
-    /// <summary>Two auctions a year, so year 1's second auction is the one that sells forward.</summary>
+    /// <summary>Two auctions a year, each selling half of year 1's forward share of vintage 2.</summary>
     private const string Scenario = """
         {
           "name": "Forward vintage host run",

@@ -156,6 +156,14 @@ public sealed class Simulation
     /// <summary>Virtual year the simulation is in, or 0 before year 1 starts.</summary>
     public int CurrentYear { get; internal set; }
 
+    private Func<TimeSpan>? _yearOffset;
+
+    /// <summary>How far into the current year the clock stands; zero for a run with no clock.</summary>
+    public TimeSpan YearOffset => _yearOffset?.Invoke() ?? TimeSpan.Zero;
+
+    /// <summary>The clock says where the year stands, so a trade can be stamped with its point in the year.</summary>
+    internal void FollowClock(Func<TimeSpan> yearOffset) => _yearOffset = yearOffset;
+
     public Unit FindUnit(int id) => Find(_unitsById, id, "unit");
 
     /// <summary>

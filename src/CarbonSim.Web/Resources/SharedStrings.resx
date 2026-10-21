@@ -254,7 +254,6 @@
   <data name="TradingIsHalted" xml:space="preserve"><value>Trading is halted: orders and offers are only taken while the year is running.</value></data>
   <data name="AuctionIsClosed" xml:space="preserve"><value>The auction is closed: bids are only taken while the auction window is open.</value></data>
   <data name="RulesChangedLine" xml:space="preserve"><value>Rules changed: floor {0} to {1}, ceiling {2} to {3}.</value></data>
-  <data name="RulesReleasedOrders" xml:space="preserve"><value>{0} orders outside the new band were released.</value></data>
   <data name="RulesReleasedBids" xml:space="preserve"><value>{0} auction bids were released.</value></data>
   <data name="BidReleased" xml:space="preserve"><value>Your bid for {0} t at {1} in auction {2} of year {3} was released: the floor is now {4} and the ceiling {5}.</value></data>
   <data name="OffsetUsageLimit" xml:space="preserve"><value>Offset usage limit</value></data>
@@ -402,4 +401,17 @@
   <data name="ResetConfirm" xml:space="preserve"><value>Set the new password</value></data>
   <data name="ResetCodeSent" xml:space="preserve"><value>If that address has an account, a code is on its way. Enter it below with your new password.</value></data>
   <data name="ResetDone" xml:space="preserve"><value>Your password is changed. Sign in with the new one.</value></data>
+  <data name="AllowancesSoldByGovernment" xml:space="preserve"><value>Allowances sold at auction</value></data>
+  <data name="AllowancesSoldInSecondaryMarket" xml:space="preserve"><value>Allowances traded on the exchange and OTC</value></data>
+  <data name="NumberOfCompliancePenaltiesApplied" xml:space="preserve"><value>Compliance penalties applied</value></data>
+  <data name="ValueOfGovtPenaltiesApplied" xml:space="preserve"><value>Value of penalties applied</value></data>
+  <data name="AllowanceVolumeAllChannels" xml:space="preserve"><value>Allowance volume (all channels)</value></data>
+  <data name="CostOfComplianceThisYear" xml:space="preserve"><value>Cost of compliance (this year)</value></data>
+  <data name="MarginalCostOfComplianceThisYear" xml:space="preserve"><value>Marginal cost of compliance (this year)</value></data>
+  <data name="TradingHaltsIn" xml:space="preserve"><value>Trading halts in {0}. Finish what you are doing.</value></data>
+  <data name="MyPendingBids" xml:space="preserve"><value>My bids in this auction</value></data>
+  <data name="CancelBid" xml:space="preserve"><value>Cancel bid</value></data>
+  <data name="AuctionClosedAlert" xml:space="preserve"><value>Auction {0} of year {1} has closed at {2}.</value></data>
+  <data name="AuctionWonAlert" xml:space="preserve"><value>You won {0} t and paid {1}.</value></data>
+  <data name="NewOffersAlert" xml:space="preserve"><value>{0} new OTC offer(s) waiting for your answer.</value></data>
 </root>

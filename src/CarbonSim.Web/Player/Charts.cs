@@ -187,14 +187,27 @@ public static class Charts
     }
 
     /// <summary>
-    /// Per-product price history: one candle per virtual year that saw a trade, drawn from that
-    /// year's first, highest, lowest and last traded price, with the year's closing price as a line.
+    /// Per-product price history: one candle per virtual month that saw a trade, drawn from that
+    /// month's first, highest, lowest and last traded price, with the month's close as a line, so
+    /// the price path inside a year can be read as it is in the original.
     /// </summary>
-    public static string Prices(IReadOnlyList<ProductBookView> books, int years, decimal floor, string floorLabel)
+    public static string Prices(IReadOnlyList<ProductBookView> books, int years, decimal floor, string floorLabel, Func<int, string> yearLabel)
     {
         ArgumentNullException.ThrowIfNull(books);
+        ArgumentNullException.ThrowIfNull(yearLabel);
 
-        string[] axis = [.. Enumerable.Range(1, years).Select(year => $"Year {year}")];
+        DateTimeFormatInfo calendar = CultureInfo.CurrentCulture.DateTimeFormat;
+        (int Year, int Month)[] periods =
+        [
+            .. Enumerable.Range(1, years).SelectMany(year => Enumerable.Range(1, 12).Select(month => (year, month))),
+        ];
+        // The year is named at its first month only, so the axis reads "Year 2 Jan, Feb, Mar ...".
+        string[] axis =
+        [
+            .. periods.Select(period => period.Month == 1
+                ? $"{yearLabel(period.Year)} {calendar.GetAbbreviatedMonthName(1)}"
+                : calendar.GetAbbreviatedMonthName(period.Month)),
+        ];
         List<object> series = [];
         List<string> legend = [];
 
@@ -205,15 +218,15 @@ public static class Charts
             // A bearish candle is the product's own colour at half weight, so the series is still
             // identifiable when the market is falling.
             string faded = colour + "80";
-            Dictionary<int, YearPriceView> byYear = book.YearPrices.ToDictionary(price => price.Year);
-            // ECharts wants "-" for a year a product did not trade in; a bare null makes its
+            Dictionary<(int Year, int Month), PeriodPriceView> byPeriod = book.Prices.ToDictionary(price => (price.Year, price.Month));
+            // ECharts wants "-" for a month a product did not trade in; a bare null makes its
             // candlestick layout read through a missing point and throw.
             List<object> candles = [];
             List<object> closes = [];
 
-            for (int year = 1; year <= years; year++)
+            foreach ((int Year, int Month) period in periods)
             {
-                if (byYear.TryGetValue(year, out YearPriceView? price))
+                if (byPeriod.TryGetValue(period, out PeriodPriceView? price))
                 {
                     candles.Add(new decimal?[] { price.Open, price.Close, price.Low, price.High });
                     closes.Add(price.Close);
@@ -263,7 +276,7 @@ public static class Charts
         {
             name = floorLabel,
             type = "line",
-            data = Enumerable.Repeat<decimal?>(floor, years).ToArray(),
+            data = Enumerable.Repeat<decimal?>(floor, periods.Length).ToArray(),
             symbol = "none",
             lineStyle = new { width = 1, type = "dashed", color = Amber },
         });

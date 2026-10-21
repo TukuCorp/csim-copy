@@ -67,15 +67,16 @@ public sealed class Standing
     }
 
     /// <summary>
-    /// The offsets the year may actually use: what is not already promised to a resting offer, up to
-    /// the year's limit. An offset that is escrowed is still the company's, but it cannot be counted
-    /// twice, and a year's compliance arithmetic has to be the same whoever asks.
+    /// The offsets the year may count, up to its limit: escrowed ones included, as for allowances. An
+    /// offset on offer is still the company's until somebody buys it, so offering it leaves the
+    /// position where it was (the original's header "ignores escrow"); <see cref="Available"/> is
+    /// the figure that leaves it out.
     /// </summary>
     public decimal OffsetsUsable(Company company, int year)
     {
         ArgumentNullException.ThrowIfNull(company);
 
-        return Math.Min(_simulation.Ledger.Available(company, Product.Offset), OffsetLimit(company, year));
+        return Math.Min(OffsetsHeld(company, year), OffsetLimit(company, year));
     }
 
     /// <summary>

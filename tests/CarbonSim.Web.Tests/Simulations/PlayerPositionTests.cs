@@ -47,8 +47,8 @@ public sealed class PlayerPositionTests : IClassFixture<SimulationTestHost>
             Math.Max(0m, before.Position.ForecastEmissions - before.Position.Held),
             "the screen reads the shortfall the way the engine states it: what is still owed, never negative");
 
-        // Section 1's auction window opens at 2:45 of a 20-minute year and closes at 5:00.
-        _host.FakeTime.Advance(TimeSpan.FromMinutes(3));
+        // Section 1's auction window opens with the 20-minute year and closes at 2:15.
+        _host.FakeTime.Advance(TimeSpan.FromMinutes(1));
         await driver.TickAsync(id);
         await runs.BidAtAuctionAsync(id, delta.Actor, unit.Id, 1, price, 20_000m);
         _host.FakeTime.Advance(TimeSpan.FromMinutes(2));

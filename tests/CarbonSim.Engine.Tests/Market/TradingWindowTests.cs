@@ -41,22 +41,15 @@ public sealed class TradingWindowTests
     {
         (Simulation simulation, SimulationClock clock, TestTimeProvider time) = Running();
 
-        Action beforeTheWindow = () => TradingWindow.RequireAuctionOpen(clock);
-
-        beforeTheWindow.Should().Throw<TradeRefusedException>()
-            .Which.Refusal.Should().Be(TradeRefusal.AuctionClosed, "the window opens near the end of a section");
-
         // The year is 20 minutes in four sections with a 3-minute window each, so section 1's window
-        // runs from minute 2 to minute 5.
-        time.Advance(TimeSpan.FromMinutes(3));
-
-        clock.IsAuctionOpen.Should().BeTrue();
+        // runs from the start of the year to minute 3, and the rest of the section is the gap.
+        clock.IsAuctionOpen.Should().BeTrue("the first window opens with the year");
         Action insideTheWindow = () => TradingWindow.RequireAuctionOpen(clock);
         insideTheWindow.Should().NotThrow();
 
         time.Advance(TimeSpan.FromMinutes(3));
 
-        clock.IsAuctionOpen.Should().BeFalse("the window closed with the section");
+        clock.IsAuctionOpen.Should().BeFalse("the window has closed and the section's gap has begun");
         Action afterTheWindow = () => TradingWindow.RequireAuctionOpen(clock);
         afterTheWindow.Should().Throw<TradeRefusedException>()
             .Which.Refusal.Should().Be(TradeRefusal.AuctionClosed);

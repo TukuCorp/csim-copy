@@ -312,6 +312,15 @@ public sealed class SimulationRegistry
         }).ConfigureAwait(false);
     }
 
+    /// <summary>Withdraws one of the caller's company's bids from the open auction.</summary>
+    public async Task CancelBidAsync(Guid simulationId, string actor, int bidId)
+    {
+        string company = await ResolveCompanyAsync(actor).ConfigureAwait(false);
+
+        await ApplyAsync(simulationId, run =>
+            run.Module.CancelBid(run.Simulation.Companies.Single(candidate => candidate.Name == company), bidId)).ConfigureAwait(false);
+    }
+
     /// <summary>Places an exchange order and reports what became of it.</summary>
     public async Task<OrderOutcome> PlaceOrderAsync(
         Guid simulationId,

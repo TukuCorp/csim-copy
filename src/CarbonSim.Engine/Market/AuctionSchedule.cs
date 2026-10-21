@@ -5,8 +5,9 @@ namespace CarbonSim.Engine.Market;
 /// <summary>
 /// The year's auctions, laid out up front from the cap: each year's auctionable volume is
 /// divided into as many lots as there are auctions that year, and the leftover tonnes go to
-/// the year's last auction so nothing is lost to rounding. When forward sales are wanted, the
-/// last auction of a year also offers part of the next year's vintage.
+/// the year's last auction so nothing is lost to rounding. When forward sales are wanted, every
+/// auction of a year also offers a slice of the next year's vintage, as the original's first
+/// auction of a year already sells next year's allowances alongside the current ones.
 /// </summary>
 public sealed class AuctionSchedule
 {
@@ -44,7 +45,7 @@ public sealed class AuctionSchedule
     /// <summary>
     /// Builds the whole run's auctions and offers their lots out of the government's issue. The
     /// forward share comes from the run's own settings (<see cref="Parameters.ForwardVintageShare"/>),
-    /// which is the share of a later year's volume sold early in the previous year's last auction
+    /// which is the share of a later year's volume sold early across the previous year's auctions
     /// (0 = no forward sales). It is read rather than passed in so the host, the bots and every
     /// harness build the same schedule.
     /// </summary>
@@ -80,14 +81,15 @@ public sealed class AuctionSchedule
             }
 
             decimal[] lots = SplitEvenly(available, parameters.AuctionsPerYear);
+            decimal[] forwardLots = SplitEvenly(forward, parameters.AuctionsPerYear);
 
             for (int sequence = 1; sequence <= parameters.AuctionsPerYear; sequence++)
             {
                 List<AuctionLot> onOffer = [new AuctionLot(year, lots[sequence - 1], false)];
 
-                if (forward > 0m && sequence == parameters.AuctionsPerYear)
+                if (forwardLots[sequence - 1] > 0m)
                 {
-                    onOffer.Add(new AuctionLot(year + 1, forward, true));
+                    onOffer.Add(new AuctionLot(year + 1, forwardLots[sequence - 1], true));
                 }
 
                 auctions.Add(new Auction(simulation, year, sequence, onOffer));

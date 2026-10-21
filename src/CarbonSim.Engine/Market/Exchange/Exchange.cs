@@ -111,27 +111,29 @@ public sealed class Exchange
         throw new KeyNotFoundException($"This exchange has no open order {orderId}.");
     }
 
+    /// <summary>
+    /// Withdraws every order still working on any book, handing back what each had set aside. A
+    /// halt does this: nothing may stay escrowed once trading has stopped, or the year end would
+    /// reconcile a company on less than it holds.
+    /// </summary>
+    public IReadOnlyList<Order> CancelAll()
+    {
+        List<Order> cancelled = [];
+
+        foreach (OrderBook book in _books.Values)
+        {
+            foreach (Order order in book.OpenOrders)
+            {
+                cancelled.Add(book.Cancel(order.Company, order.Id));
+            }
+        }
+
+        return cancelled;
+    }
+
     /// <summary>Money a company could spend, for callers working out what they can afford.</summary>
     public decimal CashOf(Company company) => _simulation.Cash.Available(company) + company.OverdraftLimit;
 
     /// <summary>Instruments a company could offer, for callers working out what they can sell.</summary>
     public decimal HoldingsOf(Company company, Product product) => _simulation.Ledger.Available(company, product);
-
-    /// <summary>
-    /// Brings every book's volatility band back onto the collar the run now trades under. The host
-    /// calls this straight after an administrator moves the floor: an exchange anchored on the old
-    /// floor would refuse the quotes the new one calls for.
-    /// </summary>
-    public void FollowRules()
-    {
-        Parameters parameters = _simulation.Rules;
-
-        foreach (Product product in Products)
-        {
-            Book(product).FollowRules(parameters.AuctionFloorPrice, parameters.AuctionCeilingPrice);
-        }
-    }
-
-    /// <summary>How many orders the last change of the rules released across every book.</summary>
-    public int ReleasedOutsideTheRules => Products.Sum(product => Book(product).ReleasedOutsideTheRules);
 }

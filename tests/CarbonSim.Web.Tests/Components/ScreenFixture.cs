@@ -64,6 +64,12 @@ public sealed class StubPlayerSession : IPlayerSession
         return Task.FromResult(new OrderOutcome(1, 0m, 0m, 0m, null));
     }
 
+    public Task CancelBidAsync(Guid simulationId, int bidId, CancellationToken cancellationToken = default)
+    {
+        Actions.Add(FormattableString.Invariant($"cancel-bid:{bidId}"));
+        return Task.CompletedTask;
+    }
+
     public Task CancelOrderAsync(Guid simulationId, int unitId, long orderId, CancellationToken cancellationToken = default)
     {
         Actions.Add(FormattableString.Invariant($"cancel:{unitId}:{orderId}"));

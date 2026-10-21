@@ -53,7 +53,7 @@ public sealed record AdminAbatementOptionView(
     string Name,
     decimal AnnualReduction,
     decimal UpfrontCost,
-    int ImplementationYears,
+    decimal ImplementationYears,
     int LifetimeYears,
     decimal AnnualNetRevenue,
     bool Implemented);

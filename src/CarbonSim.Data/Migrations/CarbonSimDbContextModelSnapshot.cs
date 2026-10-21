@@ -15,7 +15,7 @@ namespace CarbonSim.Data.Migrations
         protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "9.0.20");
+            modelBuilder.HasAnnotation("ProductVersion", "10.0.13");
 
             modelBuilder.Entity("CarbonSim.Data.Accounts.PlayerAccount", b =>
                 {
@@ -89,8 +89,8 @@ namespace CarbonSim.Data.Migrations
                     b.Property<decimal>("AnnualReductionShare")
                         .HasColumnType("TEXT");
 
-                    b.Property<int>("ImplementationYears")
-                        .HasColumnType("INTEGER");
+                    b.Property<decimal>("ImplementationYears")
+                        .HasColumnType("TEXT");
 
                     b.Property<int>("LifetimeYears")
                         .HasColumnType("INTEGER");
@@ -129,8 +129,8 @@ namespace CarbonSim.Data.Migrations
                     b.Property<decimal>("AnnualReduction")
                         .HasColumnType("TEXT");
 
-                    b.Property<int>("ImplementationYears")
-                        .HasColumnType("INTEGER");
+                    b.Property<decimal>("ImplementationYears")
+                        .HasColumnType("TEXT");
 
                     b.Property<int>("LifetimeYears")
                         .HasColumnType("INTEGER");
@@ -778,6 +778,9 @@ namespace CarbonSim.Data.Migrations
                         .HasMaxLength(60)
                         .HasColumnType("TEXT");
 
+                    b.Property<decimal>("StartsAt")
+                        .HasColumnType("TEXT");
+
                     b.HasKey("SimulationId", "UnitId", "OptionIndex");
 
                     b.ToTable("ImplementedAbatements", (string)null);
@@ -790,6 +793,9 @@ namespace CarbonSim.Data.Migrations
 
                     b.Property<long>("Sequence")
                         .HasColumnType("INTEGER");
+
+                    b.Property<TimeSpan>("AtYearOffset")
+                        .HasColumnType("TEXT");
 
                     b.Property<int>("BuyerCompanyId")
                         .HasColumnType("INTEGER");

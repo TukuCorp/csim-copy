@@ -137,6 +137,33 @@ public sealed class Auction
     }
 
     /// <summary>
+    /// Withdraws one of a company's own bids before the auction clears and hands its money back,
+    /// as the original's "Cancel bid" does while the auction is in progress.
+    /// </summary>
+    public AuctionBid CancelBid(Company company, int bidId)
+    {
+        ArgumentNullException.ThrowIfNull(company);
+
+        if (IsCleared)
+        {
+            throw new InvalidOperationException($"Auction {Sequence} of year {Year} is already closed.");
+        }
+
+        AuctionBid bid = _bids.FirstOrDefault(candidate => candidate.Id == bidId)
+            ?? throw new KeyNotFoundException($"Auction {Sequence} of year {Year} has no bid {bidId}.");
+
+        if (!ReferenceEquals(bid.Unit.Company, company))
+        {
+            throw new InvalidOperationException($"Bid {bidId} belongs to '{bid.Unit.Company.Name}', not to '{company.Name}'.");
+        }
+
+        _bids.Remove(bid);
+        _simulation.Cash.ReleaseEscrow(company, bid.Price * bid.Volume);
+
+        return bid;
+    }
+
+    /// <summary>
     /// Takes every bid the collar as it now stands cannot hold off the book and gives its money back,
     /// returning them so the run can say whose they were. A collar that moves puts a resting bid
     /// outside the band exactly as it does a resting order on the exchange, and a bid that cannot be

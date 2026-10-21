@@ -62,10 +62,10 @@ public sealed class ComplianceBot
             {
                 // Fixed fractions of the year with a little jitter, drawn in one deterministic order.
                 [BotTrigger.Abatement] = random.NextDecimal(0.01m, 0.04m),
-                // Early enough that the fleet's orders are in the book inside the first auction
-                // cycle: a room watching the exchange in the first minutes of a year has to see a
-                // market, and a bot that waits until halfway through has nothing left to trade with.
-                [BotTrigger.Trade] = random.NextDecimal(0.05m, 0.15m),
+                // Just after the year's first auction has cleared (its window opens with the year)
+                // and still inside the first quarter: the bot invests and quotes on the price the
+                // year has just set, and a room watching the exchange early in the year sees a market.
+                [BotTrigger.Trade] = random.NextDecimal(0.12m, 0.20m),
                 // And a second pass late in the year, when a bot stops quoting and starts dealing.
                 [BotTrigger.TradeAgain] = random.NextDecimal(0.60m, 0.80m),
             })
@@ -285,6 +285,7 @@ public sealed class ComplianceBot
     {
         decimal reservation = _expectedPrice * _settings.AbatementMargin;
         int remainingYears = simulation.Allocation.Years.Count - year + 1;
+        decimal shareOfYear = Math.Clamp((decimal)(simulation.YearOffset / simulation.Rules.YearLength), 0m, 1m);
 
         foreach (Unit unit in _units)
         {
@@ -298,9 +299,11 @@ public sealed class ComplianceBot
                 // fleet paid 240 at auction and accepted penalties rather than abate.
                 decimal costPerTonne = option.NetCostPerTonne;
 
+                // A project that only starts operating after the last year never cuts a tonne
+                // (FAQ #4): the build runs from now, so it has to finish inside the years left.
                 if (simulation.Abatements.HasImplemented(unit, option)
                     || costPerTonne >= reservation
-                    || option.ImplementationYears > remainingYears)
+                    || shareOfYear + option.ImplementationYears >= remainingYears)
                 {
                     continue;
                 }
@@ -509,6 +512,10 @@ public sealed class ComplianceBot
         // the last of its position and never above the collar.
         CancelQuotes(markets, allowance, actions, year);
 
+        // The offset bid from the early pass comes off too, or the one below would sit beside it and
+        // the bot would end up bidding for twice the offsets it can surrender.
+        CancelQuotes(markets, Product.Offset, actions, year, OrderSide.Buy);
+
         decimal offsetsWanted = Math.Min(shortfall, Math.Max(0m, pricingOffsetEstimate - offsetsHeld));
 
         if (offsetsWanted > 0m)
@@ -521,10 +528,12 @@ public sealed class ComplianceBot
         Buy(markets, allowance, shortfall - offsetsWanted, limit, actions, year, "the rest of its position");
     }
 
-    /// <summary>Takes this company's own resting orders for a product off the book.</summary>
-    private void CancelQuotes(BotMarkets markets, Product product, List<BotAction> actions, int year)
+    /// <summary>Takes this company's own resting orders for a product off the book, one side or both.</summary>
+    private void CancelQuotes(BotMarkets markets, Product product, List<BotAction> actions, int year, OrderSide? side = null)
     {
-        foreach (Order order in markets.Exchange.Book(product).OpenOrders.Where(order => ReferenceEquals(order.Company, _company)).ToList())
+        foreach (Order order in markets.Exchange.Book(product).OpenOrders
+            .Where(order => ReferenceEquals(order.Company, _company) && (side is null || order.Side == side))
+            .ToList())
         {
             try
             {

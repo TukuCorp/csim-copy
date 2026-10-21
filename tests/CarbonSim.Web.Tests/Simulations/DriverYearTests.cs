@@ -26,7 +26,7 @@ public sealed class DriverYearTests : IClassFixture<SimulationTestHost>
 
         // The last tick halts trading at the year boundary; ending the year is then explicit,
         // mirroring the administrator's End Year control rather than happening inside the tick.
-        _host.FakeTime.Advance(TimeSpan.FromMinutes(2));
+        _host.FakeTime.Advance(TimeSpan.FromMinutes(4));
         await driver.TickAsync(id);
         Registry().Run(id).Simulation.State.Should().Be(SimulationState.TradingHalted);
 
@@ -47,7 +47,7 @@ public sealed class DriverYearTests : IClassFixture<SimulationTestHost>
         (Simulation _, Guid id, SimulationClockService driver) = await StartAsync();
 
         await PlayYearAsync(id, driver);
-        _host.FakeTime.Advance(TimeSpan.FromMinutes(2));
+        _host.FakeTime.Advance(TimeSpan.FromMinutes(4));
         await driver.TickAsync(id);
 
         // The counter is per host, so compare against where it stood before this year's save.
@@ -67,7 +67,7 @@ public sealed class DriverYearTests : IClassFixture<SimulationTestHost>
         (Simulation simulation, Guid id, SimulationClockService driver) = await StartAsync();
 
         await PlayYearAsync(id, driver);
-        _host.FakeTime.Advance(TimeSpan.FromMinutes(2));
+        _host.FakeTime.Advance(TimeSpan.FromMinutes(4));
         await driver.TickAsync(id);
         await driver.EndYearAsync(id);
 
@@ -87,7 +87,7 @@ public sealed class DriverYearTests : IClassFixture<SimulationTestHost>
         (Simulation _, Guid id, SimulationClockService driver) = await StartAsync();
         SignedIn delta = await _host.SignInAsync(TestRunFactory.DeltaCompany);
 
-        _host.FakeTime.Advance(TimeSpan.FromMinutes(3));
+        _host.FakeTime.Advance(TimeSpan.FromMinutes(1));
         await Registry().BidAtAuctionAsync(id, delta.Actor, 1, 1, 140m, 500m);
         _host.FakeTime.Advance(TimeSpan.FromMinutes(2));
         await driver.TickAsync(id);
@@ -123,7 +123,8 @@ public sealed class DriverYearTests : IClassFixture<SimulationTestHost>
 
         for (int section = 1; section <= 4; section++)
         {
-            _host.FakeTime.Advance(TimeSpan.FromMinutes(section == 1 ? 3 : 5));
+            // One minute into each section, inside the window that opens with it.
+            _host.FakeTime.Advance(TimeSpan.FromMinutes(section == 1 ? 1 : 5));
             await registry.BidAtAuctionAsync(id, delta.Actor, 1, 1, 140m, 500m);
             await registry.BidAtAuctionAsync(id, redRiver.Actor, 2, 1, 150m, 500m);
             await driver.TickAsync(id);

@@ -8,7 +8,7 @@ public sealed class SimulationClockTests
 {
     private const int AuctionsPerYear = 4;
 
-    /// <summary>Section 5 min, auction window 3 min: opens at 2:00, closes at 5:00 of each section.</summary>
+    /// <summary>Section 5 min, auction window 3 min: opens at 0:00, closes at 3:00 of each section.</summary>
     private static (Simulation Simulation, TestTimeProvider Time, SimulationClock Clock) Build(
         bool pauseAfterAuction = false)
     {
@@ -61,28 +61,36 @@ public sealed class SimulationClockTests
     }
 
     [Fact]
-    public void Advancing_without_time_passing_raises_nothing()
+    public void The_first_auction_opens_with_the_year()
     {
+        // In the original the year's first auction is open as soon as the clock starts (demo 07:11).
         (_, _, SimulationClock clock) = Build();
         clock.Start();
 
-        clock.Advance().Should().BeEmpty();
+        clock.IsAuctionOpen.Should().BeTrue();
+        clock.Advance().Should().ContainSingle().Which.Kind.Should().Be(ClockEventKind.AuctionOpened);
         clock.ElapsedInYear.Should().Be(TimeSpan.Zero);
     }
 
     [Fact]
-    public void The_first_auction_opens_after_the_lead_in_and_closes_at_the_end_of_its_section()
+    public void Each_auction_opens_at_the_start_of_its_section_and_the_rest_of_the_section_is_the_gap()
     {
+        // Auction 2 opens on the first day of the next quarter (demo 10:12-11:15).
         (_, TestTimeProvider time, SimulationClock clock) = Build();
         clock.Start();
 
-        Advance(time, clock, TimeSpan.FromMinutes(1.5));
-        clock.IsAuctionOpen.Should().BeFalse();
-
-        Advance(time, clock, TimeSpan.FromSeconds(31));
+        Advance(time, clock, TimeSpan.FromMinutes(1));
         clock.IsAuctionOpen.Should().BeTrue();
-        clock.TimeToAuctionClose.Should().Be(TimeSpan.FromSeconds(179));
-        clock.ElapsedInYear.Should().Be(TimeSpan.FromMinutes(2) + TimeSpan.FromSeconds(1));
+        clock.TimeToAuctionClose.Should().Be(TimeSpan.FromMinutes(2));
+
+        Advance(time, clock, TimeSpan.FromMinutes(2) + TimeSpan.FromSeconds(1));
+        clock.IsAuctionOpen.Should().BeFalse();
+        clock.CurrentAuction.Should().Be(1, "the gap after an auction belongs to its section");
+        clock.TimeToAuctionOpen.Should().Be(TimeSpan.FromSeconds(119));
+
+        Advance(time, clock, TimeSpan.FromSeconds(119));
+        clock.IsAuctionOpen.Should().BeTrue();
+        clock.CurrentAuction.Should().Be(2);
     }
 
     [Fact]
@@ -99,7 +107,7 @@ public sealed class SimulationClockTests
             kinds.AddRange(clock.Advance().Select(raised => raised.Kind));
         }
 
-        kinds.Count(kind => kind == ClockEventKind.AuctionOpeningSoon).Should().Be(AuctionsPerYear);
+        kinds.Count(kind => kind == ClockEventKind.AuctionOpeningSoon).Should().Be(AuctionsPerYear - 1, "the first opens with the year");
         kinds.Count(kind => kind == ClockEventKind.AuctionOpened).Should().Be(AuctionsPerYear);
         kinds.Count(kind => kind == ClockEventKind.AuctionEndingSoon).Should().Be(AuctionsPerYear);
         kinds.Count(kind => kind == ClockEventKind.AuctionClosed).Should().Be(AuctionsPerYear);
@@ -112,8 +120,10 @@ public sealed class SimulationClockTests
         (_, TestTimeProvider time, SimulationClock clock) = Build();
         clock.Start();
 
-        Advance(time, clock, TimeSpan.FromSeconds(90))
-            .Should().ContainSingle().Which.Kind.Should().Be(ClockEventKind.AuctionOpeningSoon);
+        Advance(time, clock, TimeSpan.Zero)
+            .Should().ContainSingle().Which.Kind.Should().Be(ClockEventKind.AuctionOpened);
+        Advance(time, clock, TimeSpan.FromSeconds(150))
+            .Should().ContainSingle().Which.Kind.Should().Be(ClockEventKind.AuctionEndingSoon);
 
         Advance(time, clock, TimeSpan.FromSeconds(1)).Should().BeEmpty();
     }
@@ -124,9 +134,7 @@ public sealed class SimulationClockTests
         (Simulation simulation, TestTimeProvider time, SimulationClock clock) = Build();
         clock.Start();
 
-        Advance(time, clock, TimeSpan.FromSeconds(90))
-            .Should().ContainSingle().Which.Kind.Should().Be(ClockEventKind.AuctionOpeningSoon);
-        Advance(time, clock, TimeSpan.FromSeconds(30))
+        Advance(time, clock, TimeSpan.Zero)
             .Should().ContainSingle().Which.Kind.Should().Be(ClockEventKind.AuctionOpened);
 
         Advance(time, clock, TimeSpan.FromMinutes(2) + TimeSpan.FromSeconds(29)).Should().BeEmpty();
@@ -137,8 +145,14 @@ public sealed class SimulationClockTests
             .Should().ContainSingle().Which.Kind.Should().Be(ClockEventKind.AuctionClosed);
 
         simulation.State.Should().Be(SimulationState.Running);
-        clock.CurrentAuction.Should().Be(2);
+        clock.CurrentAuction.Should().Be(1);
         clock.IsAuctionOpen.Should().BeFalse();
+
+        Advance(time, clock, TimeSpan.FromMinutes(1.5))
+            .Should().ContainSingle().Which.Kind.Should().Be(ClockEventKind.AuctionOpeningSoon);
+        Advance(time, clock, TimeSpan.FromSeconds(30))
+            .Should().ContainSingle().Which.Kind.Should().Be(ClockEventKind.AuctionOpened);
+        clock.CurrentAuction.Should().Be(2);
     }
 
     [Fact]
@@ -147,14 +161,14 @@ public sealed class SimulationClockTests
         (Simulation simulation, TestTimeProvider time, SimulationClock clock) = Build(pauseAfterAuction: true);
         clock.Start();
 
-        Advance(time, clock, TimeSpan.FromMinutes(5));
+        Advance(time, clock, TimeSpan.FromMinutes(3));
 
         simulation.State.Should().Be(SimulationState.PausedAfterAuction);
         TimeSpan frozen = clock.ElapsedInYear;
 
         Advance(time, clock, TimeSpan.FromMinutes(3));
         clock.ElapsedInYear.Should().Be(frozen);
-        clock.CurrentAuction.Should().Be(2);
+        clock.CurrentAuction.Should().Be(1);
 
         clock.Resume();
         simulation.State.Should().Be(SimulationState.Running);
@@ -281,14 +295,17 @@ public sealed class SimulationClockTests
 
         warned.Should().ContainSingle().Which.Kind.Should().Be(ClockEventKind.TradingHaltWarned);
         simulation.State.Should().Be(SimulationState.Running, "the warning window is the players' last chance to trade");
+        clock.TimeToHalt.Should().Be(TimeSpan.FromSeconds(30), "the players are shown how long they have");
 
         Advance(time, clock, TimeSpan.FromSeconds(29)).Should().BeEmpty();
         simulation.State.Should().Be(SimulationState.Running);
+        clock.TimeToHalt.Should().Be(TimeSpan.FromSeconds(1));
 
         IReadOnlyList<ClockEvent> halted = Advance(time, clock, TimeSpan.FromSeconds(1));
 
         halted.Should().ContainSingle().Which.Kind.Should().Be(ClockEventKind.TradingHalted);
         simulation.State.Should().Be(SimulationState.TradingHalted);
+        clock.TimeToHalt.Should().BeNull("once halted there is nothing left to count down");
 
         TimeSpan frozen = clock.ElapsedInYear;
         Advance(time, clock, TimeSpan.FromMinutes(2));

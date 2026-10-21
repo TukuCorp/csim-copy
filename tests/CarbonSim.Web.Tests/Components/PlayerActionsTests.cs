@@ -1,5 +1,6 @@
 using Bunit;
 using CarbonSim.Web.Components.Pages;
+using CarbonSim.Web.Player;
 using FluentAssertions;
 
 namespace CarbonSim.Web.Tests.Components;
@@ -37,6 +38,25 @@ public sealed class PlayerActionsTests : ScreenTestContext
         page.FindAll("button").First(button => button.TextContent.Contains("Place bid", StringComparison.Ordinal)).Click();
 
         Session.Actions.Should().ContainSingle().Which.Should().Be("bid:1:1:100:1000");
+    }
+
+    [Fact]
+    public void A_pending_bid_is_listed_with_a_control_that_cancels_it()
+    {
+        // The original lists each bid in progress (vintage, price, volume) and offers "Cancel bid".
+        View = View with
+        {
+            CurrentAuction = View.CurrentAuction! with { MyBids = [new MyBidView(1, 123m, 63_000m, 0m, 0m, 7)] },
+        };
+
+        IRenderedComponent<Auction> page = RenderComponent<Auction>(parameters => parameters
+            .AddCascadingValue(Snapshot)
+            .Add(component => component.SimulationId, SimulationId));
+
+        page.Find("#pending-bids").TextContent.Should().Contain("63,000");
+        page.Find("#pending-bids button").Click();
+
+        Session.Actions.Should().ContainSingle().Which.Should().Be("cancel-bid:7");
     }
 
     [Fact]

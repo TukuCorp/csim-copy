@@ -6,6 +6,7 @@
         <div class="topbar-identity">
             <span class="company">@view.CompanyName</span>
             <span class="muted small">@view.SectorName &middot; @view.Units.Count @Strings["Units"]</span>
+            <span class="muted small virtual-date">@Strings["Year_X", view.Year] &middot; @Display.VirtualDate(view.System.YearLength - view.TimeLeftInYear, view.System.YearLength)</span>
         </div>
 
         <dl class="metrics">

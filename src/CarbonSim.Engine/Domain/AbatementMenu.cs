@@ -14,7 +14,7 @@ public sealed record AbatementMenu
         decimal annualReductionShare,
         decimal upfrontCostPerTonne,
         decimal annualNetRevenuePerTonne,
-        int implementationYears,
+        decimal implementationYears,
         int lifetimeYears)
     {
         if (string.IsNullOrWhiteSpace(code))
@@ -72,7 +72,8 @@ public sealed record AbatementMenu
     /// <summary>Running revenue (positive) or cost (negative) per tonne removed.</summary>
     public decimal AnnualNetRevenuePerTonne { get; }
 
-    public int ImplementationYears { get; }
+    /// <summary>Years from purchase to operation; a fraction is part of a year (0.75 = nine months).</summary>
+    public decimal ImplementationYears { get; }
 
     public int LifetimeYears { get; }
 

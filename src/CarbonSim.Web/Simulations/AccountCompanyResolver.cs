@@ -15,6 +15,7 @@ namespace CarbonSim.Web.Simulations;
 public sealed class AccountCompanyResolver
 {
     private readonly IServiceScopeFactory _scopes;
+    private IReadOnlyDictionary<string, string>? _playersByCompany;
 
     public AccountCompanyResolver(IServiceScopeFactory scopes)
     {
@@ -35,4 +36,37 @@ public sealed class AccountCompanyResolver
 
         return account?.CompanyName;
     }
+
+    /// <summary>
+    /// Who plays each claimed company, by the name their account is shown under: the leaderboard's
+    /// "unit (player)". Read once and kept until a registration changes it, because every screen
+    /// asks every second and the answer only moves when somebody registers.
+    /// </summary>
+    public async Task<IReadOnlyDictionary<string, string>> PlayersByCompanyAsync(CancellationToken cancellationToken = default)
+    {
+        if (_playersByCompany is { } known)
+        {
+            return known;
+        }
+
+        using IServiceScope scope = _scopes.CreateScope();
+        IAccountStore store = scope.ServiceProvider.GetRequiredService<IAccountStore>();
+        IReadOnlyList<PlayerAccount> accounts = await store.ListAsync(cancellationToken).ConfigureAwait(false);
+        Dictionary<string, string> players = new(StringComparer.Ordinal);
+
+        foreach (PlayerAccount account in accounts)
+        {
+            if (account.CompanyName is { Length: > 0 } company)
+            {
+                players[company] = account.DisplayName;
+            }
+        }
+
+        _playersByCompany = players;
+
+        return players;
+    }
+
+    /// <summary>Drops the names read so far; a registration calls this once it has claimed a company.</summary>
+    public void Forget() => _playersByCompany = null;
 }

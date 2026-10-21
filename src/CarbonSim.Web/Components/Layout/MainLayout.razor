@@ -37,6 +37,7 @@ else
                     <button class="button ghost small-button" @onclick="Context.ClearNotice">@Strings["Dismiss"]</button>
                 </p>
             }
+            <Alerts View="Context.Snapshot.View" />
             <ProgressStrip />
             <div class="shell">
                 <NavMenu />

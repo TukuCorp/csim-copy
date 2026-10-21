@@ -21,7 +21,8 @@ public sealed record MarketTrade(
     decimal Price,
     decimal Volume,
     Company Buyer,
-    Company? Seller)
+    Company? Seller,
+    TimeSpan AtYearOffset = default)
 {
     /// <summary>Money that changed hands.</summary>
     public decimal Consideration => Price * Volume;
@@ -69,7 +70,8 @@ public sealed class MarketJournal
                 trade.Price,
                 trade.Volume,
                 _simulation.FindCompany(trade.BuyerCompanyId),
-                trade.SellerCompanyId is { } sellerId ? _simulation.FindCompany(sellerId) : null));
+                trade.SellerCompanyId is { } sellerId ? _simulation.FindCompany(sellerId) : null,
+                trade.AtYearOffset));
         }
     }
 
@@ -104,6 +106,6 @@ public sealed class MarketJournal
 
     internal void Record(TradeChannel channel, Product product, decimal price, decimal volume, Company buyer, Company? seller)
     {
-        _trades.Add(new MarketTrade(_trades.Count + 1, _simulation.CurrentYear, channel, product, price, volume, buyer, seller));
+        _trades.Add(new MarketTrade(_trades.Count + 1, _simulation.CurrentYear, channel, product, price, volume, buyer, seller, _simulation.YearOffset));
     }
 }

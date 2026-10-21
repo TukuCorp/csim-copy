@@ -32,6 +32,7 @@ public sealed class PlayerSession : IPlayerSession
     private readonly IServiceScopeFactory _scopes;
     private readonly AuthenticationStateProvider _authentication;
     private PlayerAccount? _account;
+    private AccountCompanyResolver? _players;
 
     public PlayerSession(
         SimulationRegistry runs,
@@ -118,7 +119,26 @@ public sealed class PlayerSession : IPlayerSession
             return null;
         }
 
-        return await _runs.ReadAsync(simulationId, run => Build(run, account, companyName)).ConfigureAwait(false);
+        PlayerView? view = await _runs.ReadAsync(simulationId, run => Build(run, account, companyName)).ConfigureAwait(false);
+
+        if (view is null)
+        {
+            return null;
+        }
+
+        // The resolver was taken from the scope the account was read in; it keeps its own cache.
+        IReadOnlyDictionary<string, string> players = _players is { } resolver
+            ? await resolver.PlayersByCompanyAsync(cancellationToken).ConfigureAwait(false)
+            : new Dictionary<string, string>();
+
+        // The run knows a company is played by a human; the account knows who, so the name is added here.
+        return view with
+        {
+            Leaderboard =
+            [
+                .. view.Leaderboard.Select(row => players.TryGetValue(row.Company, out string? player) ? row with { Player = player } : row),
+            ],
+        };
     }
 
     public Task PlaceBidAsync(Guid simulationId, int unitId, int vintage, decimal price, decimal volume, CancellationToken cancellationToken = default) =>
@@ -163,6 +183,9 @@ public sealed class PlayerSession : IPlayerSession
     public Task CancelOrderAsync(Guid simulationId, int unitId, long orderId, CancellationToken cancellationToken = default) =>
         ActAsync(actor => _runs.CancelOrderAsync(simulationId, actor, unitId, orderId));
 
+    public Task CancelBidAsync(Guid simulationId, int bidId, CancellationToken cancellationToken = default) =>
+        ActAsync(actor => _runs.CancelBidAsync(simulationId, actor, bidId));
+
     public Task ImplementAbatementAsync(Guid simulationId, int unitId, int optionIndex, CancellationToken cancellationToken = default) =>
         ActAsync(actor => _runs.ImplementAbatementAsync(simulationId, actor, unitId, optionIndex));
 
@@ -205,6 +228,7 @@ public sealed class PlayerSession : IPlayerSession
         IAccountStore store = scope.ServiceProvider.GetRequiredService<IAccountStore>();
 
         _account = await store.FindByIdAsync(accountId).ConfigureAwait(false);
+        _players = scope.ServiceProvider.GetRequiredService<AccountCompanyResolver>();
 
         return _account;
     }
@@ -301,7 +325,10 @@ public sealed class PlayerSession : IPlayerSession
                 .Where(entry => entry.To is null || string.Equals(entry.To, company.Name, StringComparison.Ordinal))
                 .TakeLast(50)
                 .Select(entry => new ChatLine(entry.Year, entry.From, entry.Text))],
-            run.MessagingEnabled);
+            run.MessagingEnabled)
+        {
+            TimeToHalt = run.Clock.TimeToHalt,
+        };
     }
 
     private static FinancialView BuildFinance(Simulation simulation, Company company, int year, bool started)
@@ -492,7 +519,7 @@ public sealed class PlayerSession : IPlayerSession
         {
             AuctionAward? award = awards.FirstOrDefault(candidate => ReferenceEquals(candidate.Bid, bid));
 
-            myBids.Add(new MyBidView(bid.Vintage, bid.Price, bid.Volume, award?.Volume ?? 0m, award?.Cost ?? 0m));
+            myBids.Add(new MyBidView(bid.Vintage, bid.Price, bid.Volume, award?.Volume ?? 0m, award?.Cost ?? 0m, bid.Id));
         }
 
         List<AuctionAwardView> myAwards = [];
@@ -600,20 +627,22 @@ public sealed class PlayerSession : IPlayerSession
                 levels.Asks,
                 myOrders,
                 recent,
-                run.Shared($"book-yearprices:{view.Key}", () => YearPrices(simulation, product))));
+                run.Shared($"book-prices:{view.Key}", () => MonthPrices(simulation, product))));
         }
 
         return books;
     }
 
-    private static List<YearPriceView> YearPrices(Simulation simulation, Product product) =>
+    private static List<PeriodPriceView> MonthPrices(Simulation simulation, Product product) =>
     [
         .. simulation.Journal.Trades
             .Where(trade => trade.Channel == TradeChannel.Exchange && trade.Product == product)
-            .GroupBy(trade => trade.Year)
-            .OrderBy(group => group.Key)
-            .Select(group => new YearPriceView(
-                group.Key,
+            .GroupBy(trade => (trade.Year, Month: CarbonSim.Web.Components.Shared.Display.MonthOf(trade.AtYearOffset, simulation.Rules.YearLength)))
+            .OrderBy(group => group.Key.Year)
+            .ThenBy(group => group.Key.Month)
+            .Select(group => new PeriodPriceView(
+                group.Key.Year,
+                group.Key.Month,
                 group.First().Price,
                 group.Max(trade => trade.Price),
                 group.Min(trade => trade.Price),

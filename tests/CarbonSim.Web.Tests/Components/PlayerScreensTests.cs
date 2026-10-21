@@ -136,6 +136,25 @@ public sealed class PlayerScreensTests : ScreenTestContext
     }
 
     [Fact]
+    public void The_system_report_rows_are_the_originals_figures()
+    {
+        // The original's report: allowances sold by government and in the secondary market as two
+        // rows, abatement undertaken in tonnes, and the penalty count and value apart.
+        IRenderedComponent<SystemInfo> page = RenderComponent<SystemInfo>(parameters => parameters
+            .AddCascadingValue(Snapshot)
+            .Add(component => component.SimulationId, SimulationId));
+
+        string Row(string label) => page.FindAll("tr").Single(row => row.TextContent.Contains(label, StringComparison.Ordinal)).TextContent;
+
+        Row("Allowances sold at auction").Should().Contain("5,000,000");
+        Row("Allowances traded on the exchange and OTC").Should().Contain("30,000,000");
+        Row("Abatement undertaken").Should().Contain("200,000", "abatement is reported in tonnes, not as a project count");
+        Row("Compliance penalties applied").Should().NotContain("/");
+        page.FindAll("tr").Should().ContainSingle(row => row.TextContent.Contains("Value of penalties applied", StringComparison.Ordinal));
+        page.Markup.Should().NotContain("Total volume");
+    }
+
+    [Fact]
     public void Leaderboard_ranks_the_companies_and_marks_the_players_own()
     {
         IRenderedComponent<Leaderboard> page = RenderComponent<Leaderboard>(parameters => parameters

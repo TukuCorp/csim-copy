@@ -5,8 +5,9 @@ namespace CarbonSim.Engine.Clock;
 
 /// <summary>
 /// The virtual-year clock. One virtual year is divided into as many sections as there are
-/// auctions; each section ends with an auction window, and everything before that window is
-/// the gap the players trade in. The clock reads the time from an injected
+/// auctions; each section opens with its auction window, and the rest of the section is the gap
+/// the players trade in on the auction's result. This is the original's order: year 1's first
+/// auction is open as the clock starts, and the next one opens on the first day of the next quarter. The clock reads the time from an injected
 /// <see cref="TimeProvider"/> and never sleeps, blocks or spawns threads: a host calls
 /// <see cref="Advance"/> whenever it wants, and the clock reports what became due.
 /// </summary>
@@ -21,7 +22,7 @@ public sealed class SimulationClock
     private readonly TimeProvider _timeProvider;
     private readonly SimulationClockOptions _options;
     private readonly TimeSpan _sectionLength;
-    private readonly TimeSpan _auctionOpensAfter;
+    private readonly TimeSpan _auctionDuration;
 
     private TimeSpan _elapsed;
     private DateTimeOffset? _runningSince;
@@ -58,7 +59,8 @@ public sealed class SimulationClock
                 nameof(simulation));
         }
 
-        _auctionOpensAfter = _sectionLength - _simulation.Rules.AuctionDuration;
+        _auctionDuration = _simulation.Rules.AuctionDuration;
+        _simulation.FollowClock(() => ElapsedInYear);
     }
 
     /// <summary>Or "game state" in the original's vocabulary.</summary>
@@ -105,14 +107,14 @@ public sealed class SimulationClock
             TimeSpan elapsed = ElapsedInYear;
             TimeSpan start = SectionStart(SectionOf(elapsed));
 
-            return elapsed >= start + _auctionOpensAfter && elapsed < start + _sectionLength;
+            return elapsed >= start && elapsed < start + _auctionDuration;
         }
     }
 
     /// <summary>Time until the current section's auction window closes, or zero when none is open.</summary>
     public TimeSpan TimeToAuctionClose =>
         IsAuctionOpen
-            ? SectionStart(SectionOf(ElapsedInYear)) + _sectionLength - ElapsedInYear
+            ? SectionStart(SectionOf(ElapsedInYear)) + _auctionDuration - ElapsedInYear
             : TimeSpan.Zero;
 
     /// <summary>Time until the current section's auction window opens, or zero when one is open.</summary>
@@ -125,11 +127,30 @@ public sealed class SimulationClock
                 return TimeSpan.Zero;
             }
 
+            // The current section's window has been and gone, so the next one is the next section's.
             TimeSpan elapsed = ElapsedInYear;
             int section = SectionOf(elapsed);
-            TimeSpan opens = SectionStart(section) + _auctionOpensAfter;
 
-            return elapsed < opens ? opens - elapsed : TimeSpan.Zero;
+            return section < AuctionsInYear ? SectionStart(section + 1) - elapsed : TimeSpan.Zero;
+        }
+    }
+
+    /// <summary>
+    /// How long until a warned halt stops trading, or null when none is pending: what the players'
+    /// screens count down ("seconds until trading halts") once the trainer has given warning.
+    /// </summary>
+    public TimeSpan? TimeToHalt
+    {
+        get
+        {
+            if (State != SimulationState.Running || _haltAt is not { } haltAt)
+            {
+                return null;
+            }
+
+            TimeSpan left = haltAt - _timeProvider.GetUtcNow();
+
+            return left > TimeSpan.Zero ? left : TimeSpan.Zero;
         }
     }
 
@@ -338,14 +359,18 @@ public sealed class SimulationClock
     {
         for (int section = 1; section <= AuctionsInYear; section++)
         {
-            TimeSpan sectionStart = SectionStart(section);
-            TimeSpan opens = sectionStart + _auctionOpensAfter;
-            TimeSpan closes = sectionStart + _sectionLength;
+            TimeSpan opens = SectionStart(section);
+            TimeSpan closes = opens + _auctionDuration;
 
+            // The first window opens with the year, so there is nothing ahead of it to warn about.
             if (_options.AuctionNotice > TimeSpan.Zero && _openNoticedThrough < section && elapsed >= opens - _options.AuctionNotice)
             {
                 _openNoticedThrough = section;
-                events.Add(new ClockEvent(ClockEventKind.AuctionOpeningSoon, CurrentYear, section, opens - _options.AuctionNotice));
+
+                if (opens - _options.AuctionNotice >= TimeSpan.Zero)
+                {
+                    events.Add(new ClockEvent(ClockEventKind.AuctionOpeningSoon, CurrentYear, section, opens - _options.AuctionNotice));
+                }
             }
 
             if (_openedThrough < section && elapsed >= opens)

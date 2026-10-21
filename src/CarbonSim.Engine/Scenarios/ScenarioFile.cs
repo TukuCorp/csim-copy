@@ -98,7 +98,7 @@ internal sealed class AbatementOptionFile
 
     public decimal? AnnualNetRevenuePerTonne { get; set; }
 
-    public int? ImplementationYears { get; set; }
+    public decimal? ImplementationYears { get; set; }
 
     public int? LifetimeYears { get; set; }
 }

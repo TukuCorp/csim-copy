@@ -87,7 +87,7 @@ public sealed record AbatementMenuSnapshot(
     decimal AnnualReductionShare,
     decimal UpfrontCostPerTonne,
     decimal AnnualNetRevenuePerTonne,
-    int ImplementationYears,
+    decimal ImplementationYears,
     int LifetimeYears);
 
 /// <summary>A participant. Its companies are the ones naming it as owner in <see cref="CompanySnapshot"/>.</summary>
@@ -126,7 +126,7 @@ public sealed record AbatementOptionSnapshot(
     string Name,
     decimal UpfrontCost,
     decimal AnnualReduction,
-    int ImplementationYears,
+    decimal ImplementationYears,
     int LifetimeYears,
     decimal AnnualNetRevenue);
 

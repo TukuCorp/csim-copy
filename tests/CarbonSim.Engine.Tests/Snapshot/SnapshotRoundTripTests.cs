@@ -24,7 +24,8 @@ namespace CarbonSim.Engine.Tests.Snapshot;
 /// </summary>
 public sealed class SnapshotRoundTripTests
 {
-    private const int MidYearTicks = 17;
+    // Six minutes in: inside section two's window, which opens at minute five and runs 2:15.
+    private const int MidYearTicks = 12;
 
     [Fact]
     public void A_run_captured_at_the_end_of_a_year_restores_into_the_same_run()

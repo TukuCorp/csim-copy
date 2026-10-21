@@ -86,7 +86,8 @@ public sealed record MarketJournalSnapshot(IReadOnlyList<MarketTradeSnapshot> Tr
 /// <summary>
 /// One trade on any channel. The buyer and seller are companies; a null seller means the
 /// government, which is how an auction sale is recorded. Nothing here points at the orders
-/// that produced the trade, so a journal survives those orders being cancelled or filled.
+/// that produced the trade, so a journal survives those orders being cancelled or filled. The
+/// year offset is when in the year it traded; a save from before it was kept reads as the year's start.
 /// </summary>
 public sealed record MarketTradeSnapshot(
     long Sequence,
@@ -96,4 +97,5 @@ public sealed record MarketTradeSnapshot(
     decimal Price,
     decimal Volume,
     int BuyerCompanyId,
-    int? SellerCompanyId);
+    int? SellerCompanyId,
+    TimeSpan AtYearOffset = default);

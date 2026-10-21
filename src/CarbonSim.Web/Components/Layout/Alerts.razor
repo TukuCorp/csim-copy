@@ -1,0 +1,65 @@
+@inject IStringLocalizer<SharedStrings> Strings
+
+@* The original raises an alert over whatever screen is open when an auction ends or an offer
+   arrives; these are the same, shown under the top bar until the player dismisses them. Only what
+   happens while the screen is open is news: the first view a circuit sees sets the baseline. *@
+@if (View is { } view)
+{
+    @if (_auction is { } ended)
+    {
+        <p class="notice notice-status alert" role="alert">
+            <span>
+                @Strings["AuctionClosedAlert", ended.Sequence, ended.Year, Display.Price(ended.ClearingPrice)]
+                @if (ended.MyBids.Sum(bid => bid.Awarded) is var won and > 0m)
+                {
+                    @(" " + Strings["AuctionWonAlert", Display.Tonnes(won), Display.Money(ended.MyBids.Sum(bid => bid.Cost))])
+                }
+            </span>
+            <button class="button ghost small-button" @onclick="() => _auction = null">@Strings["Dismiss"]</button>
+        </p>
+    }
+
+    @if (_newOffers > 0)
+    {
+        <p class="notice notice-status alert" role="alert">
+            <a href="@RunRoute.Screen(view.SimulationId, "otc")">@Strings["NewOffersAlert", _newOffers]</a>
+            <button class="button ghost small-button" @onclick="() => _newOffers = 0">@Strings["Dismiss"]</button>
+        </p>
+    }
+}
+
+@code {
+    [Parameter] public PlayerView? View { get; set; }
+
+    private bool _baselined;
+    private (int Year, int Sequence)? _seenAuction;
+    private readonly HashSet<long> _seenOffers = [];
+    private AuctionView? _auction;
+    private int _newOffers;
+
+    protected override void OnParametersSet()
+    {
+        if (View is not { } view)
+        {
+            return;
+        }
+
+        AuctionView? cleared = view.LastClearedAuction;
+        (int Year, int Sequence)? key = cleared is null ? null : (cleared.Year, cleared.Sequence);
+        long[] fresh = [.. view.OffersToAnswer.Select(offer => offer.Id).Where(id => !_seenOffers.Contains(id))];
+
+        if (_baselined)
+        {
+            if (key is not null && key != _seenAuction)
+            {
+                _auction = cleared;
+            }
+
+            _newOffers += fresh.Length;
+        }
+
+        _baselined = true;
+        _seenAuction = key;
+        _seenOffers.UnionWith(fresh);
+    }
+}

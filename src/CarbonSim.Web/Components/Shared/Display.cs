@@ -67,6 +67,27 @@ public static class Display
             : $"{value.Minutes}m {value.Seconds:D2}s";
     }
 
+    /// <summary>
+    /// The virtual calendar date for a point in the year: the year runs January 1 to December 31,
+    /// month by month, so each of four sections opens on the first of a quarter (Apr 1, Jul 1, Oct 1),
+    /// as the original's calendar does. Written the reader's way round ("April 1", "1 tháng 4").
+    /// </summary>
+    public static string VirtualDate(TimeSpan elapsed, TimeSpan yearLength)
+    {
+        double share = YearShare(elapsed, yearLength);
+        int month = MonthOf(elapsed, yearLength);
+        // Any non-leap year: the calendar is the year's shape, not a real date.
+        int day = (int)(((share * 12) - (month - 1)) * DateTime.DaysInMonth(2001, month)) + 1;
+
+        return new DateTime(2001, month, day).ToString(CultureInfo.CurrentCulture.DateTimeFormat.MonthDayPattern, CultureInfo.CurrentCulture);
+    }
+
+    /// <summary>The virtual month (1 to 12) a point in the year falls in.</summary>
+    public static int MonthOf(TimeSpan elapsed, TimeSpan yearLength) => (int)(YearShare(elapsed, yearLength) * 12) + 1;
+
+    private static double YearShare(TimeSpan elapsed, TimeSpan yearLength) =>
+        yearLength > TimeSpan.Zero ? Math.Clamp(elapsed / yearLength, 0d, 0.999999d) : 0d;
+
     /// <summary>Long when the company holds more than it needs, short when it must buy.</summary>
     public static string Position(decimal shortfall, IStringLocalizer<SharedStrings> strings) =>
         shortfall > 0m ? $"{strings["Short"]} {Tonnes(shortfall)}" : $"{strings["Long"]} {Tonnes(-shortfall)}";

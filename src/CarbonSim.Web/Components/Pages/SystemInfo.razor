@@ -46,7 +46,7 @@ else
 
         <section class="card wide" tabindex="0">
             <h2>@Strings["SystemReport"]</h2>
-            <QuickGrid Items="@ReportRows(view).AsQueryable()" Class="grid">
+            <QuickGrid Items="@SystemReportRows.For(Strings, view.System.ThisYear, view.System.ToDate).AsQueryable()" Class="grid">
                 <TemplateColumn Title="@Strings["Product"]" Context="row">@row.Label</TemplateColumn>
                 <TemplateColumn Title="@Strings["ThisYear"]" Context="row">@row.ThisYear</TemplateColumn>
                 <TemplateColumn Title="@Strings["ToDate"]" Context="row">@row.ToDate</TemplateColumn>
@@ -71,32 +71,4 @@ else
     [Parameter] public Guid SimulationId { get; set; }
 
     private PlayerView? View => Screen?.View;
-
-    private sealed record ReportRow(string Label, string ThisYear, string ToDate);
-
-    private List<ReportRow> ReportRows(PlayerView view)
-    {
-        SystemTotals now = view.System.ThisYear;
-        SystemTotals all = view.System.ToDate;
-
-        return
-        [
-            new ReportRow(Strings["Cap"], Display.Tonnes(now.Cap), Display.Tonnes(all.Cap)),
-            new ReportRow(Strings["FreeAllowancesThisYear"], Display.Tonnes(now.FreeAllocation), Display.Tonnes(all.FreeAllocation)),
-            new ReportRow(Strings["TotalAllowancesOnOffer"], Display.Tonnes(now.AuctionableVolume), Display.Tonnes(all.AuctionableVolume)),
-            new ReportRow(Strings["ForecastEmissions"], Display.Tonnes(now.ForecastEmissions), Display.Tonnes(all.ForecastEmissions)),
-            new ReportRow(Strings["AllowancesSurrenderedToGovernment"], Display.Tonnes(now.AllowancesSurrendered), Display.Tonnes(all.AllowancesSurrendered)),
-            new ReportRow(Strings["OffsetsSurrenderedToGovernment"], Display.Tonnes(now.OffsetsSurrendered), Display.Tonnes(all.OffsetsSurrendered)),
-            new ReportRow(Strings["AllowancesBankedForTheNextYear"], Display.Tonnes(now.Banked), Display.Tonnes(all.Banked)),
-            new ReportRow(Strings["Forfeited"], Display.Tonnes(now.Forfeited), Display.Tonnes(all.Forfeited)),
-            new ReportRow(Strings["TotalVolume"], Display.Tonnes(now.AllowancesSold), Display.Tonnes(all.AllowancesSold)),
-            new ReportRow(Strings["AuctionRevenueCollectedByGovernment"], Display.Money(now.AuctionRevenue), Display.Money(all.AuctionRevenue)),
-            new ReportRow(Strings["AverageAllowancePriceAllChannels"], Display.Price(now.AverageAllowancePrice), Display.Price(all.AverageAllowancePrice)),
-            new ReportRow(Strings["AuctionAveragePrice"], Display.Price(now.AuctionAveragePrice), Display.Price(all.AuctionAveragePrice)),
-            new ReportRow(Strings["Average"] + " " + Strings["Offset"], Display.Price(now.AverageOffsetPrice), Display.Price(all.AverageOffsetPrice)),
-            new ReportRow(Strings["Abatement"], now.AbatementsImplemented.ToString(CultureInfo.CurrentCulture), all.AbatementsImplemented.ToString(CultureInfo.CurrentCulture)),
-            new ReportRow(Strings["EmissionReductions"], Display.Tonnes(now.EmissionsReduced), Display.Tonnes(all.EmissionsReduced)),
-            new ReportRow(Strings["PenaltyPerTonne"], now.PenaltyCount.ToString(CultureInfo.CurrentCulture) + " / " + Display.Money(now.PenaltyValue), all.PenaltyCount.ToString(CultureInfo.CurrentCulture) + " / " + Display.Money(all.PenaltyValue)),
-        ];
-    }
 }

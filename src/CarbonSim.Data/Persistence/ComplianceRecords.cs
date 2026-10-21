@@ -89,6 +89,9 @@ public sealed class JournalTradeRecord
     public int BuyerCompanyId { get; set; }
 
     public int? SellerCompanyId { get; set; }
+
+    /// <summary>When in its year the trade happened; zero for rows saved before this was kept.</summary>
+    public TimeSpan AtYearOffset { get; set; }
 }
 
 internal sealed class CompanyComplianceRecordConfiguration : IEntityTypeConfiguration<CompanyComplianceRecord>

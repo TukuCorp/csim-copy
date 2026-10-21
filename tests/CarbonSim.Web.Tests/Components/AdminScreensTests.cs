@@ -122,6 +122,22 @@ public sealed class AdminScreensTests : AdminScreenTestContext
     }
 
     [Fact]
+    public void The_reports_say_which_period_each_cost_and_volume_covers()
+    {
+        // The company report's costs are the year in play while the leaderboard beside it is the whole
+        // run, and the price report's volume counts every channel: each header says so.
+        IRenderedComponent<AdminReports> page = RenderComponent<AdminReports>(parameters => parameters
+            .AddCascadingValue(Snapshot)
+            .Add(component => component.SimulationId, SimulationId));
+        IReadOnlyList<string> headers = [.. page.FindAll("th").Select(header => header.TextContent.Trim())];
+
+        headers.Should().Contain("Cost of compliance (this year)");
+        headers.Should().Contain("Marginal cost of compliance (this year)");
+        headers.Should().Contain("Allowance volume (all channels)");
+        headers.Should().NotContain(header => header.Contains("Allowance auction", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public void The_surrender_screen_lists_every_company()
     {
         IRenderedComponent<AdminSurrender> page = RenderComponent<AdminSurrender>(parameters => parameters

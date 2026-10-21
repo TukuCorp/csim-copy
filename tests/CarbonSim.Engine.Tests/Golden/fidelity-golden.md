@@ -9,57 +9,57 @@ draw shows up as a change here even when every envelope still holds.
 # Fidelity run — 242 units, 3 years, 242 automated units
 
 - Cap year 1: 355,850,000 t; auctionable: 35,585,000 t
-- Auction average price by year: 100.00, 181.84, 255.97
-- Auction volume year 1: 24,007,538 t
-- Average allowance price: 155.58; offsets: 141.57; discount: 9.0%
-- Average price by vintage: 1 = 99.80, 2 = 151.87, 3 = 207.46
+- Auction average price by year: 100.00, 205.34, 252.10
+- Auction volume year 1: 27,036,954 t
+- Average allowance price: 182.64; offsets: 175.81; discount: 3.7%
+- Average price by vintage: 1 = 99.52, 2 = 197.13, 3 = 242.71
 - Abatement year 1: 3,558,500 t (1.00% of the cap)
-- Offsets surrendered year 1: 25,541,458 t (7.18% of the cap)
-- Penalties: 432 worth 8,619,094,230; market shortfall 28,730,314 t
-- Compliant company-years: 294 of 726
-- Bot cost of compliance per tonne: -62.64 to 39.72
-- BotAction log: 4,998 actions, sha256 b72aab2f2052454f89c4515c4a2c46b20d51e2c4e3bb450a0e8d31962cb4ade2
+- Offsets surrendered year 1: 26,187,210 t (7.36% of the cap)
+- Penalties: 325 worth 3,245,440,880; market shortfall 10,818,136 t
+- Compliant company-years: 401 of 726
+- Bot cost of compliance per tonne: -114.64 to 85.27
+- BotAction log: 4,901 actions, sha256 4363c05cce16fcb80f4814d7c7cf389e6538ab60a06c4f77ef1600edacc9c9c6
 
 | Year | Resting bids | Resting asks | Resting volume | Exchange fills | Exchange volume | Exchange average price | Auction average price | Units penalised | Penalty value |
 |---|---|---|---|---|---|---|---|---|---|
-| 1 | 350 | 18 | 44,786,372 | 150 | 9,947,364 | 99.33 | 100.00 | 91 | 118,401,630 |
-| 2 | 579 | 30 | 83,444,853 | 211 | 15,145,116 | 101.80 | 181.84 | 129 | 724,107,227 |
-| 3 | 897 | 34 | 129,303,103 | 88 | 12,614,798 | 104.46 | 255.97 | 212 | 7,776,585,374 |
+| 1 | 337 | 19 | 37,299,107 | 171 | 8,263,342 | 97.97 | 100.00 | 83 | 96,976,013 |
+| 2 | 269 | 13 | 39,927,627 | 199 | 13,150,737 | 179.88 | 205.34 | 77 | 233,184,116 |
+| 3 | 323 | 9 | 51,114,559 | 116 | 12,222,788 | 222.13 | 252.10 | 165 | 2,915,280,752 |
 
 - Companies allocated above their need in year 1: 24; below it: 218
 
 | Year | Obligation | Free allocation | Auction offered | Auction bid | Auction sold | Exchange traded | Offsets granted | Offsets surrendered | Abatement | Banked | Shortfall |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| 1 | 355,850,000 | 320,265,000 | 42,488,490 | 24,007,538 | 24,007,538 | 9,947,364 | 28,375,138 | 25,541,458 | 0 | 10,482,885 | 394,672 |
-| 2 | 366,606,251 | 310,657,050 | 34,310,345 | 33,690,659 | 25,306,772 | 15,145,116 | 32,050,767 | 26,862,382 | 3,558,500 | 6,910,939 | 2,413,691 |
-| 3 | 381,547,774 | 301,337,339 | 26,785,541 | 76,828,517 | 26,785,541 | 12,614,798 | 35,579,617 | 26,850,020 | 3,558,500 | 3,844,325 | 25,921,951 |
+| 1 | 355,850,000 | 320,265,000 | 42,488,490 | 27,036,954 | 27,036,954 | 8,263,342 | 28,375,138 | 26,187,210 | 0 | 17,962,418 | 323,253 |
+| 2 | 366,737,614 | 310,657,050 | 34,310,345 | 34,846,080 | 27,613,960 | 13,150,737 | 31,415,693 | 28,495,211 | 3,427,137 | 18,445,052 | 777,280 |
+| 3 | 367,414,746 | 301,337,339 | 26,785,541 | 53,984,472 | 26,785,541 | 12,222,788 | 32,182,719 | 26,636,231 | 17,691,528 | 14,301,764 | 9,717,603 |
 
 ## Hard difficulty
 
 # Fidelity run — 242 units, 3 years, 242 automated units
 
 - Cap year 1: 355,850,000 t; auctionable: 35,585,000 t
-- Auction average price by year: 100.00, 183.78, 255.90
-- Auction volume year 1: 25,139,268 t
-- Average allowance price: 155.38; offsets: 158.57; discount: -2.1%
-- Average price by vintage: 1 = 99.80, 2 = 153.68, 3 = 205.47
-- Abatement year 1: 3,558,500 t (1.00% of the cap)
-- Offsets surrendered year 1: 25,541,458 t (7.18% of the cap)
-- Penalties: 346 worth 8,533,941,864; market shortfall 28,446,473 t
-- Compliant company-years: 380 of 726
-- Bot cost of compliance per tonne: -65.97 to 42.47
-- BotAction log: 4,972 actions, sha256 2ca1ec100ec357719cd42dd72919e7e861c3a1e06ad2d734484084a69cd05136
+- Auction average price by year: 109.10, 147.40, 252.39
+- Auction volume year 1: 27,431,229 t
+- Average allowance price: 170.71; offsets: 206.80; discount: -21.1%
+- Average price by vintage: 1 = 112.48, 2 = 153.64, 3 = 243.38
+- Abatement year 1: 29,144,115 t (8.19% of the cap)
+- Offsets surrendered year 1: 26,613,991 t (7.48% of the cap)
+- Penalties: 145 worth 669,626,345; market shortfall 2,232,088 t
+- Compliant company-years: 581 of 726
+- Bot cost of compliance per tonne: -77.14 to 114.56
+- BotAction log: 4,550 actions, sha256 0194d7a31f28043b65658d0b6c17d16783f7b0e65c58beae0fa9ccf740f4bed3
 
 | Year | Resting bids | Resting asks | Resting volume | Exchange fills | Exchange volume | Exchange average price | Auction average price | Units penalised | Penalty value |
 |---|---|---|---|---|---|---|---|---|---|
-| 1 | 350 | 18 | 44,786,372 | 150 | 9,842,287 | 99.30 | 100.00 | 23 | 2,730 |
-| 2 | 577 | 30 | 81,738,513 | 206 | 14,491,588 | 101.04 | 183.78 | 118 | 604,755,914 |
-| 3 | 879 | 34 | 129,639,641 | 98 | 13,391,975 | 104.58 | 255.90 | 205 | 7,929,183,221 |
+| 1 | 319 | 18 | 34,271,754 | 194 | 8,957,259 | 122.81 | 109.10 | 38 | 4,905 |
+| 2 | 153 | 16 | 22,775,105 | 193 | 11,064,705 | 164.91 | 147.40 | 0 | 0 |
+| 3 | 292 | 15 | 40,552,229 | 134 | 9,656,685 | 218.39 | 252.39 | 107 | 669,621,440 |
 
 - Companies allocated above their need in year 1: 24; below it: 218
 
 | Year | Obligation | Free allocation | Auction offered | Auction bid | Auction sold | Exchange traded | Offsets granted | Offsets surrendered | Abatement | Banked | Shortfall |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| 1 | 355,850,000 | 320,265,000 | 42,488,490 | 25,139,268 | 25,139,268 | 9,842,287 | 28,375,138 | 25,541,458 | 0 | 11,094,584 | 9 |
-| 2 | 366,606,251 | 310,657,050 | 34,310,345 | 36,044,096 | 25,342,941 | 14,491,588 | 32,050,767 | 26,865,328 | 3,558,500 | 6,781,401 | 2,015,853 |
-| 3 | 381,547,774 | 301,337,339 | 26,785,541 | 84,793,761 | 26,785,541 | 13,391,975 | 35,576,671 | 26,790,777 | 3,558,500 | 4,562,041 | 26,430,611 |
+| 1 | 355,850,000 | 320,265,000 | 42,488,490 | 27,509,624 | 27,431,229 | 8,957,259 | 28,375,138 | 26,613,991 | 0 | 18,460,236 | 16 |
+| 2 | 352,604,587 | 310,657,050 | 34,310,345 | 21,245,312 | 19,966,792 | 11,064,705 | 29,859,917 | 28,111,928 | 17,560,164 | 24,591,404 | 0 |
+| 3 | 357,447,446 | 301,337,339 | 26,785,541 | 41,119,781 | 26,785,541 | 9,656,685 | 30,221,633 | 28,262,286 | 27,658,828 | 25,012,639 | 2,232,071 |

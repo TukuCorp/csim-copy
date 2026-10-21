@@ -42,7 +42,7 @@ public sealed class MutationPrimitiveTests : IClassFixture<SimulationTestHost>
         await AdvancedAsync(id, "a player's abatement", () => runs.ImplementAbatementAsync(id, delta.Actor, 1, 0));
 
         // Into the first section's auction window, so a bid is a legal mutation rather than a refusal.
-        _host.FakeTime.Advance(TimeSpan.FromMinutes(3));
+        _host.FakeTime.Advance(TimeSpan.FromMinutes(1));
         await AdvancedAsync(id, "a tick", () => driver.TickAsync(id));
         // Bid above the floor the collar is about to move to, so the two mutations do not interact:
         // a bid left under a raised floor is a separate finding, not this test's subject.

@@ -1466,3 +1466,26 @@ Swarm playtest (local, two Codex lanes on opencode-go/minimax-m3.1-flash-free): 
 reports/playtest/. Stopped after about a minute: the machine had ~1 GB free and Claude Code reaped the
 local host for memory, so both lanes reported partial with no game observations. Rerun it with ~3 GB
 free, or as a scripted job on a runner. The user opened the public link to sign in; the outcome was not reported.
+
+## Fidelity match against the original CarbonSim (2026-10-21)
+
+User goal: make the current program match the original CarbonSim. Earlier work tuned numbers to the
+fidelity envelopes and walked the demo-video script in QA rounds, but no single pass has checked every
+documented rule and screen against the sources. Approach: audit first (read-only, three lanes), then fix
+the confirmed gaps test-first, highest impact first. Sources only (spec, FAQ, glossary, cheat sheet,
+trainer decks, exercise reports, video transcripts, string catalog); nothing copied from carbonsim.org.
+
+- [x] Audit A, rules: engine behaviour against the EDF spec, FAQ, glossary, cheat sheet and trainer decks (reports/fidelity/audit-a-rules.md)
+- [x] Audit B, screens: player UI and admin console against the video acceptance script and string catalog (reports/fidelity/audit-b-screens.md)
+- [x] Audit C, numbers: scenario parameters and the measured run against decks, exercise reports and envelopes (reports/fidelity/audit-c-numbers.md)
+- [x] Triage into a gap list; reports/2026-10-21-fidelity-match.md (18 gaps in 4 batches, plus calibration)
+- [x] Batch 1, rules: cancel resting orders and OTC offers on a trading halt; offsets in escrow count in the header position; short companies cannot win the leaderboard (LeaderboardEntry.InCompliance); bot abatement horizon (`>=`); bot double offset buy (late pass pulls its early offset bid); the collar leaves the exchange alone (FollowRules and the released-orders count removed)
+- [x] Batch 2a: auction window at the start of each section (clock, tests in Engine and Web moved; snapshot capture at minute 6)
+- [x] Batch 2b: the forward vintage is sold in every auction of the year, not only the last
+- [ ] Batch 2c: bots bid on forward lots (with calibration, batch 4)
+- [ ] Batch 2d: fractional abatement build times with a part-year reduction (migration)
+- [x] Batch 3a: system report rows shared by System info and Reports (sold at auction / secondary market, abatement undertaken in tonnes, penalty count and value apart); price report "all channels" headers; company report "(this year)" headers; leaderboard names the account's player on both screens (AccountCompanyResolver.PlayersByCompanyAsync, forgotten on registration); halt countdown banner (SimulationClock.TimeToHalt)
+- [x] Batch 3b: virtual date on the top bar (Display.VirtualDate, a quarter per section); in-year candles (MarketTrade.AtYearOffset, migration TradeTimeInYear, one candle per virtual month); alerts on any screen for an auction that clears and for new OTC offers (Layout/Alerts.razor); pending bids listed and cancellable (Auction.CancelBid, SimulationRun.CancelBid, registry and session verbs)
+- [ ] Batch 4, calibration: re-ground the envelopes on the sources, offsets grant, abatement menu, last-auction bidding; one re-baseline of the golden
+- [ ] Gate: build 0 warnings, format clean, suite green, golden re-baselined only where intended; /verify
+- [ ] Review section here

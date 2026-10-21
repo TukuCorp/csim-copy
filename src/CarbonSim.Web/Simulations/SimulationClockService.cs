@@ -182,8 +182,8 @@ public sealed class SimulationClockService : BackgroundService
             simulationId,
             run =>
             {
-                // The module moves the collar, re-anchors the books and releases the bids the new band
-                // cannot hold; the host records who did it and tells the room, because "who" is host
+                // The module moves the collar and releases the auction bids the new band cannot hold
+                // (the exchange keeps its own band); the host records who did it and tells the room, because "who" is host
                 // knowledge and the run's own facts are not.
                 RunResult facts = run.Module.ChangeCollar(floor, ceiling);
                 CollarChange collar = facts.Collar
@@ -250,11 +250,6 @@ public sealed class SimulationClockService : BackgroundService
             Display.Price(collar.NewFloor),
             Display.Price(collar.OldCeiling),
             Display.Price(collar.NewCeiling));
-
-        if (collar.OrdersReleased > 0)
-        {
-            line += " " + Bilingual.Both(strings, "RulesReleasedOrders", collar.OrdersReleased);
-        }
 
         if (collar.BidsReleased.Count > 0)
         {

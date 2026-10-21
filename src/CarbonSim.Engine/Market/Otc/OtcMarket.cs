@@ -158,6 +158,20 @@ public sealed class OtcMarket
         return offer;
     }
 
+    /// <summary>Withdraws every offer still waiting for an answer, as a trading halt does.</summary>
+    public IReadOnlyList<OtcOffer> CancelPending()
+    {
+        List<OtcOffer> cancelled = Pending.ToList();
+
+        foreach (OtcOffer offer in cancelled)
+        {
+            _simulation.Ledger.ReleaseEscrow(offer.Seller.Company, offer.Product, offer.Volume);
+            offer.State = OtcOfferState.Cancelled;
+        }
+
+        return cancelled;
+    }
+
     private OtcOffer Answer(Unit buyer, long offerId)
     {
         OtcOffer offer = Find(offerId);

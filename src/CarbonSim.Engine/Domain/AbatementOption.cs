@@ -12,7 +12,7 @@ public sealed record AbatementOption
         string name,
         decimal upfrontCost,
         decimal annualReduction,
-        int implementationYears,
+        decimal implementationYears,
         int lifetimeYears,
         decimal annualNetRevenue)
     {
@@ -66,8 +66,11 @@ public sealed record AbatementOption
     /// <summary>Tonnes CO2e removed per year once the project is operating.</summary>
     public decimal AnnualReduction { get; }
 
-    /// <summary>Virtual years between implementation and the start of operation.</summary>
-    public int ImplementationYears { get; }
+    /// <summary>
+    /// Virtual years between implementation and the start of operation; a fraction is part of a
+    /// year, as in the original (0.75 to 5 years).
+    /// </summary>
+    public decimal ImplementationYears { get; }
 
     /// <summary>Operating years before the reduction stops.</summary>
     public int LifetimeYears { get; }

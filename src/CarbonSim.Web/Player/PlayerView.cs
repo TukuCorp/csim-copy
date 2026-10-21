@@ -61,6 +61,9 @@ public sealed record PlayerView(
     /// has none: what is left is the settlement, not a countdown to the next auction.
     /// </summary>
     public bool YearIsOver => State is "YearEnded" or "GameEnded" || TimeLeftInYear <= TimeSpan.Zero;
+
+    /// <summary>How long until the trainer's warned halt stops trading, or null when none is pending.</summary>
+    public TimeSpan? TimeToHalt { get; init; }
 }
 
 /// <summary>A run the host is driving, for the waiting screen's list.</summary>
@@ -175,7 +178,7 @@ public sealed record AbatementOpportunityView(
     string Name,
     decimal UpfrontCost,
     decimal AnnualReduction,
-    int ImplementationYears,
+    decimal ImplementationYears,
     int LifetimeYears,
     decimal AnnualNetRevenue,
     decimal ForecastRoi,
@@ -196,7 +199,8 @@ public sealed record AbatementView(
 
 public sealed record AuctionLotView(int Vintage, decimal Volume, bool IsForward);
 
-public sealed record MyBidView(int Vintage, decimal Price, decimal Volume, decimal Awarded, decimal Cost);
+/// <summary>One of the company's bids in an auction; the id is what cancelling it names.</summary>
+public sealed record MyBidView(int Vintage, decimal Price, decimal Volume, decimal Awarded, decimal Cost, int Id = 0);
 
 public sealed record AuctionAwardView(int Vintage, decimal Volume, decimal Price, decimal Cost);
 
@@ -246,7 +250,7 @@ public sealed record ProductBookView(
     IReadOnlyList<BookLevelView> AskLevels,
     IReadOnlyList<OrderView> MyOrders,
     IReadOnlyList<TradeRow> RecentTrades,
-    IReadOnlyList<YearPriceView> YearPrices);
+    IReadOnlyList<PeriodPriceView> Prices);
 
 /// <summary>One price level of the book: what is on offer at that price, added up.</summary>
 public sealed record BookLevelView(decimal Price, decimal Volume);
@@ -254,8 +258,8 @@ public sealed record BookLevelView(decimal Price, decimal Volume);
 /// <summary>The best price levels of one product's book, each side best-first.</summary>
 public sealed record BookLevelsView(IReadOnlyList<BookLevelView> Bids, IReadOnlyList<BookLevelView> Asks);
 
-/// <summary>One product's price range in one virtual year, for the price chart's candles.</summary>
-public sealed record YearPriceView(int Year, decimal Open, decimal High, decimal Low, decimal Close, decimal Volume);
+/// <summary>One product's price range in one virtual month of a year, for the price chart's candles.</summary>
+public sealed record PeriodPriceView(int Year, int Month, decimal Open, decimal High, decimal Low, decimal Close, decimal Volume);
 
 /// <summary>Where the auctions have cleared, for the exchange screen's summary strip.</summary>
 public sealed record AuctionPriceSummaryView(decimal? Low, decimal? High, decimal? Average, decimal? Last, decimal? ThisYearAverage);

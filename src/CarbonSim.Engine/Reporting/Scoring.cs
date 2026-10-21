@@ -161,16 +161,18 @@ public sealed record LeaderboardEntry(
     decimal OverallCostOfCompliance,
     decimal OverallMarginalCostOfCompliance,
     decimal FinalPosition,
-    bool IsAutomated)
+    bool IsAutomated,
+    bool InCompliance)
 {
     public override string ToString() =>
         $"#{Rank} {Company.Name}: {OverallMarginalCostOfCompliance} per tonne, position {FinalPosition}";
 }
 
 /// <summary>
-/// The leaderboard: cheapest cost of compliance per tonne first, and where two companies are
-/// level, the one left holding the larger position. AI-run companies are flagged so the UI can
-/// mark them the way the original does.
+/// The leaderboard: companies in compliance first, because a short player is not eligible to win
+/// however cheap its compliance (FAQ #21; the spec ranks on cost and compliance status); then the
+/// cheapest cost of compliance per tonne, and where two companies are level, the one left holding
+/// the larger position. AI-run companies are flagged so the UI can mark them the way the original does.
 /// </summary>
 public static class Leaderboard
 {
@@ -179,10 +181,16 @@ public static class Leaderboard
         ArgumentNullException.ThrowIfNull(simulation);
 
         List<LeaderboardEntry> entries = [];
+        Standing standing = new(simulation);
+        int year = Math.Max(1, Math.Min(simulation.CurrentYear, simulation.Allocation.Years.Count));
 
         foreach (Company company in simulation.Companies)
         {
             CompanyScore score = Scoring.Overall(simulation, company);
+
+            // Every closed year covered, and the year in play covered as it stands.
+            bool inCompliance = score.Shortfall == 0m
+                && (standing.IsSettled(company, year) || standing.Shortfall(company, year) == 0m);
 
             entries.Add(new LeaderboardEntry(
                 0,
@@ -190,14 +198,16 @@ public static class Leaderboard
                 score.CostOfCompliance,
                 score.MarginalCostOfCompliance,
                 Scoring.FinalLongShortPosition(simulation, company),
-                company.Owner.Kind == PlayerKind.Ai));
+                company.Owner.Kind == PlayerKind.Ai,
+                inCompliance));
         }
 
         // Level on cost per tonne, the company that was left holding more ranks first.
         List<LeaderboardEntry> ranked =
         [
             .. entries
-                .OrderBy(entry => entry.OverallMarginalCostOfCompliance)
+                .OrderByDescending(entry => entry.InCompliance)
+                .ThenBy(entry => entry.OverallMarginalCostOfCompliance)
                 .ThenByDescending(entry => Scoring.Holdings(simulation, entry.Company))
                 .ThenBy(entry => entry.Company.Id)
                 .Select((entry, index) => entry with { Rank = index + 1 }),

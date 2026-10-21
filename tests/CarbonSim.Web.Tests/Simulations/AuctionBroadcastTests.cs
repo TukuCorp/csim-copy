@@ -66,8 +66,8 @@ public sealed class AuctionBroadcastTests : IClassFixture<SimulationTestHost>, I
         runs.Run(_simulationId).Auctions.Auctions.Should().HaveCount(12);
 
         // Two sealed bids into the first auction's vintage-1 lot: one from each company. The
-        // window opens 2 minutes in and closes at 5, so bidding at 3 minutes lands inside it.
-        _host.FakeTime.Advance(TimeSpan.FromMinutes(3));
+        // window opens with the year and closes at 2:15, so bidding at 1 minute lands inside it.
+        _host.FakeTime.Advance(TimeSpan.FromMinutes(1));
         await runs.BidAtAuctionAsync(_simulationId, _delta.Actor, 1, 1, 140m, 1_000m);
         await runs.BidAtAuctionAsync(_simulationId, _redRiver.Actor, 2, 1, 150m, 1_000m);
         _host.FakeTime.Advance(TimeSpan.FromMinutes(2));

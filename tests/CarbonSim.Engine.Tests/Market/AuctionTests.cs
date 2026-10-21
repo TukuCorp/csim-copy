@@ -59,9 +59,10 @@ public sealed class AuctionTests
         lastOfYearOne.Lots[0].IsForward.Should().BeFalse();
         lastOfYearOne.Lots[1].Vintage.Should().Be(2);
         lastOfYearOne.Lots[1].IsForward.Should().BeTrue();
-        lastOfYearOne.Lots[1].Volume.Should().Be(184_300m);
+        lastOfYearOne.Lots[1].Volume.Should().Be(46_075m, "a quarter of the 184,300 t sold forward in year 1");
+        schedule.ForSection(1, 1).Lots.Should().Contain(lot => lot.IsForward && lot.Vintage == 2 && lot.Volume == 46_075m);
 
-        schedule.ForSection(2, 1).Lots.Single().Volume.Should().Be(184_300m, "the rest of vintage 2 is spread over its own year");
+        schedule.ForSection(2, 1).Lots.Single(lot => !lot.IsForward).Volume.Should().Be(184_300m, "the rest of vintage 2 is spread over its own year");
         schedule.Auctions.Where(auction => auction.Lots.Any(lot => lot.Vintage == 2))
             .Sum(auction => auction.Lots.Where(lot => lot.Vintage == 2).Sum(lot => lot.Volume))
             .Should().Be(921_500m);
@@ -222,7 +223,7 @@ public sealed class AuctionTests
         Auction auction = schedule.ForSection(1, 4);
         Unit unit = simulation.FindUnit(1);
         auction.PlaceBid(unit, 1, 150m, 100_000m);
-        auction.PlaceBid(unit, 2, 130m, 100_000m);
+        auction.PlaceBid(unit, 2, 130m, 40_000m);
 
         IReadOnlyList<AuctionResult> results = auction.Clear();
 
@@ -231,8 +232,8 @@ public sealed class AuctionTests
         results[0].ClearingPrice.Should().Be(100m, "vintage 1 is under-subscribed");
         results[1].Vintage.Should().Be(2);
         results[1].ClearingPrice.Should().Be(100m, "vintage 2 is under-subscribed too");
-        results[1].VolumeSold.Should().Be(100_000m);
-        simulation.Ledger.Available(unit.Company, Product.Allowance(2)).Should().Be(100_000m);
+        results[1].VolumeSold.Should().Be(40_000m);
+        simulation.Ledger.Available(unit.Company, Product.Allowance(2)).Should().Be(40_000m);
         simulation.Government.Held(2).Should().BeGreaterThan(0m, "the forward lot is only part of vintage 2");
     }
 

@@ -2,6 +2,7 @@ using CarbonSim.Engine.Clock;
 using CarbonSim.Engine.Domain;
 using CarbonSim.Engine.Market;
 using CarbonSim.Engine.Market.Exchange;
+using CarbonSim.Engine.Market.Otc;
 using CarbonSim.Engine.Run;
 using FluentAssertions;
 
@@ -33,10 +34,10 @@ public sealed class SimulationRunTests
         Auction auction = run.Auctions.ForSection(1, 1);
 
         // A 20-minute year in four sections with a 3-minute window each: section one's window runs from
-        // minute two to minute five.
-        run.Clock.IsAuctionOpen.Should().BeFalse("the window opens near the end of the section");
+        // the start of the year to minute three.
+        run.Clock.IsAuctionOpen.Should().BeTrue("the year's first auction opens with the year");
 
-        time.Advance(TimeSpan.FromMinutes(5));
+        time.Advance(TimeSpan.FromMinutes(3));
         RunResult closing = run.Advance();
 
         auction.IsCleared.Should().BeTrue("the tick that closed the section cleared its auction");
@@ -58,7 +59,7 @@ public sealed class SimulationRunTests
         (SimulationRun run, TestTimeProvider time) = Started();
 
         // Into the first section's auction window, and bid into it.
-        time.Advance(TimeSpan.FromMinutes(3));
+        time.Advance(TimeSpan.FromMinutes(1));
         run.Advance();
         run.Clock.IsAuctionOpen.Should().BeTrue();
         run.Bid(run.Simulation.FindUnit(1), 1, 150m, 100_000m);
@@ -81,13 +82,17 @@ public sealed class SimulationRunTests
     [Fact]
     public void A_bid_outside_the_window_is_refused_and_leaves_the_auction_alone()
     {
-        (SimulationRun run, _) = Started();
+        (SimulationRun run, TestTimeProvider time) = Started();
 
-        Action beforeTheWindow = () => run.Bid(run.Simulation.FindUnit(1), 1, 150m, 1_000m);
+        // Into the gap after section one's window, before section two's opens.
+        time.Advance(TimeSpan.FromMinutes(4));
+        run.Advance();
 
-        beforeTheWindow.Should().Throw<TradeRefusedException>()
+        Action betweenTheWindows = () => run.Bid(run.Simulation.FindUnit(1), 1, 150m, 1_000m);
+
+        betweenTheWindows.Should().Throw<TradeRefusedException>()
             .Which.Refusal.Should().Be(TradeRefusal.AuctionClosed);
-        run.Auctions.ForSection(1, 1).Bids.Should().BeEmpty();
+        run.Auctions.ForSection(1, 2).Bids.Should().BeEmpty();
     }
 
     [Fact]
@@ -96,7 +101,7 @@ public sealed class SimulationRunTests
         (SimulationRun run, TestTimeProvider time) = Started();
         Company bidder = run.Simulation.FindCompany(1);
 
-        time.Advance(TimeSpan.FromMinutes(3));
+        time.Advance(TimeSpan.FromMinutes(1));
         run.Advance();
         run.Bid(run.Simulation.FindUnit(1), 1, 120m, 10_000m);
 
@@ -123,7 +128,7 @@ public sealed class SimulationRunTests
         (SimulationRun run, TestTimeProvider time) = Started();
         Company bidder = run.Simulation.FindCompany(1);
 
-        time.Advance(TimeSpan.FromMinutes(3));
+        time.Advance(TimeSpan.FromMinutes(1));
         run.Advance();
         run.Bid(run.Simulation.FindUnit(1), 1, 280m, 1_000m);
 
@@ -139,7 +144,7 @@ public sealed class SimulationRunTests
     {
         (SimulationRun run, TestTimeProvider time) = Started();
 
-        time.Advance(TimeSpan.FromMinutes(3));
+        time.Advance(TimeSpan.FromMinutes(1));
         run.Advance();
         run.Bid(run.Simulation.FindUnit(1), 1, 150m, 1_000m);
 
@@ -154,7 +159,7 @@ public sealed class SimulationRunTests
     {
         (SimulationRun run, TestTimeProvider time) = Started();
 
-        time.Advance(TimeSpan.FromMinutes(3));
+        time.Advance(TimeSpan.FromMinutes(1));
         run.Advance();
         run.Bid(run.Simulation.FindUnit(1), 1, 120m, 1_000m);
 
@@ -173,7 +178,7 @@ public sealed class SimulationRunTests
     {
         (SimulationRun run, _) = Started();
 
-        // Halted in the first section, before any window opened: none of the year's auctions ran.
+        // Halted at the very start, inside the first window with nothing bid: none of the year's auctions ran.
         run.RequestHalt();
         run.EndYear();
 
@@ -196,23 +201,27 @@ public sealed class SimulationRunTests
     }
 
     [Fact]
-    public void A_collar_change_counts_only_the_orders_it_released()
+    public void A_collar_change_leaves_the_exchange_where_it_was_trading()
     {
+        // The collar is set for the primary market, not the secondary one (glossary, Ceiling Price and
+        // Floor Price): the exchange keeps its own band around its own last trade.
         (SimulationRun run, _) = Started();
         Product vintage1 = Product.Allowance(1);
         run.Simulation.Ledger.Grant(run.Simulation.FindCompany(1), vintage1, 1_000m);
-        run.PlaceOrder(new OrderRequest(run.Simulation.FindUnit(1), vintage1, OrderSide.Sell, OrderKind.Limit, 100m, 95m));
+        Order offer = run.PlaceOrder(new OrderRequest(run.Simulation.FindUnit(1), vintage1, OrderSide.Sell, OrderKind.Limit, 100m, 95m)).Order!;
+        decimal anchor = run.Exchange.Book(vintage1).LastTradePrice;
 
-        run.ChangeCollar(105m, null).Collar!.OrdersReleased.Should().Be(1, "a floor of 105 cannot hold an offer at 95");
+        run.ChangeCollar(105m, null);
 
-        run.ChangeCollar(null, 280m).Collar!.OrdersReleased.Should().Be(0, "nothing was left outside the second change");
+        offer.Status.Should().Be(OrderStatus.Open, "an offer under the auction floor may stand on the exchange");
+        run.Exchange.Book(vintage1).LastTradePrice.Should().Be(anchor, "the band stays around the exchange's own price");
     }
 
     [Fact]
     public void A_bid_placed_after_a_release_gets_an_id_of_its_own()
     {
         (SimulationRun run, TestTimeProvider time) = Started();
-        time.Advance(TimeSpan.FromMinutes(3));
+        time.Advance(TimeSpan.FromMinutes(1));
         run.Advance();
         Unit unit = run.Simulation.FindUnit(1);
         run.Bid(unit, 1, 120m, 1_000m);
@@ -240,5 +249,65 @@ public sealed class SimulationRunTests
 
         run.Exchange.Book(vintage1).LastTradePrice.Should().Be(108m, "the floor did not move, so neither does the market");
         offer.Status.Should().Be(OrderStatus.Open);
+    }
+
+    [Fact]
+    public void A_halt_cancels_resting_orders_and_pending_offers_and_hands_their_allowances_back()
+    {
+        (SimulationRun run, _) = Started();
+        Product vintage1 = Product.Allowance(1);
+        Company seller = run.Simulation.FindCompany(1);
+        run.Simulation.Ledger.Grant(seller, vintage1, 1_000m);
+        decimal held = run.Simulation.Ledger.Available(seller, vintage1);
+        Order order = run.PlaceOrder(new OrderRequest(run.Simulation.FindUnit(1), vintage1, OrderSide.Sell, OrderKind.Limit, 300m, 105m)).Order!;
+        OtcOffer offer = run.SendOffer(run.Simulation.FindUnit(1), run.Simulation.FindUnit(4), vintage1, 100m, 200m).Offer!;
+
+        run.RequestHalt();
+
+        order.Status.Should().Be(OrderStatus.Cancelled, "a halt cancels what is resting on the exchange");
+        offer.State.Should().Be(OtcOfferState.Cancelled, "and what is waiting for an answer over the counter");
+        run.Simulation.Ledger.Available(seller, vintage1).Should().Be(held, "nothing stays set aside once trading has stopped");
+    }
+
+    [Fact]
+    public void The_year_running_out_cancels_resting_orders_so_the_year_end_can_surrender_them()
+    {
+        (SimulationRun run, TestTimeProvider time) = Started();
+        Product vintage1 = Product.Allowance(1);
+        Company seller = run.Simulation.FindCompany(1);
+        decimal held = run.Simulation.Ledger.Available(seller, vintage1);
+        Order order = run.PlaceOrder(new OrderRequest(run.Simulation.FindUnit(1), vintage1, OrderSide.Sell, OrderKind.Limit, held, 105m)).Order!;
+
+        time.Advance(run.Simulation.Rules.YearLength);
+        run.Advance();
+
+        run.Simulation.State.Should().Be(SimulationState.TradingHalted);
+        order.Status.Should().Be(OrderStatus.Cancelled);
+        run.Simulation.Ledger.Available(seller, vintage1).Should().Be(held, "the year end reconciles on what the company holds");
+    }
+
+    [Fact]
+    public void A_bid_can_be_cancelled_while_its_auction_is_open_and_its_money_comes_back()
+    {
+        // The original lists each pending bid with a "Cancel bid" control while the auction runs.
+        (SimulationRun run, TestTimeProvider time) = Started();
+        Company bidder = run.Simulation.FindCompany(1);
+        run.Bid(run.Simulation.FindUnit(1), 1, 120m, 10_000m);
+        run.Bid(run.Simulation.FindUnit(1), 1, 130m, 5_000m);
+        int first = run.Auctions.ForSection(1, 1).Bids[0].Id;
+
+        run.CancelBid(bidder, first);
+
+        run.Auctions.ForSection(1, 1).Bids.Should().ContainSingle().Which.Price.Should().Be(130m);
+        run.Simulation.Cash.Escrowed(bidder).Should().Be(650_000m, "only the bid left standing keeps its money aside");
+
+        int second = run.Auctions.ForSection(1, 1).Bids[0].Id;
+        Action someoneElses = () => run.CancelBid(run.Simulation.FindCompany(2), second);
+        someoneElses.Should().Throw<InvalidOperationException>("a company cancels only its own bids");
+
+        time.Advance(TimeSpan.FromMinutes(4));
+        run.Advance();
+        Action afterTheClose = () => run.CancelBid(bidder, second);
+        afterTheClose.Should().Throw<TradeRefusedException>().Which.Refusal.Should().Be(TradeRefusal.AuctionClosed);
     }
 }

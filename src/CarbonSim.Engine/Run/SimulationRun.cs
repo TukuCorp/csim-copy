@@ -142,7 +142,7 @@ public sealed class SimulationRun
     /// <summary>Halts trading, warning the players first when a lead is given.</summary>
     public RunResult RequestHalt(TimeSpan? warnLead = null)
     {
-        Clock.RequestHalt(warnLead);
+        CancelOnHalt(Clock.RequestHalt(warnLead));
 
         return Collect();
     }
@@ -167,7 +167,9 @@ public sealed class SimulationRun
 
         if (Clock.State == SimulationState.Running)
         {
-            foreach (ClockEvent @event in Clock.Advance())
+            IReadOnlyList<ClockEvent> events = Clock.Advance();
+
+            foreach (ClockEvent @event in events)
             {
                 if (@event.Kind == ClockEventKind.AuctionClosed)
                 {
@@ -182,6 +184,7 @@ public sealed class SimulationRun
                 }
             }
 
+            CancelOnHalt(events);
             actions.AddRange(Bots?.Act(Simulation, Clock, new BotMarkets(Exchange, Otc, Auctions)) ?? []);
         }
 
@@ -230,11 +233,10 @@ public sealed class SimulationRun
     }
 
     /// <summary>
-    /// The administrator's change of the collar. Moving the floor moves every book's band with it,
-    /// so orders the new band cannot hold are released and what is left is matched against itself:
-    /// two orders can both be valid and still be crossed once the ground has moved. The revision the
-    /// run carries is what tells the bots the ground has moved, so the market re-quotes within a tick
-    /// rather than at the next scheduled pass.
+    /// The administrator's change of the collar. The collar bounds the auctions only, so the exchange
+    /// keeps trading in its own band around its own last trade; bids resting in an auction that the
+    /// new collar cannot hold are released. The revision the run carries is what tells the bots the
+    /// ground has moved, so the market re-quotes within a tick rather than at the next scheduled pass.
     /// </summary>
     public RunResult ChangeCollar(decimal? floor, decimal? ceiling)
     {
@@ -261,8 +263,6 @@ public sealed class SimulationRun
         rules.AuctionCeilingPrice = newCeiling;
         Simulation.RulesRevision++;
 
-        Exchange.FollowRules();
-
         // The auction's own book follows the collar too: a bid the new band cannot hold comes off it,
         // with the money back to the company, so nothing is left resting that could not be cleared.
         List<ReleasedBid> releasedBids = [];
@@ -280,9 +280,22 @@ public sealed class SimulationRun
                 newFloor,
                 oldCeiling,
                 newCeiling,
-                Exchange.ReleasedOutsideTheRules,
                 releasedBids),
         };
+    }
+
+    /// <summary>
+    /// A halt cancels every resting exchange order and every OTC offer still waiting for an answer,
+    /// as the original does ("Cancelled - Trading halted"). Whatever they had set aside goes back to
+    /// its owner, so the year end surrenders and banks on everything a company holds.
+    /// </summary>
+    private void CancelOnHalt(IReadOnlyList<ClockEvent> events)
+    {
+        if (events.Any(@event => @event.Kind == ClockEventKind.TradingHalted))
+        {
+            Exchange.CancelAll();
+            Otc.CancelPending();
+        }
     }
 
     // ---- the market seam ------------------------------------------------------------------------
@@ -294,6 +307,17 @@ public sealed class SimulationRun
 
         TradingWindow.RequireAuctionOpen(Clock);
         Auctions.ForSection(Simulation.CurrentYear, Clock.CurrentAuction).PlaceBid(unit, vintage, price, volume);
+
+        return Collect();
+    }
+
+    /// <summary>Withdraws one of the company's bids from the auction whose window is open.</summary>
+    public RunResult CancelBid(Company company, int bidId)
+    {
+        ArgumentNullException.ThrowIfNull(company);
+
+        TradingWindow.RequireAuctionOpen(Clock);
+        Auctions.ForSection(Simulation.CurrentYear, Clock.CurrentAuction).CancelBid(company, bidId);
 
         return Collect();
     }

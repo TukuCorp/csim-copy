@@ -25,7 +25,9 @@ public sealed class TradingWindowHostTests : IClassFixture<SimulationTestHost>
     {
         (Guid id, SignedIn delta, SimulationClockService driver, Simulation _) = await StartedAsync();
 
-        // The year has just begun, and the first section's window opens near the end of it.
+        // Past the first section's window, which opens with the year and closes at 2:15.
+        _host.FakeTime.Advance(TimeSpan.FromMinutes(3));
+        await driver.TickAsync(id);
         Runs().Run(id).Clock.IsAuctionOpen.Should().BeFalse();
 
         Func<Task> bid = () => Runs().BidAtAuctionAsync(id, delta.Actor, 1, 1, 120m, 1_000m);
@@ -51,7 +53,7 @@ public sealed class TradingWindowHostTests : IClassFixture<SimulationTestHost>
         await order.Should().ThrowAsync<TradeRefusedException>()
             .Where(exception => exception.Refusal == TradeRefusal.YearNotRunning);
         Runs().Run(id).Exchange.Book(Product.Allowance(1)).OpenOrders.Should()
-            .HaveCount(1, "only the order placed while the year was running is on the book");
+            .BeEmpty("the halt cancelled the order placed while the year was running, and the refused one never arrived");
     }
 
     private SimulationRegistry Runs() => _host.Server.Services.GetRequiredService<SimulationRegistry>();

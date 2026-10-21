@@ -37,6 +37,9 @@ public interface IPlayerSession
 
     Task CancelOrderAsync(Guid simulationId, int unitId, long orderId, CancellationToken cancellationToken = default);
 
+    /// <summary>Withdraws one of the company's bids from the auction that is open.</summary>
+    Task CancelBidAsync(Guid simulationId, int bidId, CancellationToken cancellationToken = default);
+
     Task ImplementAbatementAsync(Guid simulationId, int unitId, int optionIndex, CancellationToken cancellationToken = default);
 
     Task SendOtcOfferAsync(Guid simulationId, int sellerUnitId, int buyerUnitId, string product, decimal price, decimal volume, CancellationToken cancellationToken = default);

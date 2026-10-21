@@ -68,6 +68,25 @@ public sealed class StandingTests
     }
 
     [Fact]
+    public void An_offset_offered_for_sale_still_counts_in_the_position_but_not_in_what_is_available()
+    {
+        // The original's header long/short "ignores escrow" for offsets as for allowances: offering
+        // offsets on the exchange leaves the position where it was until somebody buys them.
+        Simulation simulation = TestSimulation.Build();
+        Company company = simulation.FindCompany(1);
+        Standing standing = new(simulation);
+        simulation.Ledger.Grant(company, Product.Allowance(2), 1_000m);
+        simulation.Ledger.Grant(company, Product.Offset, 100m);
+        decimal before = standing.Held(company, 2);
+
+        simulation.Ledger.Escrow(company, Product.Offset, 40m);
+
+        standing.OffsetLimit(company, 2).Should().BeGreaterThan(100m, "the case is about escrow, not the limit");
+        standing.Held(company, 2).Should().Be(before, "an offered offset is still the company's");
+        standing.Available(company, 2).Should().Be(before - 40m, "but it cannot be surrendered while it is on offer");
+    }
+
+    [Fact]
     public void Position_is_long_positive_and_shortfall_is_never_negative()
     {
         Simulation simulation = TestSimulation.Build();

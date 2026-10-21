@@ -21,7 +21,7 @@ else
                     <tr><th>@Strings["Product"]</th><th>@Strings["ThisYear"]</th><th>@Strings["ToDate"]</th></tr>
                 </thead>
                 <tbody>
-                    @foreach (ReportRow row in SystemRows(run))
+                    @foreach (SystemReportRow row in SystemReportRows.For(Strings, run.ThisYear, run.ToDate))
                     {
                         <tr><td>@row.Label</td><td>@row.ThisYear</td><td>@row.ToDate</td></tr>
                     }
@@ -36,8 +36,8 @@ else
                 <thead>
                     <tr>
                         <th>@Strings["Year"]</th>
-                        <th>@Strings["AllowanceAuction"] @Strings["Volume"]</th>
-                        <th>@Strings["Average"] @Strings["AllowanceAuction"]</th>
+                        <th>@Strings["AllowanceVolumeAllChannels"]</th>
+                        <th>@Strings["AverageAllowancePriceAllChannels"]</th>
                         <th>@Strings["Offset"] @Strings["Volume"]</th>
                         <th>@Strings["Average"] @Strings["Offset"]</th>
                         <th>@Strings["Average"] @Strings["AuctionNumber"]</th>
@@ -73,8 +73,8 @@ else
                         <th>@Strings["ForecastEmissions"]</th>
                         <th>@Strings["FreeAllowancesThisYear"]</th>
                         <th>@Strings["Shortfall"]</th>
-                        <th>@Strings["CostOfCompliance"]</th>
-                        <th>@Strings["OverallMarginalCostOfCompliance"]</th>
+                        <th>@Strings["CostOfComplianceThisYear"]</th>
+                        <th>@Strings["MarginalCostOfComplianceThisYear"]</th>
                         <th>@Strings["FinalLongShortPosition"]</th>
                     </tr>
                 </thead>
@@ -148,7 +148,7 @@ else
                         <tr>
                             <td>@row.Rank</td>
                             <td>@row.Company @(row.Automated ? "(AI)" : string.Empty)</td>
-                            <td>@row.Unit (@row.Player)</td>
+                            <td>@Display.Unit(row.Unit, row.Player, automated: false)</td>
                             <td>@Display.Signed(row.MarginalCost)</td>
                             <td>@Display.Tonnes(row.FinalPosition)</td>
                         </tr>
@@ -166,31 +166,5 @@ else
 
     private AdminRunDetail? Run => Snapshot?.RunId == SimulationId ? Snapshot?.Run : null;
 
-    private sealed record ReportRow(string Label, string ThisYear, string ToDate);
-
     private string Csv(string report) => $"/api/admin/runs/{SimulationId:D}/reports/{report}.csv";
-
-    private List<ReportRow> SystemRows(AdminRunDetail run)
-    {
-        SystemTotals now = run.ThisYear;
-        SystemTotals all = run.ToDate;
-
-        return
-        [
-            new ReportRow(Strings["Cap"], Display.Tonnes(now.Cap), Display.Tonnes(all.Cap)),
-            new ReportRow(Strings["FreeAllowancesThisYear"], Display.Tonnes(now.FreeAllocation), Display.Tonnes(all.FreeAllocation)),
-            new ReportRow(Strings["TotalAllowancesOnOffer"], Display.Tonnes(now.AuctionableVolume), Display.Tonnes(all.AuctionableVolume)),
-            new ReportRow(Strings["ForecastEmissions"], Display.Tonnes(now.ForecastEmissions), Display.Tonnes(all.ForecastEmissions)),
-            new ReportRow(Strings["AllowancesSurrenderedToGovernment"], Display.Tonnes(now.AllowancesSurrendered), Display.Tonnes(all.AllowancesSurrendered)),
-            new ReportRow(Strings["OffsetsSurrenderedToGovernment"], Display.Tonnes(now.OffsetsSurrendered), Display.Tonnes(all.OffsetsSurrendered)),
-            new ReportRow(Strings["AllowancesBankedForTheNextYear"], Display.Tonnes(now.Banked), Display.Tonnes(all.Banked)),
-            new ReportRow(Strings["Forfeited"], Display.Tonnes(now.Forfeited), Display.Tonnes(all.Forfeited)),
-            new ReportRow(Strings["AuctionRevenueCollectedByGovernment"], Display.Money(now.AuctionRevenue), Display.Money(all.AuctionRevenue)),
-            new ReportRow(Strings["AverageAllowancePriceAllChannels"], Display.Price(now.AverageAllowancePrice), Display.Price(all.AverageAllowancePrice)),
-            new ReportRow(Strings["AuctionAveragePrice"], Display.Price(now.AuctionAveragePrice), Display.Price(all.AuctionAveragePrice)),
-            new ReportRow(Strings["Average"] + " " + Strings["Offset"], Display.Price(now.AverageOffsetPrice), Display.Price(all.AverageOffsetPrice)),
-            new ReportRow(Strings["EmissionReductions"], Display.Tonnes(now.EmissionsReduced), Display.Tonnes(all.EmissionsReduced)),
-            new ReportRow(Strings["PenaltyPerTonne"], now.PenaltyCount.ToString(CultureInfo.CurrentCulture) + " / " + Display.Money(now.PenaltyValue), all.PenaltyCount.ToString(CultureInfo.CurrentCulture) + " / " + Display.Money(all.PenaltyValue)),
-        ];
-    }
 }

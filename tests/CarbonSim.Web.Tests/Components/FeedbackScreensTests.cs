@@ -151,7 +151,7 @@ public sealed class FeedbackScreensTests : ScreenTestContext
         // A phone wraps the legend onto a second line; the plot has to start below it or the
         // legend lands on the axis title and the top gridline.
         using JsonDocument prices = JsonDocument.Parse(
-            CarbonSim.Web.Player.Charts.Prices([], 3, 100m, "Auction floor price"));
+            CarbonSim.Web.Player.Charts.Prices([], 3, 100m, "Auction floor price", year => $"Year {year}"));
         JsonElement priceGrid = prices.RootElement.GetProperty("grid");
         JsonElement priceLegend = prices.RootElement.GetProperty("legend");
 
@@ -165,6 +165,30 @@ public sealed class FeedbackScreensTests : ScreenTestContext
 
         macc.RootElement.GetProperty("grid").GetProperty("top").GetInt32().Should().BeGreaterThanOrEqualTo(44);
         macc.RootElement.GetProperty("xAxis").GetProperty("name").GetString().Should().Be("tonnes");
+    }
+
+    [Fact]
+    public void The_price_chart_draws_the_year_month_by_month()
+    {
+        // The original's exchange chart shows the price moving inside a year (offsets under allowances,
+        // both rising), so a candle stands for a virtual month, not a whole year.
+        ProductBookView book = View.Books[0] with
+        {
+            Prices =
+            [
+                new PeriodPriceView(1, 1, 98m, 101m, 97m, 100m, 1_000m),
+                new PeriodPriceView(1, 4, 104m, 108m, 103m, 107m, 2_000m),
+            ],
+        };
+
+        using JsonDocument prices = JsonDocument.Parse(
+            CarbonSim.Web.Player.Charts.Prices([book], 3, 100m, "Auction floor price", year => $"Year {year}"));
+        JsonElement candles = prices.RootElement.GetProperty("series")[0].GetProperty("data");
+
+        prices.RootElement.GetProperty("xAxis").GetProperty("data").GetArrayLength().Should().Be(36, "three years of twelve months");
+        candles[0].ValueKind.Should().Be(JsonValueKind.Array, "January of year 1 traded");
+        candles[1].GetString().Should().Be("-", "February did not");
+        candles[3].ValueKind.Should().Be(JsonValueKind.Array, "April traded");
     }
 
     [Fact]
@@ -234,6 +258,19 @@ public sealed class FeedbackScreensTests : ScreenTestContext
             Localizer(Services)["AuctionStartsIn", string.Empty].Value.Trim(),
             "a closed year is not counting down to an auction");
         strip.Markup.Should().NotContain(Localizer(Services)["AuctionEndsIn", string.Empty].Value.Trim());
+    }
+
+    [Fact]
+    public void A_warned_halt_counts_down_on_every_players_screen()
+    {
+        // The trainer's warning is the room's last chance to trade, so the strip says how long is left.
+        View = View with { TimeToHalt = TimeSpan.FromSeconds(25) };
+
+        IRenderedComponent<ProgressStrip> strip = RenderComponent<ProgressStrip>(parameters =>
+            parameters.AddCascadingValue(Snapshot));
+
+        strip.Find(".banner-halt-warning").TextContent.Should().Contain(
+            Localizer(Services)["TradingHaltsIn", Display.Duration(TimeSpan.FromSeconds(25))].Value);
     }
 
     [Fact]

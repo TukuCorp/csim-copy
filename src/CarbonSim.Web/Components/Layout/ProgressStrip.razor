@@ -32,6 +32,11 @@
             <div class="banner banner-auction">@Strings["AuctionOpen"]</div>
         }
 
+        @if (view.TimeToHalt is { } haltIn)
+        {
+            <div class="banner banner-halted banner-halt-warning" role="alert">@Strings["TradingHaltsIn", Display.Duration(haltIn)]</div>
+        }
+
         @if (view.State is "Paused" or "PausedAfterAuction")
         {
             <div class="banner banner-paused">@Strings["Paused"]</div>

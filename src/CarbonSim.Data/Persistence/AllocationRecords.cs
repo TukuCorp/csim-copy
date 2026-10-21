@@ -59,6 +59,9 @@ public sealed class ImplementedAbatementRecord
     public int OperatingFromYear { get; set; }
 
     public int ExpiresAfterYear { get; set; }
+
+    /// <summary>The point in the run the project starts operating; zero for rows saved before it was kept.</summary>
+    public decimal StartsAt { get; set; }
 }
 
 /// <summary>A year in which a unit was taken out of service.</summary>

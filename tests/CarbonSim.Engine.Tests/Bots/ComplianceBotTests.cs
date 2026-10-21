@@ -79,7 +79,7 @@ public sealed class ComplianceBotTests
         bidBefore.Should().BePositive("the fleet has quoted by now");
 
         // The regulator raises the floor through the run module, which is the only thing that moves a
-        // collar: it re-anchors the books and tells the bots the ground has moved.
+        // collar: it tells the bots the ground has moved, and they re-quote within the exchange's band.
         run.Module.ChangeCollar(140m, null);
 
         // One virtual month later - 2 of the year's 20 minutes - the book has moved with it.
@@ -88,13 +88,13 @@ public sealed class ComplianceBotTests
         decimal bidAfter = book.BestBid ?? 0m;
         decimal offerAfter = book.BestOffer ?? 0m;
 
-        bidAfter.Should().BeGreaterThan(bidBefore, "no bid can stand below the new floor");
+        bidAfter.Should().BeGreaterThan(bidBefore, "the fleet values a tonne at the new floor and bids it up");
     }
 
     /// <summary>
-    /// A book left crossed by a rule change is a market that cannot trade: the old offers sit under
-    /// the new floor while the new bids sit above them, and nothing matches because an order only
-    /// ever met what was on the book when it arrived.
+    /// A book left crossed by a rule change is a market that cannot trade. The collar does not move
+    /// the exchange's band, and the fleet re-quotes inside it, so every new bid meets the offers
+    /// already resting rather than standing above them.
     /// </summary>
     [Fact]
     public void Raising_the_floor_leaves_no_crossed_book()
@@ -113,10 +113,6 @@ public sealed class ComplianceBotTests
 
         run.Module.ChangeCollar(140m, null);
 
-        // Nothing below the new floor survives, so the book cannot be crossed.
-        book.OpenOrders.Should().NotContain(
-            order => order.Price != null && order.Price < book.BandFloor,
-            "an order the new rules put outside the band is released, not left standing");
         if (book.BestBid is { } bid && book.BestOffer is { } offer)
         {
             bid.Should().BeLessThan(offer, "the book is not crossed");
@@ -204,6 +200,39 @@ public sealed class ComplianceBotTests
 
         run.Simulation.Abatements.For(unit).Select(project => project.Option.Code)
             .Should().NotContain("P2", "a two year build started in the last year would never run");
+    }
+
+    [Fact]
+    public void A_bot_builds_nothing_that_would_start_operating_after_the_run_ends()
+    {
+        // FAQ #4: do not implement an abatement that will produce no reductions before the end.
+        // In a one-year run every project on the menu takes at least a year to build.
+        Simulation simulation = TestSimulation.Build(years: 1);
+        TestTimeProvider time = new();
+        SimulationRun module = SimulationRun.Create(simulation, time, SimulationBots.Create(simulation, BotSettings.For(BotDifficulty.Normal)));
+        module.Clock.Start();
+
+        time.Advance(TimeSpan.FromMinutes(10));
+        IReadOnlyList<BotAction> actions = module.Advance().BotActions;
+
+        actions.Should().Contain(action => action.Trigger == BotTrigger.Abatement || action.Trigger == BotTrigger.Trade, "the bot has had its turn");
+        simulation.Abatements.For(simulation.FindUnit(3)).Should().BeEmpty("nothing built in the only year would ever run");
+    }
+
+    [Fact]
+    public void A_short_bot_late_in_the_year_keeps_one_offset_bid_rather_than_two()
+    {
+        Run run = Build();
+        Company bot = run.Simulation.FindCompany(3);
+        decimal usable = run.Simulation.Allocation.BausEmissionsFor(bot, 1) * run.Simulation.Rules.OffsetUsageLimit;
+
+        // Nobody sells offsets, so the early bid rests; the late pass must replace it, not add to it.
+        Advance(run, TimeSpan.FromMinutes(17));
+
+        run.Markets.Exchange.Book(Product.Offset).OpenOrders
+            .Where(order => ReferenceEquals(order.Company, bot) && order.Side == OrderSide.Buy)
+            .Sum(order => order.Remaining)
+            .Should().BeLessThanOrEqualTo(usable, "a bot bids for no more offsets than it can surrender");
     }
 
     [Fact]

@@ -52,9 +52,9 @@ public sealed class OrderBook
     public decimal LastTradePrice { get; private set; }
 
     /// <summary>
-    /// Moves the price the volatility band is anchored on. A regulator who raises the floor has
-    /// moved where a tonne may trade, so the band every order is checked against follows it;
-    /// without this an exchange anchored on yesterday's floor refuses any quote at the new one.
+    /// Sets the price the volatility band is anchored on, as a trade would. The band follows the
+    /// exchange's own last trade only: the auction collar is a primary-market control and never
+    /// moves it (glossary, Floor Price and Ceiling Price).
     /// </summary>
     public void Reanchor(decimal referencePrice)
     {
@@ -67,81 +67,6 @@ public sealed class OrderBook
         }
 
         LastTradePrice = referencePrice;
-    }
-
-    /// <summary>
-    /// Brings the book back inside the collar the run now trades under: every order resting outside
-    /// it is cancelled and its escrow released, and what is left is matched against itself.
-    /// </summary>
-    /// <remarks>
-    /// Without this a rule change leaves a crossed book - the offers written under the old floor
-    /// standing while the new bids are written above them - and nothing matches, because an order
-    /// only ever met what was on the book the moment it arrived. The owner of an order that cannot
-    /// stand is told by the book change the screens already read, and the run's message feed names
-    /// how many were released.
-    /// </remarks>
-    public void FollowRules(decimal floor, decimal ceiling)
-    {
-        ReleasedOutsideTheRules = 0;
-
-        // The market keeps trading where it was unless the new collar leaves that price outside it:
-        // a raised floor lifts the anchor, a cut ceiling lowers it, and a move elsewhere changes nothing.
-        Reanchor(Math.Clamp(LastTradePrice, floor, ceiling));
-
-        Order[] outside =
-        [
-            .. _resting
-                .Where(order => order.Kind != OrderKind.StopLoss
-                    && order.Price is { } price
-                    && (price < BandFloor || price > Math.Min(BandCeiling, ceiling) || price < floor))
-                .OrderBy(order => order.Id),
-        ];
-
-        foreach (Order order in outside)
-        {
-            Cancel(order.Company, order.Id);
-            ReleasedOutsideTheRules++;
-        }
-
-        Cross();
-    }
-
-    /// <summary>How many orders the latest change of the rules took off this book.</summary>
-    public int ReleasedOutsideTheRules { get; private set; }
-
-    /// <summary>
-    /// Matches what is left on the book against itself. Two orders can both be valid and still be
-    /// crossed after a shock moved where they may stand; this is what stops a bid above an offer
-    /// surviving one.
-    /// </summary>
-    public void Cross()
-    {
-        while (true)
-        {
-            Order? bid = _resting
-                .Where(order => order.Side == OrderSide.Buy && order.Kind != OrderKind.StopLoss)
-                .OrderByDescending(order => order.Price ?? 0m)
-                .ThenBy(order => order.Id)
-                .FirstOrDefault();
-            Order? ask = _resting
-                .Where(order => order.Side == OrderSide.Sell && order.Kind != OrderKind.StopLoss)
-                .OrderBy(order => order.Price ?? 0m)
-                .ThenBy(order => order.Id)
-                .FirstOrDefault();
-
-            if (bid?.Price is not { } bidPrice || ask?.Price is not { } askPrice || bidPrice < askPrice)
-            {
-                return;
-            }
-
-            Execute(bid, ask, askPrice, Math.Min(bid.Remaining, ask.Remaining));
-
-            if (bid.Remaining <= 0m)
-            {
-                _resting.Remove(bid);
-                ReleaseUnusedCash(bid);
-            }
-        }
     }
 
     public bool HasTraded => _trades.Count > 0;

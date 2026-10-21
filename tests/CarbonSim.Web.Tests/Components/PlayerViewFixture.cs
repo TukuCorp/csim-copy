@@ -140,7 +140,7 @@ internal static class PlayerViewFixture
             [new BookLevelView(112m, 5_000m)],
             [new OrderView(11, 1, vintage1.Key, "Sell", "Limit", 5_000m, 0m, 112m, null, "Open")],
             [Trade(1, vintage1, 110m, 100m)],
-            [new YearPriceView(1, 100m, 118m, 98m, 110m, 250_000m)]),
+            [new PeriodPriceView(1, 2, 100m, 118m, 98m, 110m, 250_000m)]),
         new ProductBookView(
             vintage2,
             vintage2.Key,
@@ -153,7 +153,7 @@ internal static class PlayerViewFixture
             [],
             [],
             [],
-            [new YearPriceView(1, 106m, 106m, 106m, 106m, 1_000m)]),
+            [new PeriodPriceView(1, 3, 106m, 106m, 106m, 106m, 1_000m)]),
     ];
 
     private static TradeRow Trade(int year, ProductView product, decimal price, decimal volume) =>

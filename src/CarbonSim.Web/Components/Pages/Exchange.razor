@@ -15,7 +15,7 @@ else
     <section class="card wide" tabindex="0">
         <h2>@Strings["PriceChart"]</h2>
         <p class="muted small">@Strings["PriceChartHint"]</p>
-        <EChart Option="@Charts.Prices(view.Books, view.Years, view.System.AuctionFloorPrice, Strings["AuctionFloorPrice"])" Height="260px" Label="@Strings["PriceChart"]" />
+        <EChart Option="@Charts.Prices(view.Books, view.Years, view.System.AuctionFloorPrice, Strings["AuctionFloorPrice"], year => Strings["Year_X", year])" Height="260px" Label="@Strings["PriceChart"]" />
         <h3>@Strings["AllowanceAuction"]</h3>
         <dl class="metrics">
             <div><dt>@Strings["AuctionFloorPrice"]</dt><dd>@Display.Price(view.AuctionPrices.Low ?? view.System.AuctionFloorPrice)</dd></div>

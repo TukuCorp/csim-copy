@@ -386,7 +386,6 @@
   <data name="TradingIsHalted" xml:space="preserve"><value>Giao dịch đang tạm dừng: chỉ nhận lệnh và chào bán khi năm đang chạy.</value></data>
   <data name="AuctionIsClosed" xml:space="preserve"><value>Phiên đấu giá đã đóng: chỉ nhận giá thầu khi cửa sổ đấu giá đang mở.</value></data>
   <data name="RulesChangedLine" xml:space="preserve"><value>Quy tắc đã thay đổi: giá sàn {0} thành {1}, giá trần {2} thành {3}.</value></data>
-  <data name="RulesReleasedOrders" xml:space="preserve"><value>{0} lệnh nằm ngoài dải giá mới đã được giải phóng.</value></data>
   <data name="RulesReleasedBids" xml:space="preserve"><value>{0} giá thầu đấu giá đã được giải phóng.</value></data>
   <data name="BidReleased" xml:space="preserve"><value>Giá thầu của bạn cho {0} t tại {1} trong phiên đấu giá {2} năm {3} đã được giải phóng: giá sàn hiện là {4} và giá trần là {5}.</value></data>
   <data name="StampBuild" xml:space="preserve"><value>Bản dựng {0}</value></data>
@@ -402,4 +401,17 @@
   <data name="ResetConfirm" xml:space="preserve"><value>Đặt mật khẩu mới</value></data>
   <data name="ResetCodeSent" xml:space="preserve"><value>Nếu địa chỉ này có tài khoản, mã đang được gửi tới. Hãy nhập mã bên dưới cùng mật khẩu mới.</value></data>
   <data name="ResetDone" xml:space="preserve"><value>Mật khẩu đã được đổi. Hãy đăng nhập bằng mật khẩu mới.</value></data>
+  <data name="AllowancesSoldByGovernment" xml:space="preserve"><value>Hạn ngạch bán qua đấu giá</value></data>
+  <data name="AllowancesSoldInSecondaryMarket" xml:space="preserve"><value>Hạn ngạch giao dịch trên sàn và OTC</value></data>
+  <data name="NumberOfCompliancePenaltiesApplied" xml:space="preserve"><value>Số lần phạt tuân thủ</value></data>
+  <data name="ValueOfGovtPenaltiesApplied" xml:space="preserve"><value>Giá trị tiền phạt đã áp dụng</value></data>
+  <data name="AllowanceVolumeAllChannels" xml:space="preserve"><value>Khối lượng hạn ngạch (mọi kênh)</value></data>
+  <data name="CostOfComplianceThisYear" xml:space="preserve"><value>Chi phí tuân thủ (năm nay)</value></data>
+  <data name="MarginalCostOfComplianceThisYear" xml:space="preserve"><value>Chi phí tuân thủ biên (năm nay)</value></data>
+  <data name="TradingHaltsIn" xml:space="preserve"><value>Giao dịch sẽ tạm dừng sau {0}. Hãy hoàn tất thao tác của bạn.</value></data>
+  <data name="MyPendingBids" xml:space="preserve"><value>Giá thầu của tôi trong phiên này</value></data>
+  <data name="CancelBid" xml:space="preserve"><value>Hủy giá thầu</value></data>
+  <data name="AuctionClosedAlert" xml:space="preserve"><value>Phiên đấu giá {0} của năm {1} đã đóng ở mức {2}.</value></data>
+  <data name="AuctionWonAlert" xml:space="preserve"><value>Bạn trúng {0} t và đã trả {1}.</value></data>
+  <data name="NewOffersAlert" xml:space="preserve"><value>{0} chào bán OTC mới đang chờ bạn trả lời.</value></data>
 </root>

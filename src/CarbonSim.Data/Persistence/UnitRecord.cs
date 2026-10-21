@@ -44,7 +44,7 @@ public sealed class AbatementOptionRecord
 
     public decimal AnnualReduction { get; set; }
 
-    public int ImplementationYears { get; set; }
+    public decimal ImplementationYears { get; set; }
 
     public int LifetimeYears { get; set; }
 

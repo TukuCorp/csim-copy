@@ -18,7 +18,8 @@ internal sealed class PlayerAccountService(
     IPasswordHasher<PlayerAccount> passwordHasher,
     RegistrationPolicy registration,
     CarbonSimHostOptions options,
-    ILogger<PlayerAccountService> logger)
+    ILogger<PlayerAccountService> logger,
+    CarbonSim.Web.Simulations.AccountCompanyResolver players)
 {
     /// <summary>Shortest password the host accepts, at registration and at a reset.</summary>
     private const int MinimumPasswordLength = 8;
@@ -41,6 +42,7 @@ internal sealed class PlayerAccountService(
         ?? throw new ArgumentNullException(nameof(registration));
     private readonly CarbonSimHostOptions _options = options ?? throw new ArgumentNullException(nameof(options));
     private readonly ILogger<PlayerAccountService> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    private readonly CarbonSim.Web.Simulations.AccountCompanyResolver _players = players ?? throw new ArgumentNullException(nameof(players));
 
     /// <summary>
     /// Claims a company for a new player. The registration PIN is the gate, the roster decides
@@ -128,6 +130,7 @@ internal sealed class PlayerAccountService(
         }
 
         _logger.LogInformation("Registered {Email} for company {Company}.", created.Email, created.CompanyName);
+        _players.Forget();
 
         return AccountOutcome.Ok(created);
     }

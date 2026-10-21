@@ -34,6 +34,21 @@ public sealed class ReportingTests
     }
 
     [Fact]
+    public void The_journal_records_when_in_the_year_each_trade_happened()
+    {
+        // The exchange chart draws the year month by month, so a trade carries its point in the year.
+        (Simulation simulation, _, TestTimeProvider time) = Build();
+        Exchange exchange = new(simulation);
+        simulation.Ledger.Grant(simulation.FindCompany(1), Vintage1, 10_000m);
+
+        time.Advance(TimeSpan.FromMinutes(7));
+        exchange.Place(new OrderRequest(simulation.FindUnit(1), Vintage1, OrderSide.Sell, OrderKind.Limit, 100m, 100m));
+        exchange.Place(new OrderRequest(simulation.FindUnit(4), Vintage1, OrderSide.Buy, OrderKind.Limit, 100m, 100m));
+
+        simulation.Journal.Trades.Should().ContainSingle().Which.AtYearOffset.Should().Be(TimeSpan.FromMinutes(7));
+    }
+
+    [Fact]
     public void The_journal_records_every_trade_with_its_channel_and_year()
     {
         (Simulation simulation, _, _) = Build();
@@ -257,5 +272,43 @@ public sealed class ReportingTests
         Scoring.Holdings(simulation, second).Should().BeGreaterThan(
             Scoring.Holdings(simulation, first), "the tie-break is what each was left holding");
         secondEntry.Rank.Should().BeLessThan(firstEntry.Rank, "level on cost per tonne, the larger holder ranks first");
+    }
+
+    [Fact]
+    public void A_short_company_cannot_rank_above_one_in_compliance_however_cheap_it_is()
+    {
+        // FAQ #21: players that are short are not eligible to win, whatever their cost per tonne.
+        (Simulation simulation, _, _) = Build();
+        Company covered = simulation.FindCompany(1);
+        Company shortCheap = simulation.FindCompany(2);
+        simulation.Ledger.Grant(covered, Vintage1, new Standing(simulation).Emissions(covered, 1));
+        simulation.Cash.Charge(covered, 900_000m, CashCategory.AuctionPurchase, "Bought what it needed");
+        simulation.Cash.Deposit(shortCheap, 900_000m, CashCategory.InstrumentSale, "Sold what it needed");
+
+        IReadOnlyList<LeaderboardEntry> table = Leaderboard.Rank(simulation);
+        LeaderboardEntry coveredEntry = table.Single(entry => ReferenceEquals(entry.Company, covered));
+        LeaderboardEntry shortEntry = table.Single(entry => ReferenceEquals(entry.Company, shortCheap));
+
+        shortEntry.OverallMarginalCostOfCompliance.Should().BeLessThan(coveredEntry.OverallMarginalCostOfCompliance);
+        coveredEntry.InCompliance.Should().BeTrue();
+        shortEntry.InCompliance.Should().BeFalse();
+        coveredEntry.Rank.Should().Be(1, "only a company in compliance can head the table");
+    }
+
+    [Fact]
+    public void A_year_closed_short_keeps_a_company_out_of_compliance_for_the_rest_of_the_run()
+    {
+        (Simulation simulation, SimulationClock clock, TestTimeProvider time) = Build();
+        Company company = simulation.FindCompany(1);
+
+        time.Advance(TimeSpan.FromMinutes(20));
+        clock.Advance();
+        clock.EndYear();
+        simulation.Compliance.Reconcile(1);
+        clock.BeginNextYear();
+        simulation.Ledger.Grant(company, Product.Allowance(2), 100_000_000m);
+
+        Leaderboard.Rank(simulation).Single(entry => ReferenceEquals(entry.Company, company))
+            .InCompliance.Should().BeFalse("year 1 closed with a shortfall, so covering year 2 does not undo it");
     }
 }

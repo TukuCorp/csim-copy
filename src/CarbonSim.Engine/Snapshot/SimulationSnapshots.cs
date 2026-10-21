@@ -123,7 +123,8 @@ public static class SimulationSnapshots
                     trade.Price,
                     trade.Volume,
                     trade.Buyer.Id,
-                    trade.Seller?.Id))]),
+                    trade.Seller?.Id,
+                    trade.AtYearOffset))]),
             CaptureExchange(exchange),
             CaptureOtc(otc),
             new AuctionScheduleSnapshot([.. auctions.Auctions.Select(CaptureAuction)]),
@@ -362,7 +363,8 @@ public static class SimulationSnapshots
                 project.Option.Code,
                 project.ImplementedIn,
                 project.OperatingFromYear,
-                project.ExpiresAfterYear))],
+                project.ExpiresAfterYear,
+                project.StartsAt))],
             shutdowns);
     }
 

@@ -47,7 +47,8 @@ public sealed record ImplementedAbatementSnapshot(
     string OptionCode,
     int ImplementedIn,
     int OperatingFromYear,
-    int ExpiresAfterYear);
+    int ExpiresAfterYear,
+    decimal StartsAt = 0m);
 
 /// <summary>A year in which a unit was taken out of service.</summary>
 public sealed record UnitYearSnapshot(int UnitId, int Year);

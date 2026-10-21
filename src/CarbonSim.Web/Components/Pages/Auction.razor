@@ -76,6 +76,42 @@ else
             <p class="small">@Strings["AllowancesToBeAuctionedThisYear"]: @Display.Tonnes(view.AllowancesToBeAuctionedThisYear)</p>
         </section>
 
+        @if (view.CurrentAuction is { IsCleared: false } open && open.MyBids.Count > 0)
+        {
+            @* Each sealed bid in progress, as the original lists them, with the control that withdraws it
+               while the window is open. *@
+            <section id="pending-bids" class="card wide" tabindex="0">
+                <h2>@Strings["MyPendingBids"]</h2>
+                <table class="grid">
+                    <thead>
+                        <tr>
+                            <th>@Strings["Vintage"]</th>
+                            <th>@Strings["UnitBidPrice"]</th>
+                            <th>@Strings["YouBid"]</th>
+                            <th>@Strings["CapitalCost"]</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (MyBidView bid in open.MyBids)
+                        {
+                            <tr>
+                                <td>@bid.Vintage</td>
+                                <td>@Display.Price(bid.Price)</td>
+                                <td>@Display.Tonnes(bid.Volume)</td>
+                                <td>@Display.Money(bid.Price * bid.Volume)</td>
+                                <td>
+                                    <button class="button ghost small-button" disabled="@(!view.AuctionOpen)" @onclick="() => CancelBidAsync(bid)">
+                                        @Strings["CancelBid"]
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </section>
+        }
+
         @if (view.LastClearedAuction is { } ended)
         {
             @* A polite live region: when an auction clears, its result is announced and stays on
@@ -162,6 +198,9 @@ else
     private static string Invariant(decimal value) => value.ToString(CultureInfo.InvariantCulture);
 
     private static List<int> Vintages(AuctionView auction) => [.. auction.Lots.Select(lot => lot.Vintage).Distinct().Order()];
+
+    private Task CancelBidAsync(MyBidView bid) =>
+        Context.ActAsync(session => session.CancelBidAsync(SimulationId, bid.Id), Strings["CancelBid"]);
 
     private Task PlaceBidAsync() =>
         Context.ActAsync(

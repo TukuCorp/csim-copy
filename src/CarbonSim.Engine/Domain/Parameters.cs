@@ -87,8 +87,8 @@ public sealed record Parameters
     public const decimal DefaultForwardVintageShare = 0.20m;
 
     /// <summary>
-    /// Share of the next year's auctionable volume the last auction of a year offers as a forward
-    /// vintage (0.20 = a fifth). It is a setting of the run rather than an argument to the schedule
+    /// Share of the next year's auctionable volume a year's auctions offer between them as a forward
+    /// vintage (0.20 = a fifth, a quarter of it in each of four auctions). It is a setting of the run rather than an argument to the schedule
     /// so that the host and every harness build the same run: the calibration measures a run that
     /// sells forward, and a scenario that says nothing plays the calibrated run.
     /// </summary>

@@ -64,7 +64,7 @@ public sealed class AllowanceConservationTests
         AuctionSchedule schedule = AuctionSchedule.Build(simulation);
         Auction auction = schedule.ForSection(1, 4);
 
-        auction.OfferedVolume.Should().Be(237_500m + 184_300m);
+        auction.OfferedVolume.Should().Be(237_500m + 46_075m);
         auction.UnsoldVolume.Should().Be(auction.OfferedVolume);
 
         auction.Clear();

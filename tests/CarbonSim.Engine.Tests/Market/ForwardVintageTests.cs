@@ -19,20 +19,20 @@ public sealed class ForwardVintageTests
         ScenarioLoader.LoadFile(Path.Combine("scenarios", "vietnam-2024.json"));
 
     [Fact]
-    public void The_shipped_scenario_sells_the_next_vintages_share_in_the_years_last_auction()
+    public void The_shipped_scenario_sells_the_next_vintage_forward_in_every_auction_of_the_year()
     {
+        // Year 1's first auction already offers year 1 and year 2 allowances (demo 07:11).
         Simulation simulation = Shipped();
         AuctionSchedule schedule = AuctionSchedule.Build(simulation);
-        Auction lastOfYearOne = schedule.ForSection(1, simulation.Rules.AuctionsPerYear);
+        Auction[] yearOne = [.. schedule.Auctions.Where(auction => auction.Year == 1)];
 
-        lastOfYearOne.Lots.Should().HaveCount(2, "the year's last auction also sells the next vintage early");
-        lastOfYearOne.Lots[0].Vintage.Should().Be(1);
-        lastOfYearOne.Lots[0].IsForward.Should().BeFalse();
-        lastOfYearOne.Lots[1].Vintage.Should().Be(2);
-        lastOfYearOne.Lots[1].IsForward.Should().BeTrue();
-        lastOfYearOne.Lots[1].Volume.Should().Be(
+        yearOne.Should().OnlyContain(
+            auction => auction.Lots.Count == 2 && auction.Lots[0].Vintage == 1 && !auction.Lots[0].IsForward
+                && auction.Lots[1].Vintage == 2 && auction.Lots[1].IsForward,
+            "every auction of the year sells its own vintage and part of the next one");
+        yearOne.Sum(auction => auction.Lots[1].Volume).Should().Be(
             Forward(simulation, 2),
-            "the forward lot is the calibrated share of the next year's auctionable volume");
+            "the forward lots add up to the calibrated share of the next year's auctionable volume");
 
         // Nothing is invented and nothing is lost: the year still offers its own vintage in full.
         schedule.Auctions
@@ -47,9 +47,10 @@ public sealed class ForwardVintageTests
         Simulation simulation = ScenarioLoader.LoadJson(Minimal, "forward-vintage-default");
         AuctionSchedule schedule = AuctionSchedule.Build(simulation);
 
-        schedule.ForSection(1, 1).Lots.Should().ContainSingle("only the year's last auction sells forward");
-        schedule.ForSection(1, 2).Lots.Should().Contain(lot => lot.IsForward && lot.Vintage == 2);
-        schedule.ForSection(1, 2).Lots.Single(lot => lot.IsForward).Volume.Should().Be(Forward(simulation, 2));
+        schedule.Auctions.Where(auction => auction.Year == 1)
+            .Sum(auction => auction.Lots.Where(lot => lot.IsForward && lot.Vintage == 2).Sum(lot => lot.Volume))
+            .Should().Be(Forward(simulation, 2));
+        schedule.ForSection(2, 1).Lots.Should().ContainSingle("the last year has no next vintage to sell");
     }
 
     /// <summary>The share the calibration assumes, as a volume of the given year.</summary>

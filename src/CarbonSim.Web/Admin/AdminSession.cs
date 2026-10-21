@@ -97,7 +97,7 @@ public sealed class AdminSession : IAdminSession
 
         Guid? selected = runId is { } candidate && _runs.Contains(candidate) ? candidate : null;
         AdminRunDetail? detail = selected is { } selectedId
-            ? await _runs.ReadAsync(selectedId, BuildDetail).ConfigureAwait(false)
+            ? await DetailAsync(selectedId, cancellationToken).ConfigureAwait(false)
             : null;
 
         return new AdminSnapshot(
@@ -303,9 +303,33 @@ public sealed class AdminSession : IAdminSession
             return null;
         }
 
-        AdminRunDetail detail = await _runs.ReadAsync(simulationId, BuildDetail).ConfigureAwait(false);
+        AdminRunDetail detail = await DetailAsync(simulationId, cancellationToken).ConfigureAwait(false);
 
         return AdminCsv.For(report, detail);
+    }
+
+    /// <summary>The run's detail with each human company's player named as their account is shown.</summary>
+    private async Task<AdminRunDetail> DetailAsync(Guid simulationId, CancellationToken cancellationToken)
+    {
+        AdminRunDetail detail = await _runs.ReadAsync(simulationId, BuildDetail).ConfigureAwait(false);
+        IReadOnlyDictionary<string, string> players = await PlayersAsync(cancellationToken).ConfigureAwait(false);
+
+        return detail with
+        {
+            Leaderboard =
+            [
+                .. detail.Leaderboard.Select(row => players.TryGetValue(row.Company, out string? player) ? row with { Player = player } : row),
+            ],
+        };
+    }
+
+    private async Task<IReadOnlyDictionary<string, string>> PlayersAsync(CancellationToken cancellationToken)
+    {
+        using IServiceScope scope = _scopes.CreateScope();
+
+        return await scope.ServiceProvider.GetRequiredService<AccountCompanyResolver>()
+            .PlayersByCompanyAsync(cancellationToken)
+            .ConfigureAwait(false);
     }
 
     private async Task<ClaimsPrincipal> CurrentUserAsync()

@@ -31,7 +31,6 @@ public sealed record CollarChange(
     decimal NewFloor,
     decimal OldCeiling,
     decimal NewCeiling,
-    int OrdersReleased,
     IReadOnlyList<ReleasedBid> BidsReleased);
 
 /// <summary>A bid a collar change took off the book, with the auction it was resting in.</summary>

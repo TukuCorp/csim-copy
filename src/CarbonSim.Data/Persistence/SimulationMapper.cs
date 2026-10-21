@@ -213,6 +213,7 @@ public static class SimulationMapper
                         ImplementedIn = project.ImplementedIn,
                         OperatingFromYear = project.OperatingFromYear,
                         ExpiresAfterYear = project.ExpiresAfterYear,
+                        StartsAt = project.StartsAt,
                     }),
             ],
             Shutdowns =
@@ -351,6 +352,7 @@ public static class SimulationMapper
                         Volume = trade.Volume,
                         BuyerCompanyId = trade.BuyerCompanyId,
                         SellerCompanyId = trade.SellerCompanyId,
+                        AtYearOffset = trade.AtYearOffset,
                     }),
             ],
             Exchange = new ExchangeRecord { SimulationId = id, LastOrderId = snapshot.Exchange.LastOrderId },
@@ -764,7 +766,8 @@ public static class SimulationMapper
                             project.OptionCode,
                             project.ImplementedIn,
                             project.OperatingFromYear,
-                            project.ExpiresAfterYear)),
+                            project.ExpiresAfterYear,
+                            project.StartsAt)),
                 ],
                 [
                     .. run.Shutdowns
@@ -839,7 +842,8 @@ public static class SimulationMapper
                             trade.Price,
                             trade.Volume,
                             trade.BuyerCompanyId,
-                            trade.SellerCompanyId)),
+                            trade.SellerCompanyId,
+                            trade.AtYearOffset)),
                 ]),
             new ExchangeSnapshot(
                 [

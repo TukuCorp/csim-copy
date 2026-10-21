@@ -59,7 +59,9 @@ public sealed class AbatementPortfolio
                 unit.AbatementOptions[project.OptionIndex],
                 project.ImplementedIn,
                 project.OperatingFromYear,
-                project.ExpiresAfterYear));
+                project.ExpiresAfterYear,
+                // A save from before part years were kept started its project at the turn of a year.
+                project.StartsAt == 0m ? project.OperatingFromYear : project.StartsAt));
         }
 
         foreach (UnitYearSnapshot shutdown in snapshot.Shutdowns)
@@ -118,7 +120,11 @@ public sealed class AbatementPortfolio
             CashCategory.AbatementCapital,
             $"{option.Code} {option.Name} on {unit.Name}");
 
-        ImplementedAbatement project = new(unit, option, year);
+        // The build time runs from the moment of purchase, so where the clock stands in the year counts.
+        decimal shareOfYear = _simulation.Rules.YearLength > TimeSpan.Zero
+            ? Math.Clamp((decimal)(_simulation.YearOffset / _simulation.Rules.YearLength), 0m, 1m)
+            : 0m;
+        ImplementedAbatement project = ImplementedAbatement.Bought(unit, option, year, shareOfYear);
 
         if (!_byUnit.TryGetValue(unit.Id, out List<ImplementedAbatement>? projects))
         {
