@@ -1443,8 +1443,11 @@ behind a Cloudflare quick tunnel (https, WebSockets, no account). No containers.
 - [x] Trainer password and PIN as repository secrets; local copy in demo-data (gitignored), set with the
       user's go-ahead after auto mode refused it
 - [x] Branch `hosted-demo`, push, run; sign-in page and a Blazor WebSocket checked through the URL
-- [ ] Rehearse in the browser: trainer signs in, two players register, a year runs, a bid clears -
-      left to the user: signing in to a public tunnel host with passwords is not mine to do
+- [x] Rehearse in the browser against the same Release publish on 127.0.0.1 (throwaway credentials):
+      trainer signs in, creates an exercise with 6-minute years, one player registers, the trainer starts
+      year 1, the player's waiting screen goes Running live, a 50,000 t bid at 300 clears at 100 in
+      auction 2. A signed-in round on the public address is the user's (passwords on a host they did not
+      name are not mine to type)
 - [x] Docs: deployment.md section 5 gains the hosted route (tester guide unchanged: the trainer still sends the address)
 
 ### Review
