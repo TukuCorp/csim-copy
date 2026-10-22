@@ -156,6 +156,11 @@ public static class ScenarioLoader
             OverdraftInterestRate = file.OverdraftInterestRate!.Value,
             GovernmentReserveToAuctionPercent = file.GovernmentReserveToAuctionPercent ?? 0m,
             ForwardVintageShare = file.ForwardVintageShare ?? Parameters.DefaultForwardVintageShare,
+            ExchangeAccess = file.ExchangeAccess ?? true,
+            OtcAccess = file.OtcAccess ?? true,
+            LeaderboardVisible = file.LeaderboardVisible ?? true,
+            PauseAfterAuction = file.PauseAfterAuction ?? false,
+            AiTradeAssistance = file.AiTradeAssistance ?? false,
         };
 
         errors.AddRange(parameters.Validate().Select(error => $"{Prefix}: {error}"));
@@ -415,11 +420,18 @@ public static class ScenarioLoader
                     continue;
                 }
 
+                if (unit.OffsetSupplyShare is < 0m)
+                {
+                    errors.Add($"{unitPath} '{unitName}': offsetSupplyShare must not be negative.");
+                    continue;
+                }
+
                 units.Add(new UnitTemplate(
                     unitName,
                     unit.BaselineEmissions.Value,
                     unit.NormalOperatingProfit ?? 0m,
-                    unit.AllocationFactor ?? 1m));
+                    unit.AllocationFactor ?? 1m,
+                    unit.OffsetSupplyShare ?? 0m));
             }
 
             if (units.Count == 0)
@@ -489,7 +501,8 @@ public static class ScenarioLoader
                     unitTemplate.BaselineEmissions,
                     AbatementMenu.For(template.Sector, unitTemplate.BaselineEmissions),
                     unitTemplate.NormalOperatingProfit,
-                    unitTemplate.AllocationFactor));
+                    unitTemplate.AllocationFactor,
+                    unitTemplate.OffsetSupplyShare));
             }
 
             players.Add(player);
@@ -524,5 +537,6 @@ public static class ScenarioLoader
         string Name,
         decimal BaselineEmissions,
         decimal NormalOperatingProfit,
-        decimal AllocationFactor);
+        decimal AllocationFactor,
+        decimal OffsetSupplyShare);
 }

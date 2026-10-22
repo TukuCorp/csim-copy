@@ -14,7 +14,7 @@ interactions between them.
    companies, ideally one from the power sector and one cement or steel company. Then write the file
    `reports/playtest/_playtest/players-ready`. Wait for `_playtest/year-1-started` (check every 20 s).
 2. Each year, with both companies, work through as many of these as the year allows (6 minutes, four
-   auctions, each window open in the second half of its section):
+   auctions, each window open at the start of its section):
    - Read the top bar (cash, position, best bid/offer, last trade) before and after each action, and
      check the arithmetic: an auction win of V tonnes at clearing price P should cost V x P and move the
      position by V.

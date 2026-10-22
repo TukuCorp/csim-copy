@@ -1005,6 +1005,9 @@ namespace CarbonSim.Data.Migrations
                     b.Property<int>("TradingSystemId")
                         .HasColumnType("INTEGER");
 
+                    b.Property<bool>("AiTradeAssistance")
+                        .HasColumnType("INTEGER");
+
                     b.Property<decimal>("AnnualCapReductionRate")
                         .HasColumnType("TEXT");
 
@@ -1026,6 +1029,9 @@ namespace CarbonSim.Data.Migrations
                     b.Property<decimal>("Cap")
                         .HasColumnType("TEXT");
 
+                    b.Property<bool>("ExchangeAccess")
+                        .HasColumnType("INTEGER");
+
                     b.Property<decimal>("ForwardVintageShare")
                         .HasColumnType("TEXT");
 
@@ -1035,8 +1041,14 @@ namespace CarbonSim.Data.Migrations
                     b.Property<decimal>("GovernmentReserveToAuctionPercent")
                         .HasColumnType("TEXT");
 
+                    b.Property<bool>("LeaderboardVisible")
+                        .HasColumnType("INTEGER");
+
                     b.Property<decimal>("OffsetUsageLimit")
                         .HasColumnType("TEXT");
+
+                    b.Property<bool>("OtcAccess")
+                        .HasColumnType("INTEGER");
 
                     b.Property<decimal>("OverdraftInterestRate")
                         .HasColumnType("TEXT");
@@ -1211,6 +1223,9 @@ namespace CarbonSim.Data.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<decimal>("FreeAllocation")
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal>("OffsetSupply")
                         .HasColumnType("TEXT");
 
                     b.HasKey("SimulationId", "UnitId", "Year");

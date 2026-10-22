@@ -206,3 +206,23 @@ reproducibility), none of which an internal session needs.
 **Rule.** In a gap analysis or plan, rate an existing artifact's defect by whether the stated target
 needs that artifact, and name the simplest route that meets the target first. If an artifact is only
 needed on some routes, say so and rate it for the recommended route, not the worst case.
+
+## 12. Quote a published number from the artefact the suite asserts on (2026-10-22)
+
+**What happened.** The fidelity pass re-baselined its golden and moved the seeded run's numbers
+(auction 126.45 / 234.08 / 253.39 became 137.90 / 236.47 / 268.66; 517 of 726 compliant company-years
+became 485 of 726). The golden was re-baselined and the suite went green, but the trainer runbook,
+the tester guide, the handover notes and the fidelity report still carried the earlier figures, so
+the documentation told a trainer numbers the shipped build does not produce. The two sets were both
+"measured"; only one of them was current.
+
+**Why the reading was wrong.** The numbers were read off an earlier run's notes and a mid-session
+report rather than off the file the build checks. A re-baseline moves the artefact and the prose
+about it does not move with it, and nothing fails the build when prose goes stale - the golden test
+asserts the file, not the paragraph.
+
+**Rule.** When a document publishes a measured number, read that number from the artefact the suite
+asserts on - the golden file, the generated report - and not from an earlier run's notes or a
+mid-session summary. When a calibration changes, treat every document that quotes it as part of the
+change: grep the tree for the old figures and correct them in the same pass, and point the document
+at the artefact so a reader can check it.

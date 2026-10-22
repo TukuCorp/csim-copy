@@ -124,10 +124,11 @@ internal static class FidelityRun
     public static FidelityMeasurements Play(
         BotDifficulty difficulty = BotDifficulty.Normal,
         TimeSpan? tick = null,
-        // The administrator's "hand out offsets" action, sized so the fleet surrenders the 2-3% of
-        // the cap the brief's envelope asks for rather than a third of its obligation.
-        decimal offsetShareOfEmissions = 0.03m,
-        decimal lumpyOffsetShare = 0.25m)
+        // The administrator's "hand out offsets" action on top of the scenario's own offset supply,
+        // which is granted with each year's allocation. None by default: the shipped run is measured
+        // on the scenario as it ships; the calibration grid adds some to show the trade-off.
+        decimal offsetShareOfEmissions = 0m,
+        decimal lumpyOffsetShare = 0m)
     {
         TimeSpan step = tick ?? TimeSpan.FromSeconds(30);
         Simulation simulation = ScenarioLoader.LoadFile(Path.Combine("scenarios", "vietnam-2024.json"));
@@ -240,6 +241,40 @@ internal static class FidelityRun
         return (bids, asks, volume);
     }
 
+    /// <summary>
+    /// The discount offsets trade at to current-vintage allowances (the brief; FAQ #17): each year's
+    /// exchange price of an offset against that year's exchange price of its own vintage, weighted by
+    /// the offsets traded. A run-wide average of every allowance trade would set offsets bought in a
+    /// dear year 3 against cheap year-1 auction tonnes and read the price path as a premium.
+    /// </summary>
+    private static decimal OffsetDiscount(Simulation simulation)
+    {
+        MarketJournal journal = simulation.Journal;
+        decimal weighted = 0m;
+        decimal volume = 0m;
+
+        foreach (int year in simulation.Allocation.Years)
+        {
+            MarketTrade[] offsets = [.. journal.In(year, TradeChannel.Exchange, ProductKind.Offset)];
+            MarketTrade[] current = [.. journal.In(year, TradeChannel.Exchange, ProductKind.Allowance).Where(trade => trade.Product.Vintage == year)];
+            decimal offsetVolume = offsets.Sum(trade => trade.Volume);
+            decimal currentVolume = current.Sum(trade => trade.Volume);
+
+            if (offsetVolume <= 0m || currentVolume <= 0m)
+            {
+                continue;
+            }
+
+            decimal offsetPrice = offsets.Sum(trade => trade.Consideration) / offsetVolume;
+            decimal currentPrice = current.Sum(trade => trade.Consideration) / currentVolume;
+
+            weighted += (currentPrice - offsetPrice) / currentPrice * 100m * offsetVolume;
+            volume += offsetVolume;
+        }
+
+        return volume <= 0m ? 0m : weighted / volume;
+    }
+
     /// <summary>Stands in for the administrator's "disburse offsets" action.</summary>
     private static void DisburseOffsets(
         Simulation simulation,
@@ -284,9 +319,10 @@ internal static class FidelityRun
         decimal allowanceAverage = journal.AveragePrice(1, parameters.Years, kind: ProductKind.Allowance);
         decimal offsetAverage = journal.AveragePrice(1, parameters.Years, kind: ProductKind.Offset);
         decimal vintage1 = AverageFor(simulation, 1);
-        decimal abatementYear1 = simulation.Abatements.All
-            .Where(project => project.ImplementedIn == 1)
-            .Sum(project => project.Option.AnnualReduction);
+        // The brief's "abatement volume in year 1" is what abatement took off year 1's emissions, as
+        // the original reports it ("by the end of this year I will have reduced ..."), not the yearly
+        // tonnes of every project bought in year 1, most of which only start running in year 2.
+        decimal abatementYear1 = simulation.Units.Sum(unit => simulation.Abatements.ReductionsFor(unit, 1));
         decimal offsetsYear1 = simulation.Compliance.Results
             .Where(result => result.Year == 1)
             .Sum(result => result.OffsetsSurrendered);
@@ -333,7 +369,7 @@ internal static class FidelityRun
             journal.Volume(1, 1, TradeChannel.Auction, ProductKind.Allowance),
             allowanceAverage,
             offsetAverage,
-            allowanceAverage <= 0m ? 0m : (allowanceAverage - offsetAverage) / allowanceAverage * 100m,
+            OffsetDiscount(simulation),
             vintage1,
             AverageFor(simulation, 2),
             AverageFor(simulation, 3),

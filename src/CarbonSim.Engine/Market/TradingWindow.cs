@@ -11,6 +11,9 @@ public enum TradeRefusal
 
     /// <summary>The current section's auction window is closed.</summary>
     AuctionClosed,
+
+    /// <summary>The administrator has not opened this market to players in this exercise.</summary>
+    MarketClosed,
 }
 
 /// <summary>

@@ -69,7 +69,11 @@ public sealed record ParametersSnapshot(
     decimal VolatilityBand,
     decimal OverdraftInterestRate,
     decimal GovernmentReserveToAuctionPercent,
-    decimal ForwardVintageShare);
+    decimal ForwardVintageShare,
+    bool ExchangeAccess = true,
+    bool OtcAccess = true,
+    bool LeaderboardVisible = true,
+    bool AiTradeAssistance = false);
 
 /// <summary>The growth band a sector's business-as-usual emissions were drawn from.</summary>
 public sealed record SectorBausGrowthSnapshot(string Sector, decimal MinAnnualRate, decimal MaxAnnualRate);

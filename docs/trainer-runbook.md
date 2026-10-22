@@ -15,9 +15,11 @@ participants in the room are rule-based AI companies, so the market is never emp
 handful of teams have registered.
 
 The exercise is a set of virtual years. Each virtual year is divided into one section per auction
-(four by default). A section is a stretch of open trading followed by the auction window, so the
-room always knows where it is: the progress strip counts the year, the auction and the time left.
-The default year is 20 minutes long and the auction window is 2:15 at the end of each 5:00 section.
+(four by default), one quarter of the virtual calendar each. A section opens with its auction window
+and the rest of it is open trading on the auction's result, so the room always knows where it is:
+the top bar shows the virtual date and the progress strip counts the year, the auction and the time
+left. The default year is 20 minutes long and the auction window is the first 2:15 of each 5:00
+section, as in the original, where the year's first auction is open as soon as the year starts.
 
 ## 2. Before the room arrives
 
@@ -112,13 +114,17 @@ abatement, four auctions, exchange trading, OTC, and a short debrief.
 ### Each virtual year, in order
 
 1. **Abatement.** Teams open the abatement screen, read the MACC, and implement projects. An
-   implemented project builds for its implementation time and then reduces emissions every year of
-   its life; it cannot be undone.
-2. **Auctions one to four.** The auction window opens near the end of each section. Teams bid a
-   volume and a price inside the collar; all winners pay the same clearing price.
+   implemented project builds for its implementation time, counted from the day it is bought (some
+   take a quarter of a year, so they cut emissions in the year they are bought), and then reduces
+   emissions for its life; it cannot be undone.
+2. **Auctions one to four.** The auction window opens at the start of each section. Teams bid a
+   volume and a price inside the collar for this year's vintage or next year's, see their bids
+   listed, and can cancel one while the window is open; all winners pay the same clearing price. An
+   alert on every screen gives the result when the auction closes.
 3. **Exchange.** Anytime while the clock runs, teams place market, limit and stop-loss orders, with
-   partial fills and immediate-or-cancel, inside a volatility band around the last price (anchored on
-   the auction floor before the first trade).
+   partial fills and immediate-or-cancel, inside a volatility band around the exchange's own last
+   price (anchored on the auction floor before the first trade). The price chart draws one candle
+   per virtual month.
 4. **OTC.** A team can send a named company an offer to sell; the other side accepts or rejects.
 5. **Debrief.** Halt with a warning, close the year, and read the leaderboard and the system report
    before opening the next year.
@@ -130,16 +136,20 @@ Everything is on the exercise page (/admin/run/{id}).
 - **Start the year** / **Open the next year** — begins the year and grants its free allocation.
 - **Pause the clock** / **Let the clock run** — freezes and resumes the year; nothing is lost.
 - **Halt trading** — stops trading. Put a number of seconds in **Warn seconds before halting** and
-  the room gets a warning first; leave it blank and trading halts at once. Halting is how a year
-  ends: the year has to be halted before it can be closed.
+  every player's screen counts down to the halt first; leave it blank and trading halts at once.
+  A halt cancels every resting exchange order and every OTC offer still waiting for an answer, and
+  hands back what they had set aside, as the original does. Halting is how a year ends: the year has
+  to be halted before it can be closed, so the year end surrenders and banks on everything a company
+  holds.
 - **Close the year** — runs the year-end reconciliation (offsets first up to the limit, then
   allowances by vintage), banks what may be banked, forfeits the rest, applies penalties, and saves
   the run.
 - **End the exercise** — available once the last year has been closed.
 - **Player messaging** — the on/off switch. Turn it off during a debrief so the room stops typing.
 - **Fine a unit** — a cash fine with a reason, for a rule breach you want the room to see.
-- **Hand out offsets** — gives a company a volume of offsets, the way a regulator seeds the offset
-  market. Do this early in a year if you want offset trading in that year.
+- **Hand out offsets** — gives a company a volume of offsets on top of the scenario's own supply.
+  The shipped scenario hands every unit offsets with its free allocation each year (2% of its
+  emissions, and 12% to one company in ten, which then has offsets to sell).
 - **Add abatement for a unit** — implements a project on a team's behalf, for a teachable moment.
 - **End-of-year modification** — writes a change in emissions (negative to cut) into one unit's
   business-as-usual path for a chosen year, so a shock survives a save and reload. It cannot be
@@ -149,12 +159,12 @@ Everything is on the exercise page (/admin/run/{id}).
   when you use it.
 
 - **Change the rules** — moves the price collar while the year is running: put the new floor and/or
-  ceiling in and apply. The band changes within one virtual month. Orders the new band cannot hold
-  come off the book, with the cash and allowances back with the unit that placed them, and what is
-  left is matched against itself, so the book cannot be left bid above offer. The bots re-quote
-  inside the new collar on their next pass. The room is told rather than surprised: the change lands
-  in each unit's **Messages**, and the console shows the last five changes with who made them and how
-  many orders the new band released. Only the collar can move mid-run - the cap, the free allocation
+  ceiling in and apply. The collar bounds the auctions only, as in the original: auction bids the new
+  collar cannot hold come off with their money back, while the exchange keeps trading in its own
+  band around its own last price, so it moves towards a new floor trade by trade rather than jumping.
+  The bots re-value a tonne on the spot and re-quote on their next pass. The room is told rather than
+  surprised: the change lands in each unit's **Messages**, and the console shows the last five changes
+  with who made them and how many bids the new collar released. Only the collar can move mid-run - the cap, the free allocation
   split, the growth path and the auction lots are all fixed when the exercise is built.
 
 ## 5. What to point out on the player screens
@@ -170,8 +180,9 @@ Everything is on the exercise page (/admin/run/{id}).
 - **OTC market** — offers waiting for an answer and the team's own offers.
 - **Surrender and banking** — the obligation, what was surrendered, what was banked, what was
   forfeited, and the penalty if any. Surrender happens automatically when the year closes.
-- **Leaderboard** — ranked by marginal cost of compliance, so the cheapest compliers are at the top.
-  Negative outliers are teams that were paid to abate.
+- **Leaderboard** — companies in compliance first (a short company cannot win, however cheap), then
+  by marginal cost of compliance, so the cheapest compliers are at the top. Each unit is named with
+  the player who registered for it. Negative outliers are teams that were paid to abate.
 - **System info** — the whole system's totals this year and to date, including the government's
   auction revenue and reserve.
 
@@ -217,17 +228,20 @@ unit, so a spreadsheet reads them as numbers. The surrender status page
 
 ## 8. Fidelity: what this clone promises, and what it does not
 
-The clone is behaviourally faithful within the envelopes in the bot-fidelity brief, not numerically
-identical to the original. On the seeded three-year run of the shipped scenario the auction clears at
-100.00, 181.84 and 255.97 - year one on the floor, year three most of the way to the 300 ceiling -
-with the offset discount at 9.0%, later vintages priced above earlier ones, year-one abatement at
-1.00% of the cap, the leaderboard spread between -62.64 and +39.72 with negative outliers, and a
-mid-run collar shock moving the market inside one virtual month. Two envelopes stay open and are
-recorded as skipped measurements rather than tuned away: **every bot complies and nobody pays a
-penalty** (294 of 726 company-years comply as measured) and **offsets surrender 2-3% of the cap**
-(measured at 7.18%). The fleet is net short in every year and the last year's obligation outgrows
-anything the scenario can supply, so the two cannot both hold here; the grid behind the shipped
-point, including the rows that trade one against the other, is written out by the fidelity run into
-the engine test output (fidelity-run.md and calibration-grid.md). Treat the price path and the
-leaderboard as directionally right, and do not present a specific number as the original's.
+The clone is behaviourally faithful within the envelopes in the bot-fidelity brief where they hold,
+not numerically identical to the original; reports/2026-10-21-fidelity-match.md checks every rule
+and screen against the sources. On the seeded three-year run of the shipped scenario (2026-10-22) the
+auction averages 137.90, 236.47 and 268.66 (the original's own demo year 1 averaged 123.55), later
+vintages price above earlier ones, abatement takes 0.71% of the cap off year one, offsets surrendered
+are 2.99% of the cap, offsets trade at a 12.8% discount to same-year allowances on the exchange, and a
+mid-run collar shock moves the market inside one virtual month. Three envelopes are open and recorded
+as skipped measurements rather than tuned away: **every bot complies** (485 of 726 company-years do),
+**year one clears at the floor** (137.90 against 100-110) and the **leaderboard spread** (up to
+122.04 per tonne, from year-3 penalties). Whether to hold the brief's bands or the original's observed
+figures is an open decision. Treat the price path and the leaderboard as directionally right, and do
+not present a specific number as the original's.
+
+These figures are the ones in tests/CarbonSim.Engine.Tests/Golden/fidelity-golden.md, which the
+suite asserts on every run: if a change moves the seeded run, that file changes and the build says
+so. Read the numbers there rather than trusting this paragraph.
 

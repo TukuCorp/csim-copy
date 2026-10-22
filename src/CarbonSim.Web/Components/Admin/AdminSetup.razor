@@ -71,6 +71,26 @@ else
                         <span class="muted small hint">@Strings["SetupPercentHint"]</span>
                     </dd>
                 </div>
+                <div>
+                    <dt><label for="setup-exchange-access">@Strings["AdminExchangeAccess"]</label></dt>
+                    <dd><input id="setup-exchange-access" type="checkbox" checked="@(Draft.Parameters.ExchangeAccess ?? true)" @onchange="e => Draft.Parameters.ExchangeAccess = e.Value is true" /></dd>
+                </div>
+                <div>
+                    <dt><label for="setup-otc-access">@Strings["AdminOtcAccess"]</label></dt>
+                    <dd><input id="setup-otc-access" type="checkbox" checked="@(Draft.Parameters.OtcAccess ?? true)" @onchange="e => Draft.Parameters.OtcAccess = e.Value is true" /></dd>
+                </div>
+                <div>
+                    <dt><label for="setup-leaderboard-visible">@Strings["AdminLeaderboardVisible"]</label></dt>
+                    <dd><input id="setup-leaderboard-visible" type="checkbox" checked="@(Draft.Parameters.LeaderboardVisible ?? true)" @onchange="e => Draft.Parameters.LeaderboardVisible = e.Value is true" /></dd>
+                </div>
+                <div>
+                    <dt><label for="setup-ai-trade-assistance">@Strings["AdminAiTradeAssistance"]</label></dt>
+                    <dd><input id="setup-ai-trade-assistance" type="checkbox" checked="@(Draft.Parameters.AiTradeAssistance ?? false)" @onchange="e => Draft.Parameters.AiTradeAssistance = e.Value is true" /></dd>
+                </div>
+                <div>
+                    <dt><label for="setup-pause-after-auction">@Strings["AdminPauseAfterAuction"]</label></dt>
+                    <dd><input id="setup-pause-after-auction" type="checkbox" checked="@(Draft.Parameters.PauseAfterAuction ?? false)" @onchange="e => Draft.Parameters.PauseAfterAuction = e.Value is true" /></dd>
+                </div>
                 <div><dt><label for="setup-years">@Strings["Year"]</label></dt><dd><input id="setup-years" type="text" inputmode="decimal" @bind="Draft.Parameters.Years" @bind:culture="CultureInfo.CurrentCulture" /></dd></div>
                 <div>
                     <dt><label for="setup-offset-limit">@Strings["OffsetUsageLimit"]</label></dt>

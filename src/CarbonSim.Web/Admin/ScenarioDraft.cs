@@ -87,6 +87,21 @@ public sealed class DraftParameters
     /// <summary>Share of the next year's volume a year's last auction sells forward (absent means the engine's default).</summary>
     public decimal? ForwardVintageShare { get; set; }
 
+    /// <summary>Exchange access for players (absent means open).</summary>
+    public bool? ExchangeAccess { get; set; }
+
+    /// <summary>OTC access for players (absent means open).</summary>
+    public bool? OtcAccess { get; set; }
+
+    /// <summary>Whether players see the leaderboard (absent means visible).</summary>
+    public bool? LeaderboardVisible { get; set; }
+
+    /// <summary>Whether players may put their own units on AutoTrade (absent means no).</summary>
+    public bool? AiTradeAssistance { get; set; }
+
+    /// <summary>Whether the clock stops after every auction (absent means no).</summary>
+    public bool? PauseAfterAuction { get; set; }
+
     public List<DraftGrowth> BausGrowthBySector { get; set; } = [];
 }
 
@@ -150,4 +165,7 @@ public sealed class DraftUnit
 
     /// <summary>How generously the unit was allocated, carried through the setup screen untouched.</summary>
     public decimal? AllocationFactor { get; set; }
+
+    /// <summary>The unit's yearly offset supply, carried through the setup screen untouched.</summary>
+    public decimal? OffsetSupplyShare { get; set; }
 }

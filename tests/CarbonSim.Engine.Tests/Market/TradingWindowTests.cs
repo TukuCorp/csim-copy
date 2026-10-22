@@ -125,4 +125,31 @@ public sealed class TradingWindowTests
             .Which.Refusal.Should().Be(TradeRefusal.YearNotRunning);
         otc.Reject(buyer, waiting.Id).State.Should().Be(OtcOfferState.Rejected, "turning an offer down is always allowed");
     }
+
+    [Fact]
+    public void With_exchange_access_off_an_order_is_refused_and_says_why()
+    {
+        // The spec's administrative switch "Exchange market access: yes or no".
+        (Simulation simulation, _, _) = Running();
+        simulation.Rules.ExchangeAccess = false;
+        Exchange exchange = new(simulation);
+
+        Action place = () => exchange.Place(Buy(simulation));
+
+        place.Should().Throw<TradeRefusedException>().Which.Refusal.Should().Be(TradeRefusal.MarketClosed);
+    }
+
+    [Fact]
+    public void With_otc_access_off_an_offer_is_refused_and_says_why()
+    {
+        // "OTC market access: yes or no".
+        (Simulation simulation, _, _) = Running();
+        simulation.Rules.OtcAccess = false;
+        simulation.Ledger.Grant(simulation.FindCompany(1), Vintage1, 1_000m);
+        OtcMarket otc = new(simulation);
+
+        Action send = () => otc.Send(simulation.FindUnit(1), simulation.FindUnit(4), Vintage1, 100m, 100m);
+
+        send.Should().Throw<TradeRefusedException>().Which.Refusal.Should().Be(TradeRefusal.MarketClosed);
+    }
 }

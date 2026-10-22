@@ -414,4 +414,16 @@
   <data name="AuctionClosedAlert" xml:space="preserve"><value>Auction {0} of year {1} has closed at {2}.</value></data>
   <data name="AuctionWonAlert" xml:space="preserve"><value>You won {0} t and paid {1}.</value></data>
   <data name="NewOffersAlert" xml:space="preserve"><value>{0} new OTC offer(s) waiting for your answer.</value></data>
+  <data name="ExchangeNotOpen" xml:space="preserve"><value>The exchange is not open in this exercise.</value></data>
+  <data name="OtcNotOpen" xml:space="preserve"><value>The OTC market is not open in this exercise.</value></data>
+  <data name="LeaderboardNotVisible" xml:space="preserve"><value>The trainer has not opened the leaderboard in this exercise.</value></data>
+  <data name="MarketIsClosed" xml:space="preserve"><value>This market is not open in this exercise.</value></data>
+  <data name="AdminExchangeAccess" xml:space="preserve"><value>Players may use the exchange</value></data>
+  <data name="AdminOtcAccess" xml:space="preserve"><value>Players may use the OTC market</value></data>
+  <data name="AdminLeaderboardVisible" xml:space="preserve"><value>Players see the leaderboard</value></data>
+  <data name="AdminPauseAfterAuction" xml:space="preserve"><value>Pause the clock after each auction</value></data>
+  <data name="AdminAiTradeAssistance" xml:space="preserve"><value>Players may put their units on AutoTrade</value></data>
+  <data name="AutoTradeOn" xml:space="preserve"><value>Put on AutoTrade</value></data>
+  <data name="AutoTradeOff" xml:space="preserve"><value>Take off AutoTrade</value></data>
+  <data name="CancelOffer" xml:space="preserve"><value>Withdraw offer</value></data>
 </root>

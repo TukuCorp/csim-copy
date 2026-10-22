@@ -64,6 +64,12 @@ public sealed class StubPlayerSession : IPlayerSession
         return Task.FromResult(new OrderOutcome(1, 0m, 0m, 0m, null));
     }
 
+    public Task SetAutoTradeAsync(Guid simulationId, int unitId, bool enabled, CancellationToken cancellationToken = default)
+    {
+        Actions.Add(FormattableString.Invariant($"autotrade:{unitId}:{enabled}"));
+        return Task.CompletedTask;
+    }
+
     public Task CancelBidAsync(Guid simulationId, int bidId, CancellationToken cancellationToken = default)
     {
         Actions.Add(FormattableString.Invariant($"cancel-bid:{bidId}"));
@@ -85,6 +91,12 @@ public sealed class StubPlayerSession : IPlayerSession
     public Task SendOtcOfferAsync(Guid simulationId, int sellerUnitId, int buyerUnitId, string product, decimal price, decimal volume, CancellationToken cancellationToken = default)
     {
         Actions.Add(FormattableString.Invariant($"otc-offer:{sellerUnitId}:{buyerUnitId}:{product}:{price}:{volume}"));
+        return Task.CompletedTask;
+    }
+
+    public Task CancelOtcOfferAsync(Guid simulationId, long offerId, CancellationToken cancellationToken = default)
+    {
+        Actions.Add(FormattableString.Invariant($"otc-cancel:{offerId}"));
         return Task.CompletedTask;
     }
 

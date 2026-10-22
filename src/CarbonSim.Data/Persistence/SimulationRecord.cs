@@ -81,6 +81,18 @@ public sealed class ParametersRecord
     /// <summary>Share of the next year's volume a year's last auction sold forward.</summary>
     public decimal ForwardVintageShare { get; set; }
 
+    /// <summary>Whether players may use the exchange.</summary>
+    public bool ExchangeAccess { get; set; } = true;
+
+    /// <summary>Whether players may use the OTC market.</summary>
+    public bool OtcAccess { get; set; } = true;
+
+    /// <summary>Whether players see the leaderboard.</summary>
+    public bool LeaderboardVisible { get; set; } = true;
+
+    /// <summary>Whether players may put their own units on AutoTrade.</summary>
+    public bool AiTradeAssistance { get; set; }
+
     public decimal OverdraftInterestRate { get; set; }
 }
 

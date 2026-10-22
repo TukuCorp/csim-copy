@@ -183,6 +183,9 @@ public sealed class PlayerSession : IPlayerSession
     public Task CancelOrderAsync(Guid simulationId, int unitId, long orderId, CancellationToken cancellationToken = default) =>
         ActAsync(actor => _runs.CancelOrderAsync(simulationId, actor, unitId, orderId));
 
+    public Task SetAutoTradeAsync(Guid simulationId, int unitId, bool enabled, CancellationToken cancellationToken = default) =>
+        ActAsync(actor => _runs.SetMyAutoTradeAsync(simulationId, actor, unitId, enabled));
+
     public Task CancelBidAsync(Guid simulationId, int bidId, CancellationToken cancellationToken = default) =>
         ActAsync(actor => _runs.CancelBidAsync(simulationId, actor, bidId));
 
@@ -191,6 +194,9 @@ public sealed class PlayerSession : IPlayerSession
 
     public Task SendOtcOfferAsync(Guid simulationId, int sellerUnitId, int buyerUnitId, string product, decimal price, decimal volume, CancellationToken cancellationToken = default) =>
         ActAsync(actor => _runs.SendOtcOfferAsync(simulationId, actor, sellerUnitId, buyerUnitId, product, price, volume));
+
+    public Task CancelOtcOfferAsync(Guid simulationId, long offerId, CancellationToken cancellationToken = default) =>
+        ActAsync(actor => _runs.CancelOtcOfferAsync(simulationId, actor, offerId));
 
     public Task AnswerOtcOfferAsync(Guid simulationId, int buyerUnitId, long offerId, bool accept, CancellationToken cancellationToken = default) =>
         ActAsync(actor => _runs.AnswerOtcOfferAsync(simulationId, actor, buyerUnitId, offerId, accept));
@@ -317,7 +323,7 @@ public sealed class PlayerSession : IPlayerSession
             BuildMyOffers(run, company),
             BuildHoldings(simulation, company, tradable),
             BuildMyTrades(run, company),
-            BuildLeaderboard(run, company),
+            parameters.LeaderboardVisible ? BuildLeaderboard(run, company) : [],
             BuildSystemInfo(run, parameters, year, started),
             // The room reads the room's lines; a line addressed to one company is that company's, which
             // is what keeps a sealed bid out of everybody else's feed.
@@ -837,7 +843,13 @@ public sealed class PlayerSession : IPlayerSession
             thisYear,
             toDate,
             simulation.Government.Revenue,
-            reserve);
+            reserve)
+        {
+            ExchangeAccess = parameters.ExchangeAccess,
+            OtcAccess = parameters.OtcAccess,
+            LeaderboardVisible = parameters.LeaderboardVisible,
+            AiTradeAssistance = parameters.AiTradeAssistance,
+        };
     }
 
     private static OrderView ToView(Order order) => new(

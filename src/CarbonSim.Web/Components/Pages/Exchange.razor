@@ -12,6 +12,10 @@
 }
 else
 {
+    @if (!view.System.ExchangeAccess)
+    {
+        <p class="notice notice-status market-closed" role="status">@Strings["ExchangeNotOpen"]</p>
+    }
     <section class="card wide" tabindex="0">
         <h2>@Strings["PriceChart"]</h2>
         <p class="muted small">@Strings["PriceChartHint"]</p>

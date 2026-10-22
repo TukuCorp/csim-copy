@@ -65,6 +65,10 @@ public static class SimulationMapper
                     VolatilityBand = parameters.VolatilityBand,
             GovernmentReserveToAuctionPercent = parameters.GovernmentReserveToAuctionPercent,
             ForwardVintageShare = parameters.ForwardVintageShare,
+            ExchangeAccess = parameters.ExchangeAccess,
+            OtcAccess = parameters.OtcAccess,
+            LeaderboardVisible = parameters.LeaderboardVisible,
+            AiTradeAssistance = parameters.AiTradeAssistance,
                     OverdraftInterestRate = parameters.OverdraftInterestRate,
                 },
             ],
@@ -199,6 +203,7 @@ public static class SimulationMapper
                             Year = index + 1,
                             FreeAllocation = free,
                             BausEmissions = unit.BausEmissions[index],
+                            OffsetSupply = unit.OffsetSupply is { Count: > 0 } offsets ? offsets[index] : 0m,
                         })),
             ],
             ImplementedAbatements =
@@ -675,7 +680,11 @@ public static class SimulationMapper
                     parameters.VolatilityBand,
                     parameters.OverdraftInterestRate,
                     parameters.GovernmentReserveToAuctionPercent,
-                    parameters.ForwardVintageShare)),
+                    parameters.ForwardVintageShare,
+                    parameters.ExchangeAccess,
+                    parameters.OtcAccess,
+                    parameters.LeaderboardVisible,
+                    parameters.AiTradeAssistance)),
             [
                 .. run.Sectors
                     .OrderBy(sector => sector.Name, StringComparer.Ordinal)
@@ -753,6 +762,9 @@ public static class SimulationMapper
                             ],
                             [
                                 .. allocationYearsByUnit[allocation.UnitId].OrderBy(year => year.Year).Select(year => year.BausEmissions),
+                            ],
+                            [
+                                .. allocationYearsByUnit[allocation.UnitId].OrderBy(year => year.Year).Select(year => year.OffsetSupply),
                             ])),
                 ]),
             new AbatementPortfolioSnapshot(

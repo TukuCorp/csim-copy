@@ -72,6 +72,7 @@ public sealed class OtcMarket
     public OtcOffer Send(Unit seller, Unit buyer, Product product, decimal price, decimal volume)
     {
         TradingWindow.RequireTrading(_simulation);
+        RequireOtcAccess();
         RequireUnit(seller, nameof(seller), out Company sellerCompany);
         RequireUnit(buyer, nameof(buyer), out _);
 
@@ -102,6 +103,7 @@ public sealed class OtcMarket
     public OtcOffer Accept(Unit buyer, long offerId)
     {
         TradingWindow.RequireTrading(_simulation);
+        RequireOtcAccess();
 
         OtcOffer offer = Answer(buyer, offerId);
 
@@ -170,6 +172,14 @@ public sealed class OtcMarket
         }
 
         return cancelled;
+    }
+
+    private void RequireOtcAccess()
+    {
+        if (!_simulation.Rules.OtcAccess)
+        {
+            throw new TradeRefusedException(TradeRefusal.MarketClosed, "The OTC market is not open in this exercise.");
+        }
     }
 
     private OtcOffer Answer(Unit buyer, long offerId)

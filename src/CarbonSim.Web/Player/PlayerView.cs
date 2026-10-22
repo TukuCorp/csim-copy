@@ -327,4 +327,17 @@ public sealed record SystemInfoView(
     SystemTotals ThisYear,
     SystemTotals ToDate,
     decimal GovernmentRevenue,
-    IReadOnlyList<HoldingView> GovernmentReserve);
+    IReadOnlyList<HoldingView> GovernmentReserve)
+{
+    /// <summary>Whether the exchange is open to players in this exercise.</summary>
+    public bool ExchangeAccess { get; init; } = true;
+
+    /// <summary>Whether the OTC market is open to players in this exercise.</summary>
+    public bool OtcAccess { get; init; } = true;
+
+    /// <summary>Whether players may see the leaderboard in this exercise.</summary>
+    public bool LeaderboardVisible { get; init; } = true;
+
+    /// <summary>Whether players may put their own units on AutoTrade in this exercise.</summary>
+    public bool AiTradeAssistance { get; init; }
+}

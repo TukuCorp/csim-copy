@@ -1,12 +1,14 @@
 using CarbonSim.Engine.Domain;
+using CarbonSim.Engine.Reporting;
 using CarbonSim.Engine.Snapshot;
 
 namespace CarbonSim.Engine.Market.Exchange;
 
 /// <summary>
 /// The secondary market: one order book per product (each allowance vintage, and offsets).
-/// The first trade of a book is anchored on the auction price floor, so a book starts life
-/// with a volatility band around it.
+/// A new book is anchored on the product's last trade on any channel - a vintage the auction has
+/// sold opens around its clearing price - and on the auction floor while the product has never
+/// traded, so a book starts life with a volatility band around it.
 /// </summary>
 public sealed class Exchange
 {
@@ -61,7 +63,7 @@ public sealed class Exchange
     {
         if (!_books.TryGetValue(product, out OrderBook? book))
         {
-            book = new OrderBook(_simulation, product, _simulation.Rules.AuctionFloorPrice, _ids);
+            book = new OrderBook(_simulation, product, OpeningReference(product), _ids);
             _books[product] = book;
         }
 
@@ -70,17 +72,28 @@ public sealed class Exchange
 
     /// <summary>
     /// The volatility band a product trades in: around the price its book last traded at, or
-    /// around the auction floor for a product whose book has not traded yet. The rule lives here
-    /// so a screen showing the band and the book refusing a price outside it read the same one.
+    /// around where a new book would open for a product the exchange has not seen yet. The rule
+    /// lives here so a screen showing the band and the book refusing a price outside it read the same one.
     /// </summary>
     public (decimal Floor, decimal Ceiling) BandFor(Product product)
     {
         decimal reference = _books.TryGetValue(product, out OrderBook? book)
             ? book.LastTradePrice
-            : _simulation.Rules.AuctionFloorPrice;
+            : OpeningReference(product);
         decimal band = _simulation.Rules.VolatilityBand;
 
         return (reference * (1m - band), reference * (1m + band));
+    }
+
+    /// <summary>
+    /// Where a new book opens: the product's last trade on any channel (FAQ #16 bands an order on
+    /// "the last trade for the particular product", and an auction sale is one), else the floor.
+    /// </summary>
+    private decimal OpeningReference(Product product)
+    {
+        MarketTrade? last = _simulation.Journal.Trades.LastOrDefault(trade => trade.Product == product);
+
+        return last?.Price ?? _simulation.Rules.AuctionFloorPrice;
     }
 
     /// <summary>Places an order on the right book for its product.</summary>
@@ -91,6 +104,11 @@ public sealed class Exchange
         // The book only takes orders while the year is running. Cancelling stays open in any state,
         // so a player can always take an order back.
         TradingWindow.RequireTrading(_simulation);
+
+        if (!_simulation.Rules.ExchangeAccess)
+        {
+            throw new TradeRefusedException(TradeRefusal.MarketClosed, "The exchange is not open in this exercise.");
+        }
 
         return Book(request.Product).Submit(request);
     }

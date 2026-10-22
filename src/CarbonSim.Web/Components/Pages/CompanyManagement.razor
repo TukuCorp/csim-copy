@@ -1,5 +1,6 @@
 @page "/run/{SimulationId:guid}/company"
 @inject IStringLocalizer<SharedStrings> Strings
+@inject PlayerContext Context
 
 <PageTitle>@Strings["CompanyManagement"]</PageTitle>
 <h1>@Strings["CompanyManagement"]</h1>
@@ -40,6 +41,30 @@ else
                 </QuickGrid>
             }
         </section>
+
+        @if (view.System.AiTradeAssistance)
+        {
+            @* FAQ #7: with the trainer's permission a player hands a unit to the AI and takes it back. *@
+            <section id="autotrade" class="card">
+                <h2>@Strings["AutoTrade"]</h2>
+                <table class="grid">
+                    <tbody>
+                        @foreach (UnitView unit in view.Units)
+                        {
+                            <tr>
+                                <td>@unit.Name</td>
+                                <td>@(unit.AutoTrade ? Strings["AdminOn"] : Strings["AdminOff"])</td>
+                                <td>
+                                    <button class="button small-button" @onclick="() => SetAutoTradeAsync(unit)">
+                                        @(unit.AutoTrade ? Strings["AutoTradeOff"] : Strings["AutoTradeOn"])
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </section>
+        }
     </div>
 }
 
@@ -49,4 +74,7 @@ else
     [Parameter] public Guid SimulationId { get; set; }
 
     private PlayerView? View => Screen?.View;
+
+    private Task SetAutoTradeAsync(UnitView unit) =>
+        Context.ActAsync(session => session.SetAutoTradeAsync(SimulationId, unit.Id, !unit.AutoTrade), Strings["AutoTrade"]);
 }

@@ -414,4 +414,16 @@
   <data name="AuctionClosedAlert" xml:space="preserve"><value>Phiên đấu giá {0} của năm {1} đã đóng ở mức {2}.</value></data>
   <data name="AuctionWonAlert" xml:space="preserve"><value>Bạn trúng {0} t và đã trả {1}.</value></data>
   <data name="NewOffersAlert" xml:space="preserve"><value>{0} chào bán OTC mới đang chờ bạn trả lời.</value></data>
+  <data name="ExchangeNotOpen" xml:space="preserve"><value>Sàn giao dịch không mở trong bài tập này.</value></data>
+  <data name="OtcNotOpen" xml:space="preserve"><value>Thị trường OTC không mở trong bài tập này.</value></data>
+  <data name="LeaderboardNotVisible" xml:space="preserve"><value>Giảng viên chưa mở bảng xếp hạng trong bài tập này.</value></data>
+  <data name="MarketIsClosed" xml:space="preserve"><value>Thị trường này không mở trong bài tập này.</value></data>
+  <data name="AdminExchangeAccess" xml:space="preserve"><value>Người chơi được dùng sàn giao dịch</value></data>
+  <data name="AdminOtcAccess" xml:space="preserve"><value>Người chơi được dùng thị trường OTC</value></data>
+  <data name="AdminLeaderboardVisible" xml:space="preserve"><value>Người chơi xem được bảng xếp hạng</value></data>
+  <data name="AdminPauseAfterAuction" xml:space="preserve"><value>Tạm dừng đồng hồ sau mỗi phiên đấu giá</value></data>
+  <data name="AdminAiTradeAssistance" xml:space="preserve"><value>Người chơi được chuyển tổ máy sang AutoTrade</value></data>
+  <data name="AutoTradeOn" xml:space="preserve"><value>Chuyển sang AutoTrade</value></data>
+  <data name="AutoTradeOff" xml:space="preserve"><value>Tắt AutoTrade</value></data>
+  <data name="CancelOffer" xml:space="preserve"><value>Rút chào bán</value></data>
 </root>

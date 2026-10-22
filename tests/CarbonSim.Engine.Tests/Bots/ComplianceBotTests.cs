@@ -1,3 +1,4 @@
+using CarbonSim.Engine.Allocation;
 using CarbonSim.Engine.Bots;
 using CarbonSim.Engine.Clock;
 using CarbonSim.Engine.Domain;
@@ -135,7 +136,8 @@ public sealed class ComplianceBotTests
 
         run.Simulation.Ledger.Grant(run.Simulation.FindCompany(1), Product.Allowance(1), 50_000_000m);
 
-        Advance(run, TimeSpan.FromMinutes(3));
+        // A quarter of the way in: every bot has had its quoting pass (12-20% of the year).
+        Advance(run, TimeSpan.FromMinutes(5));
 
         OrderBook book = run.Markets.Exchange.Book(Product.Allowance(1));
 
@@ -217,6 +219,36 @@ public sealed class ComplianceBotTests
 
         actions.Should().Contain(action => action.Trigger == BotTrigger.Abatement || action.Trigger == BotTrigger.Trade, "the bot has had its turn");
         simulation.Abatements.For(simulation.FindUnit(3)).Should().BeEmpty("nothing built in the only year would ever run");
+    }
+
+    [Fact]
+    public void In_the_last_year_a_long_bot_offers_everything_beyond_what_it_must_surrender()
+    {
+        // A tonne banked out of the run's last year is never used (FAQ #14), so a long bot keeps only
+        // what its obligation needs, offsets counted, and offers the rest.
+        Run run = Build();
+        Company bot = run.Simulation.FindCompany(3);
+        Advance(run, TimeSpan.FromMinutes(20));
+        run.Clock.EndYear();
+        run.Clock.BeginNextYear();
+        Advance(run, TimeSpan.FromMinutes(20));
+        run.Clock.EndYear();
+        run.Clock.BeginNextYear();
+
+        Standing standing = new(run.Simulation);
+        decimal emissions = standing.Emissions(bot, 3);
+        run.Simulation.Ledger.Grant(bot, Product.Offset, Math.Round(emissions * 0.05m, 0, MidpointRounding.AwayFromZero));
+        run.Simulation.Ledger.Grant(bot, Product.Allowance(3), emissions * 2m);
+        decimal need = emissions - standing.OffsetsUsable(bot, 3);
+
+        Advance(run, TimeSpan.FromMinutes(5));
+
+        // Held counts what is set aside for the bot's own offers, so it is the same before and after.
+        decimal offered = run.Markets.Exchange.Book(Product.Allowance(3)).OpenOrders
+            .Where(order => ReferenceEquals(order.Company, bot) && order.Side == OrderSide.Sell)
+            .Sum(order => order.Remaining);
+
+        offered.Should().Be(standing.HeldAllowances(bot, 3) - need, "everything above the obligation, offsets counted");
     }
 
     [Fact]

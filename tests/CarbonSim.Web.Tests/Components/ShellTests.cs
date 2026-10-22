@@ -1,6 +1,7 @@
 using Bunit;
 using CarbonSim.Web;
 using CarbonSim.Web.Components.Layout;
+using CarbonSim.Web.Components.Pages;
 using CarbonSim.Web.Components.Shared;
 using CarbonSim.Web.Player;
 using FluentAssertions;
@@ -82,6 +83,22 @@ public sealed class ShellTests : ScreenTestContext
         bar.Markup.Should().Contain("Best bid");
         bar.Markup.Should().Contain("Net revenue this year");
         bar.Markup.Should().Contain("112.00");
+    }
+
+    [Fact]
+    public void Markets_the_trainer_has_not_opened_are_left_out_of_the_menu_and_say_so_when_visited()
+    {
+        // The spec's switches: exchange access, OTC access, leaderboard visible to players or not.
+        View = View with { System = View.System with { ExchangeAccess = false, OtcAccess = false, LeaderboardVisible = false } };
+
+        IRenderedComponent<NavMenu> nav = RenderComponent<NavMenu>(parameters => parameters.AddCascadingValue(Snapshot));
+        IRenderedComponent<Exchange> exchange = RenderComponent<Exchange>(parameters => parameters
+            .AddCascadingValue(Snapshot)
+            .Add(component => component.SimulationId, SimulationId));
+
+        nav.FindAll("a").Select(link => link.GetAttribute("href")).Should()
+            .NotContain(href => href!.EndsWith("/exchange", StringComparison.Ordinal) || href.EndsWith("/otc", StringComparison.Ordinal) || href.EndsWith("/leaderboard", StringComparison.Ordinal));
+        exchange.Find(".market-closed").TextContent.Should().Contain("not open in this exercise");
     }
 
     [Fact]

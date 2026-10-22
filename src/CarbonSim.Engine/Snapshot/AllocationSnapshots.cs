@@ -23,7 +23,8 @@ public sealed record UnitAllocationSnapshot(
     int UnitId,
     decimal BausGrowth,
     IReadOnlyList<decimal> FreeAllocation,
-    IReadOnlyList<decimal> BausEmissions);
+    IReadOnlyList<decimal> BausEmissions,
+    IReadOnlyList<decimal>? OffsetSupply = null);
 
 /// <summary>What every unit has committed to: its implemented projects and its shutdown years.</summary>
 public sealed record AbatementPortfolioSnapshot(

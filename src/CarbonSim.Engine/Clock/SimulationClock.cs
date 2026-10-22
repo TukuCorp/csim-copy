@@ -43,7 +43,7 @@ public sealed class SimulationClock
 
         _simulation = simulation;
         _timeProvider = timeProvider;
-        _options = options ?? new SimulationClockOptions();
+        _options = options ?? new SimulationClockOptions { PauseAfterAuction = simulation.Rules.PauseAfterAuction };
 
         if (_simulation.Rules.AuctionsPerYear < 1)
         {

@@ -10,6 +10,10 @@
 }
 else
 {
+    @if (!view.System.LeaderboardVisible)
+    {
+        <p class="notice notice-status market-closed" role="status">@Strings["LeaderboardNotVisible"]</p>
+    }
     <section class="card wide" tabindex="0">
         <QuickGrid Items="@view.Leaderboard.AsQueryable()" Class="grid" RowClass="@((LeaderboardRow row) => row.IsMine ? "row-mine" : string.Empty)">
             <TemplateColumn Title="@Strings["Rank"]" Context="row">@row.Rank</TemplateColumn>

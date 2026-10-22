@@ -1,7 +1,7 @@
 @inject IStringLocalizer<SharedStrings> Strings
 
 <nav class="nav" aria-label="@Strings["Dashboard"]">
-    @foreach ((string Screen, string Key) item in Screens)
+    @foreach ((string Screen, string Key) item in Screens.Where(Open))
     {
         <a href="@RunRoute.Screen(Id, item.Screen)">@Strings[item.Key]</a>
     }
@@ -26,4 +26,13 @@
     ];
 
     private Guid Id => Screen?.SimulationId ?? Guid.Empty;
+
+    /// <summary>A market the trainer has not opened in this exercise is left out of the menu.</summary>
+    private bool Open((string Screen, string Key) item) => Screen?.View?.System is not { } system || item.Screen switch
+    {
+        "exchange" => system.ExchangeAccess,
+        "otc" => system.OtcAccess,
+        "leaderboard" => system.LeaderboardVisible,
+        _ => true,
+    };
 }

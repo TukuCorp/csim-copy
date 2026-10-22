@@ -224,17 +224,21 @@ public sealed class PlaywrightFeedbackTests : IClassFixture<PlaywrightHostFixtur
         (await MoneyAsync(player, "Capital")).Should().Be(
             before - 500_000m, "the fine is charged to the company the unit belongs to");
 
-        // 2. Handing out offsets shows up in the player's holdings.
+        // 2. Handing out offsets shows up in the player's holdings, on top of the offsets the
+        //    scenario granted with the year's allocation.
+        await player.GotoAsync($"{_host.BaseUrl}/run/{RunId(player)}/surrender");
+        await player.WaitUntilInteractiveAsync();
+        decimal offsetsBefore = await OffsetsHeldAsync(player);
+
         await SelectByTextAsync(admin, "#offset-unit", company);
         await admin.FillAsync("#offset-volume", "100000");
         await ClickAsync(admin, "Hand out offsets");
         (await NoticeAsync(admin, "#offset-volume")).Should().Contain("100,000");
 
-        await player.GotoAsync($"{_host.BaseUrl}/run/{RunId(player)}/surrender");
-        await player.WaitUntilInteractiveAsync();
+        string expected = (offsetsBefore + 100_000m).ToString("N0", CultureInfo.GetCultureInfo("en-US"));
         await player.WaitForFunctionAsync(
-            "() => document.querySelector('table.grid')?.innerText.includes('100,000') === true",
-            null,
+            "expected => [...document.querySelectorAll('table.grid tr')].some(row => row.innerText.startsWith('Offset') && row.innerText.includes(expected))",
+            expected,
             new PageWaitForFunctionOptions { Timeout = 30000 });
 
         // 3. An abatement committed for the player's unit appears on the abatement screen.
@@ -324,6 +328,16 @@ public sealed class PlaywrightFeedbackTests : IClassFixture<PlaywrightHostFixtur
     }
 
     /// <summary>The number a named metric shows, with its grouping and currency stripped off.</summary>
+    /// <summary>The offsets the holdings table shows as held, zero when the company has none.</summary>
+    private static async Task<decimal> OffsetsHeldAsync(IPage page)
+    {
+        string held = await page.EvaluateAsync<string>(
+            "() => { const row = [...document.querySelectorAll('table.grid tr')].find(row => row.innerText.startsWith('Offset'));"
+                + " const cells = row ? [...row.querySelectorAll('td')] : []; return cells.length ? cells[cells.length - 1].textContent.replace(/[^0-9.]/g, '') : '0'; }");
+
+        return decimal.Parse(held, CultureInfo.InvariantCulture);
+    }
+
     private static async Task<decimal> MoneyAsync(IPage page, string label)
     {
         string[] found = await page.EvaluateAsync<string[]>(

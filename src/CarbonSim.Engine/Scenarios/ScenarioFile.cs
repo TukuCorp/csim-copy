@@ -60,6 +60,21 @@ internal sealed class ParametersFile
     /// </summary>
     public decimal? ForwardVintageShare { get; set; }
 
+    /// <summary>Whether players may use the exchange; absent means yes.</summary>
+    public bool? ExchangeAccess { get; set; }
+
+    /// <summary>Whether players may use the OTC market; absent means yes.</summary>
+    public bool? OtcAccess { get; set; }
+
+    /// <summary>Whether players see the leaderboard; absent means yes.</summary>
+    public bool? LeaderboardVisible { get; set; }
+
+    /// <summary>Whether players may put their own units on AutoTrade; absent means no.</summary>
+    public bool? AiTradeAssistance { get; set; }
+
+    /// <summary>Whether the clock stops after every auction until the trainer resumes it; absent means no.</summary>
+    public bool? PauseAfterAuction { get; set; }
+
     public List<BausGrowthFile>? BausGrowthBySector { get; set; }
 }
 
@@ -132,4 +147,7 @@ internal sealed class UnitFile
 
     /// <summary>How generously the unit was allocated when the sector's free cake is shared out.</summary>
     public decimal? AllocationFactor { get; set; }
+
+    /// <summary>The share of its emissions the unit is handed in offsets each year (0 when absent).</summary>
+    public decimal? OffsetSupplyShare { get; set; }
 }

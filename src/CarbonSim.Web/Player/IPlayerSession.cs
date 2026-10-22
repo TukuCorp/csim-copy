@@ -37,12 +37,18 @@ public interface IPlayerSession
 
     Task CancelOrderAsync(Guid simulationId, int unitId, long orderId, CancellationToken cancellationToken = default);
 
+    /// <summary>Puts one of the company's units on AutoTrade or takes it off, where the exercise allows it.</summary>
+    Task SetAutoTradeAsync(Guid simulationId, int unitId, bool enabled, CancellationToken cancellationToken = default);
+
     /// <summary>Withdraws one of the company's bids from the auction that is open.</summary>
     Task CancelBidAsync(Guid simulationId, int bidId, CancellationToken cancellationToken = default);
 
     Task ImplementAbatementAsync(Guid simulationId, int unitId, int optionIndex, CancellationToken cancellationToken = default);
 
     Task SendOtcOfferAsync(Guid simulationId, int sellerUnitId, int buyerUnitId, string product, decimal price, decimal volume, CancellationToken cancellationToken = default);
+
+    /// <summary>Withdraws one of the company's own offers before it is answered.</summary>
+    Task CancelOtcOfferAsync(Guid simulationId, long offerId, CancellationToken cancellationToken = default);
 
     Task AnswerOtcOfferAsync(Guid simulationId, int buyerUnitId, long offerId, bool accept, CancellationToken cancellationToken = default);
 

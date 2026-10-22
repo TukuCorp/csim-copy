@@ -1,5 +1,6 @@
 using CarbonSim.Engine.Domain;
 using CarbonSim.Engine.Market;
+using CarbonSim.Engine.Market.Otc;
 using CarbonSim.Engine.Reporting;
 using CarbonSim.Web.Simulations;
 using FluentAssertions;
@@ -70,5 +71,46 @@ public sealed class MarketActionTests : IClassFixture<SimulationTestHost>
         buyer.Company.Capital.Should().BeLessThan(buyerBefore);
         seller.Company.Capital.Should().BeGreaterThan(sellerBefore);
         runs.Run(id).Otc.Offers.Single().State.Should().Be(CarbonSim.Engine.Market.Otc.OtcOfferState.Accepted);
+    }
+
+    [Fact]
+    public async Task A_seller_withdraws_its_own_offer_and_the_instruments_come_back()
+    {
+        Simulation simulation = TestRunFactory.Build();
+        SimulationRegistry runs = _host.Server.Services.GetRequiredService<SimulationRegistry>();
+        Guid id = runs.Start(simulation);
+        SignedIn delta = await _host.SignInAsync(TestRunFactory.DeltaCompany);
+        SignedIn redRiver = await _host.SignInAsync(TestRunFactory.RedRiverCompany);
+        await _host.CreateDriver().StartAsync(id);
+
+        Unit seller = simulation.FindUnit(1);
+        simulation.Ledger.Grant(seller.Company, Product.Allowance(1), 1_000m);
+
+        long offer = await runs.SendOtcOfferAsync(id, delta.Actor, 1, 2, "Vintage 1", 110m, 100m);
+        simulation.Ledger.Escrowed(seller.Company, Product.Allowance(1)).Should().Be(100m, "the offer sets the instruments aside");
+
+        await runs.CancelOtcOfferAsync(id, delta.Actor, offer);
+
+        runs.Run(id).Otc.Offers.Single().State.Should().Be(OtcOfferState.Cancelled);
+        simulation.Ledger.Escrowed(seller.Company, Product.Allowance(1)).Should().Be(0m, "the instruments come back to the seller");
+    }
+
+    [Fact]
+    public async Task A_company_cannot_withdraw_an_offer_another_company_made()
+    {
+        Simulation simulation = TestRunFactory.Build();
+        SimulationRegistry runs = _host.Server.Services.GetRequiredService<SimulationRegistry>();
+        Guid id = runs.Start(simulation);
+        SignedIn delta = await _host.SignInAsync(TestRunFactory.DeltaCompany);
+        SignedIn redRiver = await _host.SignInAsync(TestRunFactory.RedRiverCompany);
+        await _host.CreateDriver().StartAsync(id);
+
+        simulation.Ledger.Grant(simulation.FindUnit(1).Company, Product.Allowance(1), 1_000m);
+        long offer = await runs.SendOtcOfferAsync(id, delta.Actor, 1, 2, "Vintage 1", 110m, 100m);
+
+        Func<Task> withdraw = () => runs.CancelOtcOfferAsync(id, redRiver.Actor, offer);
+
+        await withdraw.Should().ThrowAsync<UnauthorizedAccessException>();
+        runs.Run(id).Otc.Offers.Single().State.Should().Be(OtcOfferState.Pending);
     }
 }

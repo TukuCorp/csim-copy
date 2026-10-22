@@ -71,7 +71,7 @@ internal sealed class TrainingRun
     }
 
     /// <summary>Plays whole virtual years: allocate, trade, clear, reconcile, close the books.</summary>
-    public void PlayYears(int count, decimal offsetShareOfEmissions = 0.03m, decimal lumpyOffsetShare = 0.25m)
+    public void PlayYears(int count, decimal offsetShareOfEmissions = 0m, decimal lumpyOffsetShare = 0m)
     {
         for (int played = 0; played < count; played++)
         {
@@ -87,7 +87,7 @@ internal sealed class TrainingRun
     }
 
     /// <summary>Plays the year the clock is currently in, up to and including the books closing.</summary>
-    public void PlayYear(decimal offsetShareOfEmissions = 0.03m, decimal lumpyOffsetShare = 0.25m)
+    public void PlayYear(decimal offsetShareOfEmissions = 0m, decimal lumpyOffsetShare = 0m)
     {
         Play(Module, Time, _tick, offsetShareOfEmissions, lumpyOffsetShare);
     }
@@ -100,8 +100,8 @@ internal sealed class TrainingRun
     public static void Play(
         RestoredSimulation restored,
         TestTimeProvider time,
-        decimal offsetShareOfEmissions = 0.03m,
-        decimal lumpyOffsetShare = 0.25m,
+        decimal offsetShareOfEmissions = 0m,
+        decimal lumpyOffsetShare = 0m,
         TimeSpan? tick = null)
     {
         ArgumentNullException.ThrowIfNull(restored);

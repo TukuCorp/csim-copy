@@ -312,6 +312,31 @@ public sealed class SimulationRegistry
         }).ConfigureAwait(false);
     }
 
+    /// <summary>
+    /// Puts one of the caller's own units on AutoTrade or takes it off, where the exercise lets
+    /// players do that themselves; the trainer's own switch is on the console.
+    /// </summary>
+    public async Task SetMyAutoTradeAsync(Guid simulationId, string actor, int unitId, bool enabled)
+    {
+        string company = await ResolveCompanyAsync(actor).ConfigureAwait(false);
+
+        await ApplyAsync(simulationId, run =>
+        {
+            Unit unit = run.Simulation.FindUnit(unitId);
+            RequireOwner(company, unit);
+
+            if (!run.Simulation.Rules.AiTradeAssistance)
+            {
+                throw new InvalidOperationException("The trainer has not let players put their units on AutoTrade in this exercise.");
+            }
+
+            unit.AutoTrade = enabled;
+            RebuildBots(run);
+
+            return run.Module.Inspect();
+        }).ConfigureAwait(false);
+    }
+
     /// <summary>Withdraws one of the caller's company's bids from the open auction.</summary>
     public async Task CancelBidAsync(Guid simulationId, string actor, int bidId)
     {
@@ -397,6 +422,26 @@ public sealed class SimulationRegistry
             offer.Id, offer.Seller.Name, offer.Buyer.Name, Describe(offer.Product), offer.Price, offer.Volume).ConfigureAwait(false);
 
         return offer.Id;
+    }
+
+    /// <summary>Withdraws one of the caller's company's offers and tells its watchers.</summary>
+    public async Task CancelOtcOfferAsync(Guid simulationId, string actor, long offerId)
+    {
+        string company = await ResolveCompanyAsync(actor).ConfigureAwait(false);
+
+        RunResult facts = await ApplyAsync(simulationId, run =>
+        {
+            OtcOffer offer = run.Otc.Offers.FirstOrDefault(candidate => candidate.Id == offerId)
+                ?? throw new KeyNotFoundException($"This market has no offer {offerId}.");
+            RequireOwner(company, offer.Seller);
+
+            return run.Module.WithdrawOffer(offer.Seller, offerId);
+        }).ConfigureAwait(false);
+
+        OtcOffer withdrawn = facts.Offer
+            ?? throw new InvalidOperationException("The OTC market did not report the offer it withdrew.");
+
+        await _hub.Clients.Group(Group(simulationId)).OtcOfferResolved(withdrawn.Id, withdrawn.State.ToString()).ConfigureAwait(false);
     }
 
     /// <summary>Answers an offer and tells its watchers how it was resolved.</summary>

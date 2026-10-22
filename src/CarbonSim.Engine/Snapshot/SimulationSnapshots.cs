@@ -292,7 +292,11 @@ public static class SimulationSnapshots
             parameters.VolatilityBand,
             parameters.OverdraftInterestRate,
             parameters.GovernmentReserveToAuctionPercent,
-            parameters.ForwardVintageShare);
+            parameters.ForwardVintageShare,
+            parameters.ExchangeAccess,
+            parameters.OtcAccess,
+            parameters.LeaderboardVisible,
+            parameters.AiTradeAssistance);
     }
 
     private static Parameters Rebuild(ParametersSnapshot snapshot)
@@ -323,6 +327,10 @@ public static class SimulationSnapshots
             OverdraftInterestRate = snapshot.OverdraftInterestRate,
             GovernmentReserveToAuctionPercent = snapshot.GovernmentReserveToAuctionPercent,
             ForwardVintageShare = snapshot.ForwardVintageShare,
+            ExchangeAccess = snapshot.ExchangeAccess,
+            OtcAccess = snapshot.OtcAccess,
+            LeaderboardVisible = snapshot.LeaderboardVisible,
+            AiTradeAssistance = snapshot.AiTradeAssistance,
         };
     }
 
@@ -335,7 +343,8 @@ public static class SimulationSnapshots
                 unit.Id,
                 plan.BausGrowthFor(unit),
                 [.. plan.Years.Select(year => plan.FreeAllocationFor(unit, year))],
-                [.. plan.Years.Select(year => plan.BausEmissionsFor(unit, year))]))]);
+                [.. plan.Years.Select(year => plan.BausEmissionsFor(unit, year))],
+                [.. plan.Years.Select(year => plan.OffsetSupplyFor(unit, year))]))]);
     }
 
     private static AbatementPortfolioSnapshot CaptureAbatements(

@@ -26,8 +26,9 @@ if you read Vietnamese.
 ## 2. How a year runs
 
 A virtual year lasts about 20 minutes of real time (the trainer can shorten it). It has four
-sections. Each section ends with a sealed-bid auction window. The progress strip under the top bar
-shows the year, the auction and the countdowns. At the end of the year the trainer halts trading
+sections, one quarter of the virtual calendar each. Each section opens with a sealed-bid auction
+window. The top bar shows the virtual date; the progress strip under it shows the year, the auction
+and the countdowns, and counts down to a halt when the trainer gives warning. At the end of the year the trainer halts trading
 and closes the year. That is when your company surrenders allowances against its emissions, and
 any shortfall is charged a penalty.
 
@@ -79,11 +80,10 @@ Sign in with the trainer account the operator gives you, then open the console a
 
 ## 6. Known limits (deliberate, please do not file these)
 
-- **Many companies end up short in year 3.** With the shipped calibration only about 40% of
-  company-years comply (294 of 726 in the seeded run), and most units pay a penalty in the last
-  year. The cap falls 3% a year while emissions grow, and the scenario cannot supply enough
-  allowances and offsets to close that gap while also keeping prices rising. This is a calibration
-  choice we have measured and documented, not a bug in the settlement.
+- **Some companies end up short in year 3.** With the shipped calibration about 67% of
+  company-years comply (485 of 726 in the seeded run), and most penalties fall in the last year.
+  The cap falls 3% a year while emissions grow. This is a calibration choice we have measured and
+  documented, not a bug in the settlement.
 - **The exchange has few sellers.** Most companies are short every year, so only a couple of dozen
   AI companies ever offer allowances. Expect plenty of bids and a thin offer side.
 - **A mid-run shock moves only the price collar.** The trainer can move the floor and ceiling
@@ -91,8 +91,11 @@ Sign in with the trainer account the operator gives you, then open the console a
 - **A restart goes back to the start of the year.** The server saves an exercise when it is created
   and at each year end. If the host goes down mid-year, the trainer loads the exercise back from
   the last year end and that year is played again.
-- **AI companies wait a moment before quoting.** They first trade 5-15% of the way into the year,
-  so the book is empty for the first minute or two.
+- **AI companies wait for the first auction before quoting.** They first trade 12-20% of the way
+  into the year, just after the year's first auction has cleared, so the exchange book is empty
+  for the first few minutes.
+- **A halt cancels resting orders and OTC offers.** When the trainer halts trading, your open
+  orders and unanswered offers are cancelled and what they had set aside comes back to you.
 
 ## 7. Reporting a problem
 

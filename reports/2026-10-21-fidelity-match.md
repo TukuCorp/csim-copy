@@ -70,6 +70,73 @@ leaderboard visibility), mid-run cap and free-share shocks, manual surrender and
 trading systems, direct messages and transfers between a company's units. Each is a feature, not a
 mismatch in what the clone already does; they are listed in the audits for a later pass.
 
-## Results
+## Results (2026-10-22)
 
-(filled in as each batch lands)
+Gate: build 0 warnings, `dotnet format` clean, Engine 312 passed + 3 skipped, Data 18, Web 231 + 1
+skipped. Each behaviour change has a test that failed first, except the two noted below. Four
+migrations: `TradeTimeInYear`, `PartYearAbatement`, `ScenarioOffsetSupply`, `ExerciseSwitches`
+(each adds or widens columns; older saves load with the new fields at their neutral values).
+
+| # | Gap | Done |
+|---|---|---|
+| 1 | Halt cancels orders and offers | `SimulationRun` cancels every resting order and pending OTC offer on a trading halt; the year end reconciles on everything held |
+| 2 | Escrowed offsets in the position | `Standing.OffsetsUsable` counts escrowed offsets, as in FAQ #18's worked example |
+| 3 | Short companies cannot win | `LeaderboardEntry.InCompliance`; compliant companies rank first |
+| 4 | Bot abatement horizon | bots skip a project that would finish after the run (counted from the point in the year) |
+| 5 | Bot double offset buy | the late pass pulls its early offset bid before bidding again |
+| 6 | Collar moves the exchange | the collar bounds the auctions only; `OrderBook.FollowRules` and the released-orders count removed |
+| 7 | Auction window position | the window opens at the start of each section |
+| 8 | Forward vintages | every auction of a year sells part of the next vintage (bots do not bid on them yet; see Open) |
+| 9 | Fractional builds | build times are fractional and run from the moment of purchase; a part year gets its share of the reduction and revenue |
+| 10 | System report rows | one shared builder for System info and Reports, on the original's rows |
+| 11 | Price report volume | headed "all channels" |
+| 12 | Leaderboard player | the account's display name on both leaderboards, one label shape |
+| 13 | Cost columns' period | headed "(this year)" |
+| 14 | Halt warning | a countdown banner on every player screen |
+| 15 | Alerts | an alert on any screen when an auction clears or an OTC offer arrives |
+| 16 | In-year chart | trades carry their point in the year; one candle per virtual month |
+| 17 | Pending bids | listed on the auction page, each cancellable while the window is open |
+| 18 | Virtual date | on the top bar, a quarter per section |
+| A9 | Offset supply in the scenario | per-unit `offsetSupplyShare`, granted with each year's allocation; the shipped scenario gives 2%, and 12% to one company in ten |
+
+Tests written in the same step as the fix, so their failing run was not seen: the system report
+rows and the leaderboard player name.
+
+Calibration (batch 4), measured on the seeded run (Normal difficulty) after the changes above, with
+the abatement menus re-authored in the original's shape (four rungs, builds from a quarter year to
+two years, two rungs under the floor) and bots that bid the full remainder in the last auction and
+round their need up:
+
+| Envelope (brief section 6) | Before this pass | Now | Source figure |
+|---|---|---|---|
+| Year-1 auction at or near the floor | 100.00 | 137.90 (skipped) | demo year 1: 123.55, every lot sold |
+| Year 3 towards the ceiling (at least 200) | 255.97 | 268.66 | |
+| Offsets at a 5-25% discount | 9.0% (run-wide) | 12.8% same-year exchange | FAQ #17: 5-50%, the AI sometimes at a premium |
+| Later vintages above earlier | holds | holds | |
+| Year-1 abatement about 1% of the cap | 1.00% (committed) | 0.71% delivered | demo 0.83% |
+| Offsets surrendered 2-3% of the cap | 7.18% (skipped) | 2.99% | demo 2.61% |
+| Leaderboard spread +5 to +40 | -62.64 to 39.72 | -79.91 to 122.04 (skipped) | |
+| Every bot complies | 294 of 726 (skipped) | 485 of 726 (skipped) | Mexico 74-84% |
+
+Two measurement corrections: year-1 abatement is what abatement took off year 1 (the brief's
+"volume in year 1", as the demo reports it), not the yearly tonnes of every project bought in year 1;
+and the offset discount compares offsets with the same year's current vintage on the exchange, not
+the run-wide average of every allowance trade. Calibration stopped here on purpose: the remaining
+misses are choices between the brief's bands and what the original shows, which is the owner's call.
+
+### Open
+
+- **Decision: the envelopes.** Hold the brief's year-1 band (100-110) and full compliance, or
+  re-ground them on the sources (year 1 at 100-130 from the demo's 123.55; compliance at least 74%
+  from Mexico), as audit C proposes. The year-3 "at least 200" check has no source either.
+- **Bots and forward lots.** Forward vintages are on sale in every auction, but bots do not bid on
+  them (audit C, C4); the vintage premium comes from the clearing path, not from forward demand.
+- **Year-3 shortfall.** 14.6 Mt short while 23.4 Mt is left banked by long companies at the run's end.
+- **Not in this pass** (features rather than mismatches): manual surrender and banking; banking
+  override; mid-run cap and free-share shocks; multiple trading systems; direct messages; transfers
+  between a company's units.
+- The administrator switches the spec lists for a phased exercise are built (exchange access, OTC
+  access, leaderboard visibility, AI trade assistance, pause after each auction); see
+  activeContext.md, the 2026-10-22 section.
+- An automated "auto backup" commit (46ec7c5, 2026-10-22 05:03) pushed part of this work to
+  `origin/main` mid-session, before the suites were green.

@@ -354,6 +354,14 @@ public sealed class SimulationRun
         return Collect() with { Offer = offer };
     }
 
+    /// <summary>The seller withdraws an offer that has not been answered; allowed in any state.</summary>
+    public RunResult WithdrawOffer(Unit seller, long offerId)
+    {
+        OtcOffer offer = Otc.Cancel(seller, offerId);
+
+        return Collect() with { Offer = offer };
+    }
+
     /// <summary>
     /// What the feed owes, without changing the run. A host-only change - a chat message, a save -
     /// still owes the watchers whatever the last operation left unsaid, and this is how it asks.

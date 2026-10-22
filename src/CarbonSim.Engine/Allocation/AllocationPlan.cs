@@ -22,6 +22,7 @@ public sealed class AllocationPlan
     private readonly decimal[] _freeAllocation;
     private readonly Dictionary<int, decimal[]> _allocationByUnit;
     private readonly Dictionary<int, decimal[]> _bauByUnit;
+    private readonly Dictionary<int, decimal[]> _offsetsByUnit;
     private readonly Dictionary<int, decimal> _growthByUnit;
 
     internal AllocationPlan(Simulation simulation)
@@ -35,6 +36,7 @@ public sealed class AllocationPlan
         _freeAllocation = new decimal[parameters.Years];
         _allocationByUnit = [];
         _bauByUnit = [];
+        _offsetsByUnit = [];
         _growthByUnit = [];
 
         Dictionary<string, SectorBausGrowth> growthBySector = parameters.BausGrowthBySector
@@ -83,6 +85,7 @@ public sealed class AllocationPlan
                     Unit unit = units[unitIndex];
                     AllocationFor(unit, year)[year - 1] = unitCakes[unitIndex];
                     BausFor(unit, year)[year - 1] = Round(unit.BaselineEmissions * Pow(1m + _growthByUnit[unit.Id], year - 1));
+                    OffsetsFor(unit)[year - 1] = Round(BausFor(unit, year)[year - 1] * unit.OffsetSupplyShare);
                 }
             }
         }
@@ -115,6 +118,22 @@ public sealed class AllocationPlan
         YearIndex(year);
 
         return company.Units.Sum(unit => FreeAllocationFor(unit, year));
+    }
+
+    /// <summary>The offsets a unit is handed in a year with its free allocation.</summary>
+    public decimal OffsetSupplyFor(Unit unit, int year)
+    {
+        ArgumentNullException.ThrowIfNull(unit);
+
+        return OffsetsFor(unit)[YearIndex(year)];
+    }
+
+    public decimal OffsetSupplyFor(Company company, int year)
+    {
+        ArgumentNullException.ThrowIfNull(company);
+        YearIndex(year);
+
+        return company.Units.Sum(unit => OffsetSupplyFor(unit, year));
     }
 
     /// <summary>The unit's business-as-usual emissions in a year, grown from its baseline.</summary>
@@ -203,6 +222,7 @@ public sealed class AllocationPlan
 
         _allocationByUnit.Clear();
         _bauByUnit.Clear();
+        _offsetsByUnit.Clear();
         _growthByUnit.Clear();
 
         foreach (UnitAllocationSnapshot unit in snapshot.Units)
@@ -217,6 +237,8 @@ public sealed class AllocationPlan
             _growthByUnit[unit.UnitId] = unit.BausGrowth;
             _allocationByUnit[unit.UnitId] = [.. unit.FreeAllocation];
             _bauByUnit[unit.UnitId] = [.. unit.BausEmissions];
+            // A save from before the scenario carried an offset supply had none.
+            _offsetsByUnit[unit.UnitId] = unit.OffsetSupply is { Count: > 0 } offsets ? [.. offsets] : new decimal[_caps.Length];
         }
     }
 
@@ -244,6 +266,17 @@ public sealed class AllocationPlan
         }
 
         return bau;
+    }
+
+    private decimal[] OffsetsFor(Unit unit)
+    {
+        if (!_offsetsByUnit.TryGetValue(unit.Id, out decimal[]? offsets))
+        {
+            offsets = new decimal[Years.Count];
+            _offsetsByUnit[unit.Id] = offsets;
+        }
+
+        return offsets;
     }
 
     private int YearIndex(int year)

@@ -460,4 +460,22 @@ public sealed class ExchangeTests
         simulation.Cash.Escrowed(buyer).Should().Be(0m);
         simulation.Ledger.Available(buyer, Vintage1).Should().Be(1m);
     }
+
+    [Fact]
+    public void A_vintage_first_traded_on_the_exchange_is_banded_around_its_auction_clearing()
+    {
+        // The volatility band is set by the last trade of the product (FAQ #16), and an auction sale
+        // is a trade: a vintage the auction sold at 150 opens on the exchange around 150, not the floor.
+        Simulation simulation = TestSimulation.Build();
+        TestSimulation.Running(simulation);
+        AuctionSchedule schedule = AuctionSchedule.Build(simulation);
+        Auction auction = schedule.ForSection(1, 1);
+        auction.PlaceBid(simulation.FindUnit(1), 1, 150m, auction.Lots[0].Volume);
+        auction.PlaceBid(simulation.FindUnit(4), 1, 150m, auction.Lots[0].Volume);
+        auction.Clear();
+        Exchange exchange = new(simulation);
+
+        exchange.BandFor(Vintage1).Should().Be((135m, 165m));
+        exchange.Book(Vintage1).LastTradePrice.Should().Be(150m);
+    }
 }

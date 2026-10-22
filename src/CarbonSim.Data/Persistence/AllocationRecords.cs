@@ -38,6 +38,9 @@ public sealed class UnitAllocationYearRecord
     public decimal FreeAllocation { get; set; }
 
     public decimal BausEmissions { get; set; }
+
+    /// <summary>Offsets the unit is handed that year; zero for rows saved before the supply was kept.</summary>
+    public decimal OffsetSupply { get; set; }
 }
 
 /// <summary>

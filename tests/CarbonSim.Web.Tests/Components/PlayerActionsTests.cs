@@ -41,6 +41,46 @@ public sealed class PlayerActionsTests : ScreenTestContext
     }
 
     [Fact]
+    public void Where_the_trainer_allows_it_a_player_puts_a_unit_on_autotrade_from_company_management()
+    {
+        View = View with { System = View.System with { AiTradeAssistance = true } };
+
+        IRenderedComponent<CompanyManagement> page = RenderComponent<CompanyManagement>(parameters => parameters
+            .AddCascadingValue(Snapshot)
+            .Add(component => component.SimulationId, SimulationId));
+
+        page.Find("#autotrade button").Click();
+
+        Session.Actions.Should().ContainSingle().Which.Should().StartWith($"autotrade:{View.Units[0].Id}:");
+    }
+
+    [Fact]
+    public void Without_the_trainers_permission_company_management_offers_no_autotrade_control()
+    {
+        IRenderedComponent<CompanyManagement> page = RenderComponent<CompanyManagement>(parameters => parameters
+            .AddCascadingValue(Snapshot)
+            .Add(component => component.SimulationId, SimulationId));
+
+        page.FindAll("#autotrade").Should().BeEmpty();
+    }
+
+    [Fact]
+    public void A_seller_withdraws_a_pending_offer_from_the_otc_screen()
+    {
+        // Catalog "CancelOffer" / "Offer cancelled": the seller can take an offer back before it is answered.
+        OtcOfferView mine = new(17, "Phu My 1", "Song Xanh", "Red River Power", "AI Power 1", ProductView.Allowance(1), 100m, 1_000m, 100_000m, "Pending", false, true);
+        View = View with { MyOffers = [mine] };
+
+        IRenderedComponent<Otc> page = RenderComponent<Otc>(parameters => parameters
+            .AddCascadingValue(Snapshot)
+            .Add(component => component.SimulationId, SimulationId));
+
+        page.Find("#my-offers button").Click();
+
+        Session.Actions.Should().ContainSingle().Which.Should().Be("otc-cancel:17");
+    }
+
+    [Fact]
     public void A_pending_bid_is_listed_with_a_control_that_cancels_it()
     {
         // The original lists each bid in progress (vintage, price, volume) and offers "Cancel bid".

@@ -13,7 +13,8 @@ public sealed class Unit
         decimal baselineEmissions,
         IReadOnlyList<AbatementOption>? abatementOptions = null,
         decimal normalOperatingProfit = 0m,
-        decimal allocationFactor = 1m)
+        decimal allocationFactor = 1m,
+        decimal offsetSupplyShare = 0m)
     {
         if (string.IsNullOrWhiteSpace(name))
         {
@@ -38,6 +39,14 @@ public sealed class Unit
                 "A unit's allocation factor has to be greater than zero.");
         }
 
+        if (offsetSupplyShare < 0m)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(offsetSupplyShare),
+                offsetSupplyShare,
+                "A unit's offset supply cannot be negative.");
+        }
+
         Id = id;
         Name = name.Trim();
         Company = company;
@@ -45,6 +54,7 @@ public sealed class Unit
         AbatementOptions = abatementOptions ?? [];
         NormalOperatingProfit = normalOperatingProfit;
         AllocationFactor = allocationFactor;
+        OffsetSupplyShare = offsetSupplyShare;
     }
 
     public int Id { get; }
@@ -68,6 +78,13 @@ public sealed class Unit
     /// is short by the same fraction and nobody has anything to sell.
     /// </summary>
     public decimal AllocationFactor { get; }
+
+    /// <summary>
+    /// The share of its business-as-usual emissions the unit is handed in offsets each year, with
+    /// its free allocation: the scenario's offset supply. A unit above the offset usage limit is an
+    /// offset provider, holding more than it may surrender and selling the rest.
+    /// </summary>
+    public decimal OffsetSupplyShare { get; }
 
     /// <summary>Abatement projects this unit may implement, cheapest first is not guaranteed.</summary>
     public IReadOnlyList<AbatementOption> AbatementOptions { get; }

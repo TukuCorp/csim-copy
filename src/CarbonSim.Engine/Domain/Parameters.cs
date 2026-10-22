@@ -95,6 +95,32 @@ public sealed record Parameters
     public decimal ForwardVintageShare { get; init; } = DefaultForwardVintageShare;
 
     /// <summary>
+    /// Whether players may use the exchange at all - the spec's administrative switch "Exchange
+    /// market access: yes or no", for an exercise that introduces the markets in phases. Settable by
+    /// the run (internally), like the collar, so an administrator can open a market between phases.
+    /// </summary>
+    public bool ExchangeAccess { get; internal set; } = true;
+
+    /// <summary>Whether players may make and accept OTC offers ("OTC market access: yes or no").</summary>
+    public bool OtcAccess { get; internal set; } = true;
+
+    /// <summary>Whether players see the leaderboard ("Leaderboard: visible to players or not").</summary>
+    public bool LeaderboardVisible { get; internal set; } = true;
+
+    /// <summary>
+    /// Whether players may put their own units on AutoTrade (the spec's "AI trade assistance";
+    /// FAQ #7: "when enabled by the sim-administrator"). The trainer can switch any unit regardless.
+    /// </summary>
+    public bool AiTradeAssistance { get; internal set; }
+
+    /// <summary>
+    /// The scenario's request that the clock stop after every auction until the trainer resumes it
+    /// (the spec's "pause after each"). A new run's clock takes it as its option; a saved run keeps
+    /// the option with its clock, so this is read once, when the run is built.
+    /// </summary>
+    public bool PauseAfterAuction { get; init; }
+
+    /// <summary>
     /// Returns one message per value that cannot be run, so an administrator sees every
     /// problem with a scenario in a single pass. Empty means the parameters are usable.
     /// </summary>

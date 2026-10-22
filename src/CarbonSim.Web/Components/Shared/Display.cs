@@ -94,7 +94,12 @@ public static class Display
 
     /// <summary>A shut trading window, named in the reader's language.</summary>
     public static string Refusal(TradeRefusal refusal, IStringLocalizer<SharedStrings> strings) =>
-        strings[refusal == TradeRefusal.AuctionClosed ? "AuctionIsClosed" : "TradingIsHalted"];
+        strings[refusal switch
+        {
+            TradeRefusal.AuctionClosed => "AuctionIsClosed",
+            TradeRefusal.MarketClosed => "MarketIsClosed",
+            _ => "TradingIsHalted",
+        }];
 
     /// <summary>
     /// Why the market refused an order: the reader's own words for a shut window, and the market's

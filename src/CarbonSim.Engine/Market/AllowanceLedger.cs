@@ -93,6 +93,13 @@ public sealed class AllowanceLedger
             {
                 Grant(company, Product.Allowance(year), entitlement);
             }
+
+            decimal offsets = _simulation.Allocation.OffsetSupplyFor(company, year);
+
+            if (offsets > 0m)
+            {
+                Grant(company, Product.Offset, offsets);
+            }
         }
     }
 

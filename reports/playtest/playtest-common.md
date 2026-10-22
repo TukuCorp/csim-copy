@@ -23,8 +23,8 @@ Known quirks (not bugs to report):
   re-render before it is committed. If that happens, set it with `eval`: assign `.value` and dispatch
   a `change` event (and `input` for range sliders), then click the button in the same `eval`.
 - The bid volume input has id `bid-volume`; the bid price is an `input[type=range]` (floor to ceiling).
-- An auction window is open only in the second half of each section of the year; "Place bid" is
-  disabled outside it. Poll the snapshot every few seconds until it is enabled.
+- An auction window is open only at the start of each section of the year (the first 45%); "Place
+  bid" is disabled outside it. Poll the snapshot every few seconds until it is enabled.
 - uids change after every snapshot; always use uids from the latest snapshot.
 
 ## What to report

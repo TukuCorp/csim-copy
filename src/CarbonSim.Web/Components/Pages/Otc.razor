@@ -11,6 +11,10 @@
 }
 else
 {
+    @if (!view.System.OtcAccess)
+    {
+        <p class="notice notice-status market-closed" role="status">@Strings["OtcNotOpen"]</p>
+    }
     <div class="cards">
         <section class="card">
             <h2>@Strings["SendOfferToSell"]</h2>
@@ -97,6 +101,12 @@ else
                     <TemplateColumn Title="@Strings["Volume"]" Context="row">@Display.Tonnes(row.Volume)</TemplateColumn>
                     <TemplateColumn Title="@Strings["Price"]" Context="row">@Display.Price(row.Price)</TemplateColumn>
                     <TemplateColumn Title="@Strings["State"]" Context="row">@row.State</TemplateColumn>
+                    <TemplateColumn Title="" Context="row">
+                        @if (row.State == "Pending")
+                        {
+                            <button class="button small-button ghost" @onclick="() => CancelAsync(row)">@Strings["CancelOffer"]</button>
+                        }
+                    </TemplateColumn>
                 </QuickGrid>
             </div>
         }
@@ -167,4 +177,7 @@ else
 
         return Context.ActAsync(session => session.AnswerOtcOfferAsync(SimulationId, unitId, offer.Id, accept), Strings["SendOffer"]);
     }
+
+    private Task CancelAsync(OtcOfferView offer) =>
+        Context.ActAsync(session => session.CancelOtcOfferAsync(SimulationId, offer.Id), Strings["CancelOffer"]);
 }
