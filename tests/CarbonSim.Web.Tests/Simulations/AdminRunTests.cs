@@ -1,3 +1,4 @@
+using CarbonSim.Engine.Bots;
 using CarbonSim.Engine.Domain;
 using CarbonSim.Engine.Market;
 using CarbonSim.Engine.Reporting;
@@ -185,6 +186,69 @@ public sealed class AdminRunTests : IClassFixture<SimulationTestHost>
 
         await load.Should().ThrowAsync<InvalidOperationException>("the saved copy is older than the run being played");
         runs.Run(created).Should().BeSameAs(live);
+    }
+
+    [Fact]
+    public async Task A_trainer_announcement_reaches_the_room_even_with_player_messaging_off()
+    {
+        Guid id = StartRun(108);
+        SimulationClockService driver = _host.CreateDriver();
+
+        await driver.StartAsync(id);
+        await driver.SetMessagingAsync(id, enabled: false);
+        await driver.AnnounceAsync(id, "  Auction 2 opens in five minutes ", toCompany: null);
+        await driver.AnnounceAsync(id, "Your bid was late", TestRunFactory.RedRiverCompany);
+
+        Run(id).Chat.Should().HaveCount(2);
+        Run(id).Chat[0].Should().Be(new ChatEntry(1, "Administrator", "Auction 2 opens in five minutes"));
+        Run(id).Chat[1].Should().Be(new ChatEntry(1, "Administrator", "Your bid was late", TestRunFactory.RedRiverCompany));
+    }
+
+    [Fact]
+    public async Task An_announcement_to_a_company_the_run_does_not_have_is_refused()
+    {
+        Guid id = StartRun(109);
+        SimulationClockService driver = _host.CreateDriver();
+
+        Func<Task> announce = () => driver.AnnounceAsync(id, "hello", "No Such Company");
+
+        await announce.Should().ThrowAsync<InvalidOperationException>();
+        Run(id).Chat.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task A_run_created_at_hard_adds_its_autotrade_bots_at_hard()
+    {
+        SimulationClockService driver = _host.CreateDriver();
+        string json = TestRunFactory.ScenarioJson
+            .Replace("\"seed\": 7", "\"seed\": 7302", StringComparison.Ordinal)
+            .Replace("\"forwardVintageShare\":", "\"aiDifficulty\": \"hard\", \"forwardVintageShare\":", StringComparison.Ordinal);
+        Guid created = await driver.CreateRunAsync(json, "admin-difficulty-check");
+        HostedRun run = Run(created);
+
+        await driver.SetAutoTradeAsync(created, run.Simulation.Units[0].Id, enabled: true);
+
+        run.Simulation.Rules.AiDifficulty.Should().Be(BotDifficulty.Hard);
+        run.Bots!.Bots.Should().ContainSingle().Which.Settings.Difficulty.Should().Be(BotDifficulty.Hard);
+    }
+
+    [Fact]
+    public async Task The_trainer_can_close_and_reopen_a_market_inside_a_running_year()
+    {
+        Guid id = StartRun(110);
+        SimulationClockService driver = _host.CreateDriver();
+
+        await driver.StartAsync(id);
+        await driver.SetMarketAccessAsync(id, exchange: false, otc: null, leaderboard: false);
+
+        Run(id).Simulation.Rules.ExchangeAccess.Should().BeFalse();
+        Run(id).Simulation.Rules.OtcAccess.Should().BeTrue("a switch left out stays as it was");
+        Run(id).Simulation.Rules.LeaderboardVisible.Should().BeFalse();
+
+        await driver.SetMarketAccessAsync(id, exchange: true, otc: null, leaderboard: null);
+
+        Run(id).Simulation.Rules.ExchangeAccess.Should().BeTrue();
+        Run(id).Simulation.State.Should().Be(SimulationState.Running, "switching a market does not touch the clock");
     }
 
     private SimulationRegistry Registry() => _host.Server.Services.GetRequiredService<SimulationRegistry>();

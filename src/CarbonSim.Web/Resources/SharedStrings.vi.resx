@@ -426,4 +426,17 @@
   <data name="AutoTradeOn" xml:space="preserve"><value>Chuyển sang AutoTrade</value></data>
   <data name="AutoTradeOff" xml:space="preserve"><value>Tắt AutoTrade</value></data>
   <data name="CancelOffer" xml:space="preserve"><value>Rút chào bán</value></data>
+  <data name="AIDifficulty" xml:space="preserve"><value>Độ khó của bot AI</value></data>
+  <data name="AiDifficultyEasy" xml:space="preserve"><value>Dễ</value></data>
+  <data name="AiDifficultyNormal" xml:space="preserve"><value>Trung bình</value></data>
+  <data name="AiDifficultyHard" xml:space="preserve"><value>Khó</value></data>
+  <data name="CreditLimit" xml:space="preserve"><value>Hạn mức tín dụng</value></data>
+  <data name="AdminCompanyName" xml:space="preserve"><value>Tên công ty</value></data>
+  <data name="AdminApplyToAll" xml:space="preserve"><value>Áp dụng các số này cho mọi công ty</value></data>
+  <data name="AdminAnnouncement" xml:space="preserve"><value>Thông báo tới người chơi</value></data>
+  <data name="AdminAnnounceTo" xml:space="preserve"><value>Gửi tới</value></data>
+  <data name="AdminEveryone" xml:space="preserve"><value>Tất cả người chơi</value></data>
+  <data name="AdminAnnounced" xml:space="preserve"><value>Đã gửi thông báo.</value></data>
+  <data name="VirtualDate" xml:space="preserve"><value>Ngày trong năm</value></data>
+  <data name="AdminAccessSaved" xml:space="preserve"><value>Đã lưu quyền truy cập thị trường.</value></data>
 </root>

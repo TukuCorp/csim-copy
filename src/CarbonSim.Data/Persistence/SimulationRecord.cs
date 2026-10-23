@@ -1,3 +1,4 @@
+using CarbonSim.Engine.Bots;
 using CarbonSim.Engine.Domain;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -92,6 +93,9 @@ public sealed class ParametersRecord
 
     /// <summary>Whether players may put their own units on AutoTrade.</summary>
     public bool AiTradeAssistance { get; set; }
+
+    /// <summary>How sharp the exercise's bots are; a bot added mid-run plays at it.</summary>
+    public BotDifficulty AiDifficulty { get; set; } = BotDifficulty.Normal;
 
     public decimal OverdraftInterestRate { get; set; }
 }

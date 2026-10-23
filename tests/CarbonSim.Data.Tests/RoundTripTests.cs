@@ -1,4 +1,5 @@
 using CarbonSim.Data.Persistence;
+using CarbonSim.Engine.Bots;
 using CarbonSim.Engine.Domain;
 using CarbonSim.Engine.Market;
 using CarbonSim.Engine.Reporting;
@@ -83,6 +84,26 @@ public sealed class RoundTripTests
         // Capturing what was restored has to produce the snapshot that was saved. Collection
         // order is not compared, so this is about the content of every table.
         recaptured.Should().BeEquivalentTo(saved);
+    }
+
+    [Fact]
+    public async Task The_exercise_ai_difficulty_survives_the_trip()
+    {
+        using SqliteTestDatabase database = new();
+        TrainingRun run = TrainingRun.Start(Scenario);
+        SimulationSnapshot captured = SimulationSnapshots.Capture(
+            run.Simulation, run.Clock, run.Exchange, run.Otc, run.Auctions, run.Bots);
+        SimulationSnapshot saved = captured with
+        {
+            TradingSystem = captured.TradingSystem with
+            {
+                Parameters = captured.TradingSystem.Parameters with { AiDifficulty = BotDifficulty.Hard },
+            },
+        };
+
+        SimulationSnapshot loaded = await SaveAndLoad(database, saved);
+
+        loaded.TradingSystem.Parameters.AiDifficulty.Should().Be(BotDifficulty.Hard);
     }
 
     [Fact]

@@ -125,8 +125,15 @@ migration set is SQLite-only; PostgreSQL builds from the model.
 
 **One trading system per simulation**, as the snapshot and the registry both assume.
 
-**A mid-run shock moves only the price collar.** The cap, allocation and auction lots are fixed when
-an exercise is built.
+**Admin setup covers the exercise, not the roster.** The setup screen edits the rules, the AI
+difficulty, each company's name, capital and credit limit, the sectors and their menus. Adding or
+deleting companies and units, per-sector free allocation, a per-vintage schedule of sales and setup
+import/export still come from the scenario JSON (audit B #33-#36, #40).
+
+**A mid-run change moves only the price collar and the market switches.** The trainer can move the
+collar and open or close the exchange, the OTC market and the leaderboard inside a year
+(`SimulationRun.SetMarketAccess`); the cap, allocation and auction lots are fixed when an exercise is
+built.
 
 ## 6. Prioritised next steps
 

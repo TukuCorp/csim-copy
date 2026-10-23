@@ -270,6 +270,36 @@ public sealed class SimulationRunTests
     }
 
     [Fact]
+    public void Closing_the_exchange_mid_year_cancels_its_resting_orders_and_refuses_new_ones_until_it_reopens()
+    {
+        (SimulationRun run, _) = Started();
+        Product vintage1 = Product.Allowance(1);
+        Company seller = run.Simulation.FindCompany(1);
+        run.Simulation.Ledger.Grant(seller, vintage1, 1_000m);
+        decimal held = run.Simulation.Ledger.Available(seller, vintage1);
+        OrderRequest sell = new(run.Simulation.FindUnit(1), vintage1, OrderSide.Sell, OrderKind.Limit, 300m, 105m);
+        Order order = run.PlaceOrder(sell).Order!;
+        OtcOffer offer = run.SendOffer(run.Simulation.FindUnit(1), run.Simulation.FindUnit(4), vintage1, 100m, 200m).Offer!;
+        int revision = run.Simulation.RulesRevision;
+
+        run.SetMarketAccess(exchange: false, otc: null, leaderboard: null);
+
+        order.Status.Should().Be(OrderStatus.Cancelled, "a market the trainer closes keeps nothing resting");
+        offer.State.Should().Be(OtcOfferState.Pending, "the OTC market was not touched");
+        run.Simulation.Rules.OtcAccess.Should().BeTrue();
+        run.Simulation.RulesRevision.Should().BeGreaterThan(revision, "the bots re-read the rules on their next pass");
+        run.Invoking(r => r.PlaceOrder(sell)).Should().Throw<TradeRefusedException>()
+            .Which.Refusal.Should().Be(TradeRefusal.MarketClosed);
+
+        run.SetMarketAccess(exchange: true, otc: false, leaderboard: false);
+
+        offer.State.Should().Be(OtcOfferState.Cancelled, "closing OTC cancels the offers waiting for an answer");
+        run.Simulation.Ledger.Available(seller, vintage1).Should().Be(held, "nothing stays set aside in a closed market");
+        run.Simulation.Rules.LeaderboardVisible.Should().BeFalse();
+        run.PlaceOrder(sell).Order!.Status.Should().Be(OrderStatus.Open, "a reopened exchange takes orders again");
+    }
+
+    [Fact]
     public void The_year_running_out_cancels_resting_orders_so_the_year_end_can_surrender_them()
     {
         (SimulationRun run, TestTimeProvider time) = Started();

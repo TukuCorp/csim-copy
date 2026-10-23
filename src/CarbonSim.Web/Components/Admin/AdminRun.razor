@@ -21,6 +21,7 @@ else
                 <div><dt>@Strings["AuctionNumber"]</dt><dd>@run.Auction / @run.AuctionsPerYear</dd></div>
                 @if (run.CountdownsApply)
                 {
+                    <div><dt>@Strings["VirtualDate"]</dt><dd id="admin-virtual-date">@Display.VirtualDate(run.Parameters.YearLength - run.TimeLeftInYear, run.Parameters.YearLength)</dd></div>
                     <div><dt>@Strings["AdminTimeLeftInYear"]</dt><dd>@Display.Duration(run.TimeLeftInYear)</dd></div>
                     <div><dt>@Strings["AdminAuctionOpensIn"]</dt><dd>@Display.Duration(run.TimeToAuctionOpen)</dd></div>
                     <div><dt>@Strings["AdminAuctionClosesIn"]</dt><dd>@Display.Duration(run.TimeToAuctionClose)</dd></div>
@@ -88,6 +89,50 @@ else
             @if (_messagingNotice is { } messaging)
             {
                 <p class="notice @(messaging.IsError ? "notice-error" : "notice-status")" role="status">@messaging.Text</p>
+            }
+
+            @* The phased exercise's switches, movable inside a year: closing a market cancels what is
+               resting in it, so the button is the whole story. *@
+            <p>
+                @Strings["AdminExchangeAccess"]:
+                <strong id="admin-exchange-state">@(run.ExchangeAccess ? Strings["AdminOn"] : Strings["AdminOff"])</strong>
+                <button class="button small-button" id="admin-exchange-toggle" @onclick="() => SetAccessAsync(exchange: !run.ExchangeAccess)">
+                    @(run.ExchangeAccess ? Strings["AdminSwitchOff"] : Strings["AdminSwitchOn"])
+                </button>
+            </p>
+            <p>
+                @Strings["AdminOtcAccess"]:
+                <strong id="admin-otc-state">@(run.OtcAccess ? Strings["AdminOn"] : Strings["AdminOff"])</strong>
+                <button class="button small-button" id="admin-otc-toggle" @onclick="() => SetAccessAsync(otc: !run.OtcAccess)">
+                    @(run.OtcAccess ? Strings["AdminSwitchOff"] : Strings["AdminSwitchOn"])
+                </button>
+            </p>
+            <p>
+                @Strings["AdminLeaderboardVisible"]:
+                <strong id="admin-leaderboard-state">@(run.LeaderboardVisible ? Strings["AdminOn"] : Strings["AdminOff"])</strong>
+                <button class="button small-button" id="admin-leaderboard-toggle" @onclick="() => SetAccessAsync(leaderboard: !run.LeaderboardVisible)">
+                    @(run.LeaderboardVisible ? Strings["AdminSwitchOff"] : Strings["AdminSwitchOn"])
+                </button>
+            </p>
+        </section>
+
+        <section class="card">
+            <h2>@Strings["AdminAnnouncement"]</h2>
+            <label for="announce-to">
+                @Strings["AdminAnnounceTo"]
+                <select id="announce-to" @bind="_announceTo">
+                    <option value="">@Strings["AdminEveryone"]</option>
+                    @foreach (AdminCompanyView company in run.Companies)
+                    {
+                        <option value="@company.Name">@company.Name</option>
+                    }
+                </select>
+            </label>
+            <label for="announce-text">@Strings["Message"]<textarea id="announce-text" rows="2" @bind="_announceText"></textarea></label>
+            <button class="button" id="admin-announce" disabled="@string.IsNullOrWhiteSpace(_announceText)" @onclick="AnnounceAsync">@Strings["Send"]</button>
+            @if (_announceNotice is { } announce)
+            {
+                <p class="notice @(announce.IsError ? "notice-error" : "notice-status")" role="status">@announce.Text</p>
             }
         </section>
 
@@ -269,6 +314,9 @@ else
 
     private double? _warnSeconds;
     private ConsoleNotice? _messagingNotice;
+    private ConsoleNotice? _announceNotice;
+    private string _announceTo = string.Empty;
+    private string _announceText = string.Empty;
     private ConsoleNotice? _fineNotice;
     private ConsoleNotice? _offsetNotice;
     private ConsoleNotice? _abatementNotice;
@@ -345,6 +393,30 @@ else
             session => session.SetMessagingAsync(SimulationId, !run.MessagingEnabled),
             Strings["AdminMessagingSaved"],
             notice => _messagingNotice = notice);
+
+    private Task SetAccessAsync(bool? exchange = null, bool? otc = null, bool? leaderboard = null) =>
+        ActAsync(
+            session => session.SetMarketAccessAsync(SimulationId, exchange, otc, leaderboard),
+            Strings["AdminAccessSaved"],
+            notice => _messagingNotice = notice);
+
+    private Task AnnounceAsync()
+    {
+        string text = _announceText.Trim();
+        string? to = _announceTo.Length == 0 ? null : _announceTo;
+
+        if (text.Length == 0)
+        {
+            return Task.CompletedTask;
+        }
+
+        _announceText = string.Empty;
+
+        return ActAsync(
+            session => session.AnnounceAsync(SimulationId, text, to),
+            Strings["AdminAnnounced"],
+            notice => _announceNotice = notice);
+    }
 
     private Task ToggleAutoTradeAsync(AdminUnitView unit) =>
         Context.ActAsync(session => session.SetAutoTradeAsync(SimulationId, unit.Id, !unit.AutoTrade));

@@ -86,8 +86,9 @@ Sign in with the trainer account the operator gives you, then open the console a
   documented, not a bug in the settlement.
 - **The exchange has few sellers.** Most companies are short every year, so only a couple of dozen
   AI companies ever offer allowances. Expect plenty of bids and a thin offer side.
-- **A mid-run shock moves only the price collar.** The trainer can move the floor and ceiling
-  during a year. The cap and allocation are fixed when the exercise is built.
+- **A mid-run change moves only the price collar and the market switches.** The trainer can move
+  the floor and ceiling, and open or close the exchange, the OTC market and the leaderboard, during
+  a year. The cap and allocation are fixed when the exercise is built.
 - **A restart goes back to the start of the year.** The server saves an exercise when it is created
   and at each year end. If the host goes down mid-year, the trainer loads the exercise back from
   the last year end and that year is played again.

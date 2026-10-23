@@ -1624,3 +1624,46 @@ trainer runbook, the tester guide, the handover notes and the fidelity report we
 it. The lesson is the one from the architecture pass: report a number only after reading it from
 the artefact the suite asserts on, not from an earlier run's notes.
 
+
+## Admin setup depth and trainer announcements (2026-10-23)
+
+User goal: "+5%" towards the original, then document, commit and push to main. Chosen as the
+cheapest points with no owner decision needed: admin-console gaps from audit B (#22, #23, #28, #30,
+#36) where the engine already has the rule or nearly so.
+
+- [x] AI difficulty as an exercise setting (audit B #30, cat `AIDifficulty`): scenario `aiDifficulty`, carried on `Parameters`, the snapshot and the EF record; the fleet is built and refreshed at it; a select on the setup screen
+- [x] Companies on the setup screen (audit B #28 starting capital and credit limit, #36 rename): a table of the draft's companies with name, capital and credit limit, plus "apply to all"
+- [x] Trainer announcements to players (audit B #23): the console posts into the run's messages under the trainer's name, also when player messaging is off
+- [x] Virtual date on the console's run header (audit B #22)
+- [x] Added after re-scoring: exchange, OTC and leaderboard switches the trainer can flip inside a running year (`SimulationRun.SetMarketAccess`; closing cancels what rests there)
+- [ ] Gate: build 0 warnings, format clean, full suite green; golden unchanged
+- [ ] Docs (runbook, handover), review section, commit, push main
+- [x] Gate: build 0 warnings, format clean, Engine 317 + 3 skipped, Data 19, Web 241 + 1 skipped (opt-in load run); Playwright real; golden unchanged (no file under Golden/ moved)
+- [x] Docs (runbook, tester guide, handover), review section, commit, push main; /verify verified 12 of 12 (.verify/admin-setup-and-switches.json)
+
+### Review
+
+Built, test-first at each layer:
+- **AI difficulty** is an exercise setting: `aiDifficulty` in the scenario (Easy/Normal/Hard, any case,
+  an unknown name refused), `Parameters.AiDifficulty`, the snapshot, the EF `Parameters` table
+  (migration `AiDifficulty`, existing rows default to Normal = 1, not Easy = 0, as EF generated). The
+  fleet is created at it, and `SimulationBots.Refresh` falls back to it when there is no fleet yet, so
+  a bot added by an AutoTrade switch no longer drops to Normal in a human-only exercise.
+- **Setup screen**: an AI difficulty select; a Companies table with each company's name, starting
+  capital and credit limit, plus a "give every company these figures" row.
+- **Trainer messages**: `SimulationClockService.AnnounceAsync` posts an "Administrator" line to the
+  room or to one named company (unknown company refused), whether or not player messaging is on;
+  only room lines go out on the hub group, as with the collar notices.
+- **Console header** shows the virtual date in the year.
+- **Market switches mid-run** (added after re-scoring): `SimulationRun.SetMarketAccess` opens or
+  closes the exchange, the OTC market and the leaderboard inside a year; closing cancels what rests
+  there and hands escrow back, bumps the rules revision; the console has three on/off rows and the
+  players' screens get a `ParametersChanged` push.
+
+Re-score (estimate, same method as the 2026-10-23 answer): admin console about 55% to about 63%
+(audit B #23 have; #22, #28, #30, #36 partial-plus), rules about 85% to 86%; overall about 70% to
+about 72-73%, short of the +5 asked. The earlier per-item gain table overstated overall points by
+quoting admin-area gains as overall gains.
+
+Not done: per-sector free allocation, schedule of sales by vintage, add/delete companies and units,
+the three open fidelity envelopes (need the owner's choice of target), bots on forward lots.

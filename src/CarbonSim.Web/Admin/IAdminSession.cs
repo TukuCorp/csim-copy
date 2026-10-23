@@ -44,6 +44,12 @@ public interface IAdminSession
 
     Task SetMessagingAsync(Guid simulationId, bool enabled, CancellationToken cancellationToken = default);
 
+    /// <summary>Opens or closes the exchange, the OTC market or the leaderboard mid-run; null leaves one as it is.</summary>
+    Task SetMarketAccessAsync(Guid simulationId, bool? exchange, bool? otc, bool? leaderboard, CancellationToken cancellationToken = default);
+
+    /// <summary>Posts the trainer's line to the room, or to one company when one is named.</summary>
+    Task AnnounceAsync(Guid simulationId, string text, string? toCompany, CancellationToken cancellationToken = default);
+
     Task IssueFineAsync(Guid simulationId, int unitId, decimal amount, string description, CancellationToken cancellationToken = default);
 
     Task DisburseOffsetsAsync(Guid simulationId, int companyId, decimal volume, CancellationToken cancellationToken = default);

@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text.Json;
+using CarbonSim.Engine.Bots;
 using CarbonSim.Engine.Domain;
 
 namespace CarbonSim.Engine.Scenarios;
@@ -130,6 +131,14 @@ public static class ScenarioLoader
             }
         }
 
+        BotDifficulty difficulty = BotDifficulty.Normal;
+
+        if (file.AiDifficulty is { } named
+            && (!Enum.TryParse(named.Trim(), ignoreCase: true, out difficulty) || !Enum.IsDefined(difficulty)))
+        {
+            problems.Add($"aiDifficulty must be Easy, Normal or Hard (got \"{named}\").");
+        }
+
         if (problems.Count > 0)
         {
             errors.AddRange(problems.Select(problem => $"{Prefix}: {problem}"));
@@ -161,6 +170,7 @@ public static class ScenarioLoader
             LeaderboardVisible = file.LeaderboardVisible ?? true,
             PauseAfterAuction = file.PauseAfterAuction ?? false,
             AiTradeAssistance = file.AiTradeAssistance ?? false,
+            AiDifficulty = difficulty,
         };
 
         errors.AddRange(parameters.Validate().Select(error => $"{Prefix}: {error}"));

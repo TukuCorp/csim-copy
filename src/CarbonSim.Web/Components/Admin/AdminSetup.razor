@@ -1,5 +1,6 @@
 @page "/admin/setup"
 @layout AdminLayout
+@using CarbonSim.Engine.Bots
 @using CarbonSim.Engine.Scenarios
 @inject IStringLocalizer<SharedStrings> Strings
 @inject IAdminSession Session
@@ -91,6 +92,17 @@ else
                     <dt><label for="setup-pause-after-auction">@Strings["AdminPauseAfterAuction"]</label></dt>
                     <dd><input id="setup-pause-after-auction" type="checkbox" checked="@(Draft.Parameters.PauseAfterAuction ?? false)" @onchange="e => Draft.Parameters.PauseAfterAuction = e.Value is true" /></dd>
                 </div>
+                <div>
+                    <dt><label for="setup-ai-difficulty">@Strings["AIDifficulty"]</label></dt>
+                    <dd>
+                        <select id="setup-ai-difficulty" value="@Difficulty(Draft.Parameters.AiDifficulty)" @onchange="e => Draft.Parameters.AiDifficulty = e.Value?.ToString()">
+                            @foreach (BotDifficulty level in Enum.GetValues<BotDifficulty>())
+                            {
+                                <option value="@level">@Strings["AiDifficulty" + level]</option>
+                            }
+                        </select>
+                    </dd>
+                </div>
                 <div><dt><label for="setup-years">@Strings["Year"]</label></dt><dd><input id="setup-years" type="text" inputmode="decimal" @bind="Draft.Parameters.Years" @bind:culture="CultureInfo.CurrentCulture" /></dd></div>
                 <div>
                     <dt><label for="setup-offset-limit">@Strings["OffsetUsageLimit"]</label></dt>
@@ -128,6 +140,39 @@ else
                     </dd>
                 </div>
             </dl>
+        </section>
+
+        <section class="card wide" tabindex="0">
+            <h2>@Strings["Companies"]</h2>
+            <div class="segments">
+                <label for="setup-all-capital">@Strings["Capital"]<input id="setup-all-capital" type="text" inputmode="decimal" @bind="_allCapital" @bind:culture="CultureInfo.CurrentCulture" /></label>
+                <label for="setup-all-credit">@Strings["CreditLimit"]<input id="setup-all-credit" type="text" inputmode="decimal" @bind="_allCredit" @bind:culture="CultureInfo.CurrentCulture" /></label>
+                <button class="button ghost small-button" id="setup-apply-to-all" @onclick="ApplyToAllCompanies">@Strings["AdminApplyToAll"]</button>
+            </div>
+            <table class="grid">
+                <thead>
+                    <tr>
+                        <th>@Strings["AdminCompanyName"]</th>
+                        <th>@Strings["Sector"]</th>
+                        <th>@Strings["Capital"]</th>
+                        <th>@Strings["CreditLimit"]</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @for (int c = 0; c < Draft.Companies.Count; c++)
+                    {
+                        DraftCompany company = Draft.Companies[c];
+                        string companyId = $"setup-company-{c}";
+
+                        <tr>
+                            <td><label class="sr-only" for="@(companyId + "-name")">@Strings["AdminCompanyName"]</label><input id="@(companyId + "-name")" type="text" @bind="company.Name" /></td>
+                            <td>@company.Sector</td>
+                            <td><label class="sr-only" for="@(companyId + "-capital")">@Strings["Capital"]</label><input id="@(companyId + "-capital")" type="text" inputmode="decimal" @bind="company.Capital" @bind:culture="CultureInfo.CurrentCulture" /></td>
+                            <td><label class="sr-only" for="@(companyId + "-credit")">@Strings["CreditLimit"]</label><input id="@(companyId + "-credit")" type="text" inputmode="decimal" @bind="company.OverdraftLimit" @bind:culture="CultureInfo.CurrentCulture" /></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
         </section>
 
         <section class="card wide" tabindex="0">
@@ -218,6 +263,8 @@ else
     private List<string> _errors = [];
     private bool _registrationOpen;
     private string _pin = string.Empty;
+    private decimal? _allCapital;
+    private decimal? _allCredit;
 
     private ScenarioDraft? Draft => _draft;
 
@@ -249,6 +296,22 @@ else
         if (decimal.TryParse(typed, NumberStyles.Number, CultureInfo.CurrentCulture, out decimal percent))
         {
             set(percent / 100m);
+        }
+    }
+
+    /// <summary>The level the select shows: a scenario that never names one plays at Normal.</summary>
+    private static string Difficulty(string? named) =>
+        Enum.TryParse(named, ignoreCase: true, out BotDifficulty level) && Enum.IsDefined(level)
+            ? level.ToString()
+            : nameof(BotDifficulty.Normal);
+
+    /// <summary>Gives every company the figures typed above the table; a box left empty changes nothing.</summary>
+    private void ApplyToAllCompanies()
+    {
+        foreach (DraftCompany company in Draft?.Companies ?? [])
+        {
+            company.Capital = _allCapital ?? company.Capital;
+            company.OverdraftLimit = _allCredit ?? company.OverdraftLimit;
         }
     }
 

@@ -1,3 +1,4 @@
+using CarbonSim.Engine.Bots;
 using CarbonSim.Engine.Domain;
 using CarbonSim.Engine.Market;
 
@@ -73,7 +74,8 @@ public sealed record ParametersSnapshot(
     bool ExchangeAccess = true,
     bool OtcAccess = true,
     bool LeaderboardVisible = true,
-    bool AiTradeAssistance = false);
+    bool AiTradeAssistance = false,
+    BotDifficulty AiDifficulty = BotDifficulty.Normal);
 
 /// <summary>The growth band a sector's business-as-usual emissions were drawn from.</summary>
 public sealed record SectorBausGrowthSnapshot(string Sector, decimal MinAnnualRate, decimal MaxAnnualRate);

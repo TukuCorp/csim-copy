@@ -175,6 +175,112 @@ public sealed class AdminActionsTests : AdminScreenTestContext
         off.Find("#admin-messaging-toggle").TextContent.Should().Contain(Localizer(Services)["AdminSwitchOn"].Value);
     }
 
+    [Fact]
+    public void The_setup_screen_sets_the_exercise_ai_difficulty()
+    {
+        Session.Draft = new ScenarioDraft { Name = "Draft", Sectors = [], Companies = [] };
+
+        IRenderedComponent<AdminSetup> page = RenderComponent<AdminSetup>();
+        page.Find("#setup-ai-difficulty").GetAttribute("value").Should().Be("Normal", "a scenario that never names it plays at Normal");
+        page.Find("#setup-ai-difficulty").Change("Hard");
+
+        Session.Draft.Parameters.AiDifficulty.Should().Be("Hard");
+    }
+
+    [Fact]
+    public void The_setup_screen_edits_each_companys_name_capital_and_credit_limit()
+    {
+        Session.Draft = new ScenarioDraft
+        {
+            Name = "Draft",
+            Sectors = [],
+            Companies =
+            [
+                new DraftCompany { Name = "Delta Power", Capital = 1_000_000m, OverdraftLimit = 100_000m },
+                new DraftCompany { Name = "Red River Power", Capital = 2_000_000m, OverdraftLimit = 200_000m },
+            ],
+        };
+
+        IRenderedComponent<AdminSetup> page = RenderComponent<AdminSetup>();
+        page.Find("#setup-company-1-name").Change("Song Da Power");
+        page.Find("#setup-company-1-capital").Change("3,000,000");
+        page.Find("#setup-company-1-credit").Change("300,000");
+
+        DraftCompany second = Session.Draft.Companies[1];
+        second.Name.Should().Be("Song Da Power");
+        second.Capital.Should().Be(3_000_000m);
+        second.OverdraftLimit.Should().Be(300_000m);
+        Session.Draft.Companies[0].Name.Should().Be("Delta Power", "only the row that was edited changes");
+    }
+
+    [Fact]
+    public void The_setup_screen_gives_every_company_the_same_capital_and_credit_limit_at_once()
+    {
+        Session.Draft = new ScenarioDraft
+        {
+            Name = "Draft",
+            Sectors = [],
+            Companies =
+            [
+                new DraftCompany { Name = "Delta Power", Capital = 1_000_000m, OverdraftLimit = 100_000m },
+                new DraftCompany { Name = "Red River Power", Capital = 2_000_000m, OverdraftLimit = 200_000m },
+            ],
+        };
+
+        IRenderedComponent<AdminSetup> page = RenderComponent<AdminSetup>();
+        page.Find("#setup-all-capital").Change("5,000,000");
+        page.Find("#setup-all-credit").Change("500,000");
+        page.Find("#setup-apply-to-all").Click();
+
+        Session.Draft.Companies.Should().OnlyContain(company => company.Capital == 5_000_000m && company.OverdraftLimit == 500_000m);
+    }
+
+    [Fact]
+    public void An_announcement_goes_to_the_room_or_to_the_company_the_trainer_picks()
+    {
+        IRenderedComponent<AdminRun> page = Render();
+        page.Find("#announce-text").Change("Auction 2 opens in five minutes");
+        page.Find("#admin-announce").Click();
+
+        page.Find("#announce-to").Change("Red River Power");
+        page.Find("#announce-text").Change("Your bid was late");
+        page.Find("#admin-announce").Click();
+
+        Session.Actions.Should().Equal(
+            "announce::Auction 2 opens in five minutes",
+            "announce:Red River Power:Your bid was late");
+    }
+
+    [Fact]
+    public void The_market_switches_say_their_state_and_flip_one_market_at_a_time()
+    {
+        Snapshot = AdminViewFixture.Sample(SimulationId) with
+        {
+            Run = AdminViewFixture.Detail(SimulationId, "Running") with { OtcAccess = false },
+        };
+
+        IRenderedComponent<AdminRun> page = Render();
+
+        page.Find("#admin-exchange-state").TextContent.Trim().Should().Be(Localizer(Services)["AdminOn"].Value);
+        page.Find("#admin-otc-state").TextContent.Trim().Should().Be(Localizer(Services)["AdminOff"].Value);
+
+        page.Find("#admin-exchange-toggle").Click();
+        page.Find("#admin-otc-toggle").Click();
+        page.Find("#admin-leaderboard-toggle").Click();
+
+        Session.Actions.Should().Equal("access:False::", "access::True:", "access:::False");
+    }
+
+    [Fact]
+    public void The_run_header_shows_the_virtual_date()
+    {
+        AdminRunDetail detail = AdminViewFixture.Detail(SimulationId, "Running");
+        string expected = CarbonSim.Web.Components.Shared.Display.VirtualDate(
+            detail.Parameters.YearLength - detail.TimeLeftInYear, detail.Parameters.YearLength);
+
+        Render().Find("#admin-virtual-date").TextContent.Trim().Should().Be(expected);
+    }
+
     private static IStringLocalizer<SharedStrings> Localizer(IServiceProvider services) =>
         services.GetRequiredService<IStringLocalizer<SharedStrings>>();
 

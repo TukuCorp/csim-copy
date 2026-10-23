@@ -426,4 +426,17 @@
   <data name="AutoTradeOn" xml:space="preserve"><value>Put on AutoTrade</value></data>
   <data name="AutoTradeOff" xml:space="preserve"><value>Take off AutoTrade</value></data>
   <data name="CancelOffer" xml:space="preserve"><value>Withdraw offer</value></data>
+  <data name="AIDifficulty" xml:space="preserve"><value>AI difficulty</value></data>
+  <data name="AiDifficultyEasy" xml:space="preserve"><value>Easy</value></data>
+  <data name="AiDifficultyNormal" xml:space="preserve"><value>Normal</value></data>
+  <data name="AiDifficultyHard" xml:space="preserve"><value>Hard</value></data>
+  <data name="CreditLimit" xml:space="preserve"><value>Credit limit</value></data>
+  <data name="AdminCompanyName" xml:space="preserve"><value>Company name</value></data>
+  <data name="AdminApplyToAll" xml:space="preserve"><value>Give every company these figures</value></data>
+  <data name="AdminAnnouncement" xml:space="preserve"><value>Message to players</value></data>
+  <data name="AdminAnnounceTo" xml:space="preserve"><value>Send to</value></data>
+  <data name="AdminEveryone" xml:space="preserve"><value>Everyone</value></data>
+  <data name="AdminAnnounced" xml:space="preserve"><value>Message sent.</value></data>
+  <data name="VirtualDate" xml:space="preserve"><value>Date in the year</value></data>
+  <data name="AdminAccessSaved" xml:space="preserve"><value>Market access saved.</value></data>
 </root>

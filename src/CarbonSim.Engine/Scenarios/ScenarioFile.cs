@@ -75,6 +75,9 @@ internal sealed class ParametersFile
     /// <summary>Whether the clock stops after every auction until the trainer resumes it; absent means no.</summary>
     public bool? PauseAfterAuction { get; set; }
 
+    /// <summary>Easy, Normal or Hard, in any case; absent means Normal.</summary>
+    public string? AiDifficulty { get; set; }
+
     public List<BausGrowthFile>? BausGrowthBySector { get; set; }
 }
 

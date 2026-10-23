@@ -102,6 +102,9 @@ public sealed class DraftParameters
     /// <summary>Whether the clock stops after every auction (absent means no).</summary>
     public bool? PauseAfterAuction { get; set; }
 
+    /// <summary>Easy, Normal or Hard (absent means Normal).</summary>
+    public string? AiDifficulty { get; set; }
+
     public List<DraftGrowth> BausGrowthBySector { get; set; } = [];
 }
 

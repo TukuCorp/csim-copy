@@ -69,6 +69,7 @@ public static class SimulationMapper
             OtcAccess = parameters.OtcAccess,
             LeaderboardVisible = parameters.LeaderboardVisible,
             AiTradeAssistance = parameters.AiTradeAssistance,
+            AiDifficulty = parameters.AiDifficulty,
                     OverdraftInterestRate = parameters.OverdraftInterestRate,
                 },
             ],
@@ -684,7 +685,8 @@ public static class SimulationMapper
                     parameters.ExchangeAccess,
                     parameters.OtcAccess,
                     parameters.LeaderboardVisible,
-                    parameters.AiTradeAssistance)),
+                    parameters.AiTradeAssistance,
+                    parameters.AiDifficulty)),
             [
                 .. run.Sectors
                     .OrderBy(sector => sector.Name, StringComparer.Ordinal)

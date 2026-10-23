@@ -172,6 +172,15 @@ public sealed record AdminRunDetail(
     /// <summary>Every change an administrator has made to this run's rules, newest last.</summary>
     public IReadOnlyList<RuleChange> RuleChanges { get; init; } = [];
 
+    /// <summary>Whether players may use the exchange right now.</summary>
+    public bool ExchangeAccess { get; init; } = true;
+
+    /// <summary>Whether players may use the OTC market right now.</summary>
+    public bool OtcAccess { get; init; } = true;
+
+    /// <summary>Whether players see the leaderboard right now.</summary>
+    public bool LeaderboardVisible { get; init; } = true;
+
     /// <summary>
     /// Whether the clock may be let run again: a year paused mid-flight, or a halt the trainer
     /// took while there was still time on the clock.

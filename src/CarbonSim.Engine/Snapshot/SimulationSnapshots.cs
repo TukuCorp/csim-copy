@@ -296,7 +296,8 @@ public static class SimulationSnapshots
             parameters.ExchangeAccess,
             parameters.OtcAccess,
             parameters.LeaderboardVisible,
-            parameters.AiTradeAssistance);
+            parameters.AiTradeAssistance,
+            parameters.AiDifficulty);
     }
 
     private static Parameters Rebuild(ParametersSnapshot snapshot)
@@ -331,6 +332,7 @@ public static class SimulationSnapshots
             OtcAccess = snapshot.OtcAccess,
             LeaderboardVisible = snapshot.LeaderboardVisible,
             AiTradeAssistance = snapshot.AiTradeAssistance,
+            AiDifficulty = snapshot.AiDifficulty,
         };
     }
 

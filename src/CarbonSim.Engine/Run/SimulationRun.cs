@@ -285,6 +285,42 @@ public sealed class SimulationRun
     }
 
     /// <summary>
+    /// The trainer opening or closing a market, or the leaderboard, while the run is under way; a null
+    /// leaves that switch as it is. A market that closes keeps nothing resting: its orders or offers
+    /// are cancelled with what they had set aside handed back, as a halt does, because nobody could
+    /// reach them to cancel them until it reopens.
+    /// </summary>
+    public RunResult SetMarketAccess(bool? exchange, bool? otc, bool? leaderboard)
+    {
+        Parameters rules = Simulation.Rules;
+
+        if (exchange is { } exchangeOpen)
+        {
+            if (rules.ExchangeAccess && !exchangeOpen)
+            {
+                Exchange.CancelAll();
+            }
+
+            rules.ExchangeAccess = exchangeOpen;
+        }
+
+        if (otc is { } otcOpen)
+        {
+            if (rules.OtcAccess && !otcOpen)
+            {
+                Otc.CancelPending();
+            }
+
+            rules.OtcAccess = otcOpen;
+        }
+
+        rules.LeaderboardVisible = leaderboard ?? rules.LeaderboardVisible;
+        Simulation.RulesRevision++;
+
+        return Collect();
+    }
+
+    /// <summary>
     /// A halt cancels every resting exchange order and every OTC offer still waiting for an answer,
     /// as the original does ("Cancelled - Trading halted"). Whatever they had set aside goes back to
     /// its owner, so the year end surrenders and banks on everything a company holds.

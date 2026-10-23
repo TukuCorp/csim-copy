@@ -119,6 +119,18 @@ public sealed class StubAdminSession : IAdminSession
         return Task.CompletedTask;
     }
 
+    public Task AnnounceAsync(Guid simulationId, string text, string? toCompany, CancellationToken cancellationToken = default)
+    {
+        Actions.Add($"announce:{toCompany}:{text}");
+        return Task.CompletedTask;
+    }
+
+    public Task SetMarketAccessAsync(Guid simulationId, bool? exchange, bool? otc, bool? leaderboard, CancellationToken cancellationToken = default)
+    {
+        Actions.Add($"access:{exchange}:{otc}:{leaderboard}");
+        return Task.CompletedTask;
+    }
+
     public Task SetRegistrationAsync(bool open, string pin, CancellationToken cancellationToken = default)
     {
         Actions.Add($"registration:{open}:{pin}");

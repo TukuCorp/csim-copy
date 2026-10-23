@@ -1,4 +1,5 @@
 using System.Globalization;
+using CarbonSim.Engine.Bots;
 
 namespace CarbonSim.Engine.Domain;
 
@@ -119,6 +120,12 @@ public sealed record Parameters
     /// the option with its clock, so this is read once, when the run is built.
     /// </summary>
     public bool PauseAfterAuction { get; init; }
+
+    /// <summary>
+    /// How sharp the exercise's bots are (the original's "AI Difficulty"). The fleet is built at it,
+    /// and a bot added later by an AutoTrade switch plays at it too.
+    /// </summary>
+    public BotDifficulty AiDifficulty { get; init; } = BotDifficulty.Normal;
 
     /// <summary>
     /// Returns one message per value that cannot be run, so an administrator sees every

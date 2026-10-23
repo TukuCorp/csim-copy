@@ -1,0 +1,119 @@
+{
+  "task": "Admin setup and switches: scenario AI difficulty, setup-screen company edits, trainer announcements, virtual date in run header, mid-run market access switches",
+  "claims": [
+    {
+      "id": "ai-difficulty-engine",
+      "claim": "A scenario's aiDifficulty sets Parameters.AiDifficulty, the fleet plays at it, an engine snapshot keeps it, an unknown value is refused, and a refreshed fleet built from no bots uses it",
+      "run": "dotnet test tests/CarbonSim.Engine.Tests --filter \"FullyQualifiedName~CarbonSim.Engine.Tests.Scenarios.AiDifficultyTests\"",
+      "expect_exit": 0,
+      "expect_output": "Passed!\\s+-\\s+Failed:\\s+0, Passed:\\s+[1-9]",
+      "timeout": 600,
+      "fails_on_base": true,
+      "base_fail_pattern": "error CS|CS1061|CS0117|CS0103|CS0246"
+    },
+    {
+      "id": "ai-difficulty-persistence",
+      "claim": "EF/SQLite persistence keeps the exercise AI difficulty across a save and load",
+      "run": "dotnet test tests/CarbonSim.Data.Tests --filter \"FullyQualifiedName~The_exercise_ai_difficulty_survives_the_trip\"",
+      "expect_exit": 0,
+      "expect_output": "Passed!\\s+-\\s+Failed:\\s+0, Passed:\\s+[1-9]",
+      "timeout": 600,
+      "fails_on_base": true,
+      "base_fail_pattern": "error CS|CS1061|CS0117|CS0103|CS0246"
+    },
+    {
+      "id": "ai-difficulty-run-bots",
+      "claim": "A run created at Hard adds its autotrade bots at Hard",
+      "run": "dotnet test tests/CarbonSim.Web.Tests --filter \"FullyQualifiedName~A_run_created_at_hard_adds_its_autotrade_bots_at_hard\"",
+      "expect_exit": 0,
+      "expect_output": "Passed!\\s+-\\s+Failed:\\s+0, Passed:\\s+[1-9]",
+      "timeout": 600,
+      "fails_on_base": true,
+      "base_fail_pattern": "error CS|CS1061|CS0117|CS0103|CS0246|CS0535"
+    },
+    {
+      "id": "migration-default-normal",
+      "claim": "The AiDifficulty migration's Up method adds the column with defaultValue 1 (Normal), not 0 (Easy)",
+      "run": "awk '/void Up\\(/,/void Down\\(/' src/CarbonSim.Data/Migrations/20261023001445_AiDifficulty.cs | grep -E 'defaultValue:[[:space:]]*1\\)'",
+      "expect_exit": 0,
+      "expect_output": "defaultValue:\\s*1\\)",
+      "timeout": 60,
+      "fails_on_base": true,
+      "base_fail_pattern": "No such file|cannot open|can't open"
+    },
+    {
+      "id": "setup-screen-edits",
+      "claim": "AdminSetup.razor edits AI difficulty and each company's name, capital and credit limit, with an apply-to-all control",
+      "run": "dotnet test tests/CarbonSim.Web.Tests --filter \"FullyQualifiedName~The_setup_screen_sets_the_exercise_ai_difficulty|FullyQualifiedName~The_setup_screen_edits_each_companys_name_capital_and_credit_limit|FullyQualifiedName~The_setup_screen_gives_every_company_the_same_capital_and_credit_limit_at_once\"",
+      "expect_exit": 0,
+      "expect_output": "Passed!\\s+-\\s+Failed:\\s+0, Passed:\\s+3,",
+      "timeout": 600,
+      "fails_on_base": true,
+      "base_fail_pattern": "error CS|CS1061|CS0117|CS0103|CS0246|CS0535"
+    },
+    {
+      "id": "announce",
+      "claim": "SimulationClockService.AnnounceAsync posts an Administrator line to the room or one company even with player messaging off, refuses an unknown company, and the admin console sends it",
+      "run": "dotnet test tests/CarbonSim.Web.Tests --filter \"FullyQualifiedName~A_trainer_announcement_reaches_the_room_even_with_player_messaging_off|FullyQualifiedName~An_announcement_to_a_company_the_run_does_not_have_is_refused|FullyQualifiedName~An_announcement_goes_to_the_room_or_to_the_company_the_trainer_picks\"",
+      "expect_exit": 0,
+      "expect_output": "Passed!\\s+-\\s+Failed:\\s+0, Passed:\\s+3,",
+      "timeout": 600,
+      "fails_on_base": true,
+      "base_fail_pattern": "error CS|CS1061|CS0117|CS0103|CS0246|CS0535"
+    },
+    {
+      "id": "admin-virtual-date",
+      "claim": "The admin run screen header shows the virtual date",
+      "run": "dotnet test tests/CarbonSim.Web.Tests --filter \"FullyQualifiedName~The_run_header_shows_the_virtual_date\"",
+      "expect_exit": 0,
+      "expect_output": "Passed!\\s+-\\s+Failed:\\s+0, Passed:\\s+[1-9]",
+      "timeout": 600,
+      "fails_on_base": true,
+      "base_fail_pattern": "error CS|CS1061|CS0117|CS0103|CS0246|CS0535"
+    },
+    {
+      "id": "market-access",
+      "claim": "SimulationRun.SetMarketAccess opens/closes exchange, OTC and leaderboard mid-run, cancelling resting orders/offers and returning escrow; the admin console toggles call it",
+      "run": "dotnet test tests/CarbonSim.Engine.Tests --filter \"FullyQualifiedName~Closing_the_exchange_mid_year_cancels_its_resting_orders_and_refuses_new_ones_until_it_reopens\" && dotnet test tests/CarbonSim.Web.Tests --filter \"FullyQualifiedName~The_trainer_can_close_and_reopen_a_market_inside_a_running_year|FullyQualifiedName~The_market_switches_say_their_state_and_flip_one_market_at_a_time\"",
+      "expect_exit": 0,
+      "expect_output": "(?s)Passed!\\s+-\\s+Failed:\\s+0, Passed:\\s+1,.*Passed!\\s+-\\s+Failed:\\s+0, Passed:\\s+2,",
+      "timeout": 900,
+      "fails_on_base": true,
+      "base_fail_pattern": "error CS|CS1061|CS0117|CS0103|CS0246|CS0535"
+    },
+    {
+      "id": "build-clean",
+      "claim": "dotnet build CarbonSim.sln has 0 warnings and 0 errors",
+      "run": "dotnet build CarbonSim.sln --no-incremental",
+      "expect_exit": 0,
+      "expect_output": "\\b0 Warning\\(s\\)[\\s\\S]*\\b0 Error\\(s\\)",
+      "timeout": 900,
+      "fails_on_base": false
+    },
+    {
+      "id": "format-clean",
+      "claim": "dotnet format CarbonSim.sln --verify-no-changes is clean",
+      "run": "dotnet format CarbonSim.sln --verify-no-changes",
+      "expect_exit": 0,
+      "timeout": 900,
+      "fails_on_base": false
+    },
+    {
+      "id": "full-suite",
+      "claim": "dotnet test CarbonSim.sln passes in full across all three test projects",
+      "run": "dotnet test CarbonSim.sln > .verify/full-suite.log 2>&1; ! grep -q 'Failed!' .verify/full-suite.log && grep -c 'Passed!' .verify/full-suite.log",
+      "expect_exit": 0,
+      "expect_output": "(?m)^3$",
+      "timeout": 1200,
+      "fails_on_base": false
+    },
+    {
+      "id": "golden-unchanged",
+      "claim": "The fidelity golden file(s) under tests/CarbonSim.Engine.Tests/Golden are unchanged versus HEAD",
+      "run": "git diff --quiet HEAD -- tests/CarbonSim.Engine.Tests/Golden && test -z \"$(git status --porcelain -- tests/CarbonSim.Engine.Tests/Golden)\"",
+      "expect_exit": 0,
+      "timeout": 60,
+      "fails_on_base": false
+    }
+  ]
+}

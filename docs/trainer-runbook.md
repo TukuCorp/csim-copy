@@ -62,7 +62,14 @@ not have to guess. When you explain the collar from the deck, give it in the cur
 2. Open **New exercise** (/admin/setup). The screen loads the configured scenario into an editable
    draft: the exercise name and seed, the rules (cap, reduction rate, free allocation share, offset
    limit, banking limit, penalty, collar, auctions per year, year length, auction window, volatility
-   band, interest), the sectors and their abatement menus, and the growth band per sector.
+   band, interest), the AI difficulty, the companies, the sectors and their abatement menus, and the
+   growth band per sector.
+   - **AI difficulty** (Easy, Normal or Hard) sets how sharp every bot plays, including a bot that
+     takes over a unit later through an AutoTrade switch. A scenario that does not name one plays at
+     Normal.
+   - **Companies** lists every company with its name, starting capital and credit limit, all
+     editable. To give the whole room the same budget, type a capital and/or a credit limit above
+     the table and press **Give every company these figures**; a box left empty changes nothing.
 3. Set the seed. The same seed reproduces the same AI behaviour, so pick a fresh one per room and
    write it down.
 4. Check **Let players claim a company** and set the **Access PIN** for the room. Save the
@@ -72,6 +79,9 @@ not have to guess. When you explain the collar from the deck, give it in the cur
 6. Open it from the exercise list. The console shows the clock, the controls, and the parameters
    read-only. Parameters cannot be changed on a live exercise: the engine fixes the cap, allocation
    and abatement economics when the exercise is built, so a change means a new exercise.
+
+The console's run header also shows the virtual date in the year (a quarter per auction section),
+the same date the players read on their top bar.
 
 ### 2.3 Rehearse the room
 
@@ -146,6 +156,9 @@ Everything is on the exercise page (/admin/run/{id}).
   the run.
 - **End the exercise** — available once the last year has been closed.
 - **Player messaging** — the on/off switch. Turn it off during a debrief so the room stops typing.
+- **Message to players** — your own line into the players' **Messages**, signed "Administrator",
+  to everyone or to one company. It goes out even while player messaging is off, so you can quiet
+  the room and still talk to it. A line to one company is seen by that company only.
 - **Fine a unit** — a cash fine with a reason, for a rule breach you want the room to see.
 - **Hand out offsets** — gives a company a volume of offsets on top of the scenario's own supply.
   The shipped scenario hands every unit offsets with its free allocation each year (2% of its
@@ -164,8 +177,13 @@ Everything is on the exercise page (/admin/run/{id}).
   band around its own last price, so it moves towards a new floor trade by trade rather than jumping.
   The bots re-value a tonne on the spot and re-quote on their next pass. The room is told rather than
   surprised: the change lands in each unit's **Messages**, and the console shows the last five changes
-  with who made them and how many bids the new collar released. Only the collar can move mid-run - the cap, the free allocation
-  split, the growth path and the auction lots are all fixed when the exercise is built.
+  with who made them and how many bids the new collar released. Only the collar and the market
+  switches below can move mid-run - the cap, the free allocation split, the growth path and the
+  auction lots are all fixed when the exercise is built.
+- **Exchange, OTC market and leaderboard switches** — open or close each one inside a running year,
+  for an agenda that brings the markets in one at a time. Closing a market cancels every order or
+  offer resting in it and hands back what it had set aside; the players' menu drops the entry at
+  once. The bots stop trading there too.
 
 ## 5. What to point out on the player screens
 

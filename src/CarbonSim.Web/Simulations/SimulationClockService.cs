@@ -368,6 +368,78 @@ public sealed class SimulationClockService : BackgroundService
             },
             cancellationToken: cancellationToken);
 
+    /// <summary>
+    /// The trainer opening or closing a market, or the leaderboard, inside a running year. A market
+    /// that closes cancels what was resting in it; the parameters push is what makes an open player
+    /// screen drop or restore the menu entry without waiting for the clock.
+    /// </summary>
+    public async Task SetMarketAccessAsync(
+        Guid simulationId,
+        bool? exchange,
+        bool? otc,
+        bool? leaderboard,
+        CancellationToken cancellationToken = default)
+    {
+        await ApplyAsync(
+            simulationId,
+            run => run.Module.SetMarketAccess(exchange, otc, leaderboard),
+            cancellationToken: cancellationToken).ConfigureAwait(false);
+
+        using IServiceScope scope = _services.CreateScope();
+        IHubContext<SimulationHub, ISimulationClient> hub =
+            scope.ServiceProvider.GetRequiredService<IHubContext<SimulationHub, ISimulationClient>>();
+
+        await hub.Clients.Group(SimulationGroups.For(simulationId)).ParametersChanged(cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// The trainer's own line into the run's messages, to the room or to one company. It goes
+    /// through whether or not player messaging is on, because the switch quiets the players, not
+    /// the person running the exercise.
+    /// </summary>
+    public async Task AnnounceAsync(
+        Guid simulationId,
+        string text,
+        string? toCompany,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(text);
+
+        string? to = string.IsNullOrWhiteSpace(toCompany) ? null : toCompany.Trim();
+        ChatEntry? recorded = null;
+
+        await ApplyAsync(
+            simulationId,
+            run =>
+            {
+                if (to is not null && !run.Simulation.Companies.Any(company => string.Equals(company.Name, to, StringComparison.Ordinal)))
+                {
+                    throw new InvalidOperationException($"This run has no company called {to}.");
+                }
+
+                recorded = new ChatEntry(run.Simulation.CurrentYear, "Administrator", text.Trim(), to);
+                run.Chat.Add(recorded);
+
+                return run.Module.Inspect();
+            },
+            cancellationToken: cancellationToken).ConfigureAwait(false);
+
+        ChatEntry entry = recorded ?? throw new InvalidOperationException("The announcement was not recorded.");
+
+        // As with the collar notices, only a line for the room goes out on the group; a line for one
+        // company reaches that company's screen on its next refresh and nobody else's.
+        if (entry.To is null)
+        {
+            using IServiceScope scope = _services.CreateScope();
+            IHubContext<SimulationHub, ISimulationClient> hub =
+                scope.ServiceProvider.GetRequiredService<IHubContext<SimulationHub, ISimulationClient>>();
+
+            await hub.Clients.Group(SimulationGroups.For(simulationId))
+                .MessageReceived(entry.From, entry.Text, entry.Year, cancellationToken)
+                .ConfigureAwait(false);
+        }
+    }
+
     /// <summary>Switches player messaging on or off for a run and tells its watchers.</summary>
     public Task SetMessagingAsync(Guid simulationId, bool enabled, CancellationToken cancellationToken = default) =>
         ApplyAsync(

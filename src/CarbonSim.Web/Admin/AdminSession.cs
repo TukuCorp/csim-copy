@@ -234,6 +234,23 @@ public sealed class AdminSession : IAdminSession
         await _driver.SetMessagingAsync(simulationId, enabled, cancellationToken).ConfigureAwait(false);
     }
 
+    public async Task SetMarketAccessAsync(
+        Guid simulationId,
+        bool? exchange,
+        bool? otc,
+        bool? leaderboard,
+        CancellationToken cancellationToken = default)
+    {
+        await RequireAdministratorAsync().ConfigureAwait(false);
+        await _driver.SetMarketAccessAsync(simulationId, exchange, otc, leaderboard, cancellationToken).ConfigureAwait(false);
+    }
+
+    public async Task AnnounceAsync(Guid simulationId, string text, string? toCompany, CancellationToken cancellationToken = default)
+    {
+        await RequireAdministratorAsync().ConfigureAwait(false);
+        await _driver.AnnounceAsync(simulationId, text, toCompany, cancellationToken).ConfigureAwait(false);
+    }
+
     public async Task IssueFineAsync(
         Guid simulationId,
         int unitId,
@@ -556,6 +573,9 @@ public sealed class AdminSession : IAdminSession
             simulation.State == SimulationState.YearEnded && simulation.CurrentYear >= parameters.Years)
         {
             RuleChanges = [.. run.RuleChanges],
+            ExchangeAccess = parameters.ExchangeAccess,
+            OtcAccess = parameters.OtcAccess,
+            LeaderboardVisible = parameters.LeaderboardVisible,
         };
     }
 

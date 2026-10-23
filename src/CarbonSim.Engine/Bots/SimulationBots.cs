@@ -35,7 +35,7 @@ public sealed class SimulationBots
     {
         ArgumentNullException.ThrowIfNull(simulation);
 
-        settings ??= BotSettings.For(BotDifficulty.Normal);
+        settings ??= BotSettings.For(simulation.Rules.AiDifficulty);
         decimal referencePrice = simulation.Rules.AuctionFloorPrice;
         List<ComplianceBot> bots = [];
 
@@ -63,7 +63,7 @@ public sealed class SimulationBots
         ArgumentNullException.ThrowIfNull(simulation);
 
         IReadOnlyList<ComplianceBot> existing = current?.Bots ?? [];
-        BotSettings settings = existing.Count > 0 ? existing[0].Settings : BotSettings.For(BotDifficulty.Normal);
+        BotSettings settings = existing.Count > 0 ? existing[0].Settings : BotSettings.For(simulation.Rules.AiDifficulty);
         List<ComplianceBot> bots = [];
 
         foreach (Company company in simulation.Companies)
