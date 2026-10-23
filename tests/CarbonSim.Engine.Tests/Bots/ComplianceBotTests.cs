@@ -70,8 +70,9 @@ public sealed class ComplianceBotTests
         Run run = Build(automateHumans: true);
         Product vintage1 = Product.Allowance(1);
 
-        // Three minutes in: the fleet's quotes are on the book, either side of the hundred floor.
-        Advance(run, TimeSpan.FromMinutes(3));
+        // Four minutes in (a fifth of the year, the end of the 12-20% quoting window, so every bot has
+        // quoted whatever its draw): the fleet's quotes are on the book, either side of the hundred floor.
+        Advance(run, TimeSpan.FromMinutes(4));
 
         OrderBook book = run.Markets.Exchange.Book(vintage1);
         decimal bidBefore = book.BestBid ?? 0m;
@@ -103,10 +104,11 @@ public sealed class ComplianceBotTests
         Run run = Build(automateHumans: true);
         Product vintage1 = Product.Allowance(1);
 
-        // One company far longer than it can bank, so the book has both sides by minute three.
+        // One company far longer than it can bank, so the book has both sides by minute four, the end
+        // of the 12-20% quoting window.
         run.Simulation.Ledger.Grant(run.Simulation.FindCompany(1), vintage1, 50_000_000m);
 
-        Advance(run, TimeSpan.FromMinutes(3));
+        Advance(run, TimeSpan.FromMinutes(4));
 
         OrderBook book = run.Markets.Exchange.Book(vintage1);
 

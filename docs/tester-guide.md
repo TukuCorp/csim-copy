@@ -80,10 +80,10 @@ Sign in with the trainer account the operator gives you, then open the console a
 
 ## 6. Known limits (deliberate, please do not file these)
 
-- **Some companies end up short in year 3.** With the shipped calibration about 67% of
-  company-years comply (485 of 726 in the seeded run), and most penalties fall in the last year.
-  The cap falls 3% a year while emissions grow. This is a calibration choice we have measured and
-  documented, not a bug in the settlement.
+- **Every AI company complies in the seeded run.** All 726 company-years comply with no penalties
+  (tests/CarbonSim.Engine.Tests/Golden/fidelity-golden.md). Human players can still end short:
+  the cap falls 3% a year while emissions grow, and late in each year the AI companies sell what
+  they will not keep, so a short player who waits past the year's last auction finds fewer sellers.
 - **The exchange has few sellers.** Most companies are short every year, so only a couple of dozen
   AI companies ever offer allowances. Expect plenty of bids and a thin offer side.
 - **A mid-run change moves only the price collar and the market switches.** The trainer can move

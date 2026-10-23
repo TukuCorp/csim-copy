@@ -18,6 +18,9 @@ public enum BotTrigger
 
     /// <summary>Later in the year: take the resting quotes off and re-quote at prices that trade.</summary>
     TradeAgain,
+
+    /// <summary>After the year's last auction: the last chance to settle the position on the exchange.</summary>
+    FinalPass,
 }
 
 /// <summary>One thing a bot did, or tried to do and could not.</summary>

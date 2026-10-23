@@ -81,10 +81,11 @@ public sealed class BotFillBroadcastTests : IClassFixture<SimulationTestHost>, I
         fills[0].Args[5].Should().Be(TestRunFactory.DeltaCompany);
 
         // A later player order that does not trade must not re-announce the bot's fill. It has to
-        // be inside the volatility band, which is anchored on the price the bots traded at.
+        // be inside the volatility band, which is anchored on the price the bots traded at, and under
+        // the long bot's leftover offer, which rests at that price.
         // The pause that follows is heard after anything the order sent, so waiting for it is
         // what makes "nothing more arrived" a real check rather than a guess at a delay.
-        await runs.PlaceOrderAsync(_simulationId, _delta.Actor, 1, "Vintage 1", "Buy", "Limit", 1m, 100m);
+        await runs.PlaceOrderAsync(_simulationId, _delta.Actor, 1, "Vintage 1", "Buy", "Limit", 1m, 90m);
         await driver.PauseAsync(_simulationId);
 
         for (int attempt = 0; attempt < 300 && !_events.Any(@event => @event.Method == "MarketStateChanged" && (string)@event.Args[0]! == "Paused"); attempt++)

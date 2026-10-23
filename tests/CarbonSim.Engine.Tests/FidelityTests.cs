@@ -5,8 +5,10 @@ using FluentAssertions;
 namespace CarbonSim.Engine.Tests;
 
 /// <summary>
-/// The acceptance envelopes from the bot fidelity brief, measured on a seeded run of the
-/// shipped 242-unit Vietnam scenario. Each envelope is its own test, so a failure says which
+/// The acceptance envelopes, measured on a seeded run of the shipped 242-unit Vietnam scenario.
+/// Since 2026-10-23 they hold the clone to what the original was observed doing (the owner's
+/// decision), not to the bot brief's own bands where the two differ; each test names its source
+/// (reports/fidelity/audit-c-numbers.md, section 3). Each envelope is its own test, so a failure says which
 /// one moved. Where an envelope does not hold yet, the test is skipped and the skip reason
 /// states what the seeded run actually measured; the full measurement report is written to the
 /// build output as `fidelity-run.md` by <see cref="The_run_is_recorded"/>.
@@ -75,38 +77,61 @@ public sealed class FidelityTests
         measured.Companies.Should().Be(242);
     }
 
-    [Fact(Skip = "calibration limit, measured 2026-10-22 (reports/2026-10-21-fidelity-match.md): 485 of 726 company-years comply on the shipped scenario, with 241 penalties, most in years 2 and 3, where long companies bank while short ones find few sellers. The sources show non-compliance in later years too (Mexico 74-84% compliant; Dominican Republic 5% of obligations short), so whether this envelope stays at 100% is the owner's decision.")]
-    public void Envelope_one_every_bot_complies_and_nobody_pays_a_penalty()
+    [Fact]
+    public void Envelope_one_nobody_pays_a_penalty_in_year_one()
     {
-        Measured.PenaltyCount.Should().Be(0);
-        Measured.TotalShortfall.Should().Be(0m);
-        Measured.CompliantCompanies.Should().Be(Measured.Companies);
+        // The original's demo system report for year 1: no unit penalised, nothing paid.
+        Measured.PenaltyCountByYear[0].Should().Be(0);
     }
 
     [Fact]
-    public void The_sharper_bot_setting_comes_closer_to_full_compliance()
+    public void Envelope_one_at_least_three_quarters_of_company_years_comply()
     {
+        // No source shows a multi-year run without penalties; Mexico's exercise ran 74-84% compliant.
+        decimal compliant = (decimal)Measured.CompliantCompanies / (Measured.Companies * Measured.Years);
+
+        compliant.Should().BeGreaterThanOrEqualTo(0.74m);
+    }
+
+    [Fact]
+    public void Envelope_one_the_shortfall_is_at_most_five_percent_of_the_obligations()
+    {
+        // The Dominican Republic exercise ended about 5% of its obligations short.
+        decimal obligations = Measured.Supply.Sum(year => year.Obligation);
+
+        Measured.TotalShortfall.Should().BeLessThanOrEqualTo(obligations * 0.05m);
+    }
+
+    [Fact]
+    public void The_sharper_bot_setting_complies_at_least_as_well()
+    {
+        // Both settings now reach full compliance on the shipped scenario, so "sharper" can only mean
+        // "no worse" here; a change that leaves the Hard fleet short of the Normal one fails this.
         FidelityMeasurements hard = HardRun.Value;
 
-        hard.TotalShortfall.Should().BeLessThan(Measured.TotalShortfall);
-        hard.PenaltyCount.Should().BeLessThan(Measured.PenaltyCount);
-    }
-
-    [Fact(Skip = "measured 2026-10-22: year-1 auctions average 137.90 against the 100-110 band. The original's own year 1 averaged 123.55 with every lot sold (demo video, frames 11 and 18), so the band is the brief's reading of the Dominican pattern rather than the original's; which one to hold is the owner's decision (reports/2026-10-21-fidelity-match.md).")]
-    public void Envelope_two_year_one_clears_at_the_price_floor()
-    {
-        // The collar floor is 100 and the ceiling 300.
-        Measured.AuctionAveragePriceByYear[0].Should().BeInRange(100m, 110m);
+        hard.TotalShortfall.Should().BeLessThanOrEqualTo(Measured.TotalShortfall);
+        hard.PenaltyCount.Should().BeLessThanOrEqualTo(Measured.PenaltyCount);
     }
 
     [Fact]
-    public void Envelope_two_prices_climb_towards_the_ceiling_by_year_three()
+    public void Envelope_two_year_one_clears_near_the_floor()
     {
+        // The collar floor is 100 and the ceiling 300. The original's own year 1 averaged 123.55 with
+        // every lot sold (demo video, frames 11 and 18).
+        Measured.AuctionAveragePriceByYear[0].Should().BeInRange(100m, 130m);
+    }
+
+    [Fact]
+    public void Envelope_two_prices_rise_over_the_run_and_stay_under_the_ceiling()
+    {
+        // The trainer deck's three-year run (slide 27) rises by about a third over the run. The
+        // brief's "200 by year three" read the Dominican run, whose floor was raised and shocked, so
+        // it is not held here.
         decimal yearOne = Measured.AuctionAveragePriceByYear[0];
         decimal yearThree = Measured.AuctionAveragePriceByYear[2];
 
         yearThree.Should().BeGreaterThan(yearOne);
-        yearThree.Should().BeGreaterThanOrEqualTo(200m, "the Dominican pattern in the brief reaches the ceiling by year three");
+        yearThree.Should().BeLessThan(300m);
     }
 
     [Fact]
@@ -135,11 +160,13 @@ public sealed class FidelityTests
         Measured.OffsetsShareOfCapPercent.Should().BeInRange(2m, 3m);
     }
 
-    [Fact(Skip = "measured 2026-10-22: bot cost of compliance runs from -79.91 to 122.04 per tonne; the top of the range is penalties on year-2 and year-3 shortfalls (14.6 Mt short in year 3). Bound to envelope one: the same year-3 calibration closes both (reports/2026-10-21-fidelity-match.md).")]
-    public void Envelope_six_the_leaderboard_spread_is_between_five_and_forty_per_tonne_with_negative_outliers()
+    [Fact(Skip = "measured 2026-10-23 with full compliance and no penalties: bot cost of compliance runs from -68.64 to 108.80 per tonne (golden). The top is the price level, years 2-3 clearing at about 235-250 on the menus' 240 rung; the bottom is the scenario's deliberate allocation spread (lessons #5). Closing it is a re-authoring of the scenario's menus and allocation, not a bot fix.")]
+    public void Envelope_six_the_bots_finish_within_forty_a_tonne_either_way()
     {
+        // The lecture on the original: its bots finish the three-year Mexico scenario between +31
+        // and -40 a tonne, so the spread has a top of the order of tens and a few negative outliers.
         Measured.BotMarginalCostMax.Should().BeInRange(5m, 40m);
-        Measured.BotMarginalCostMin.Should().BeLessThan(0m, "the brief expects a few negative outliers");
+        Measured.BotMarginalCostMin.Should().BeInRange(-40m, 0m);
     }
 
     // The shock envelope lives in ComplianceBotTests: it needs a live book to watch, not a full

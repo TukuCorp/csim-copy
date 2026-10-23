@@ -246,18 +246,17 @@ unit, so a spreadsheet reads them as numbers. The surrender status page
 
 ## 8. Fidelity: what this clone promises, and what it does not
 
-The clone is behaviourally faithful within the envelopes in the bot-fidelity brief where they hold,
-not numerically identical to the original; reports/2026-10-21-fidelity-match.md checks every rule
-and screen against the sources. On the seeded three-year run of the shipped scenario (2026-10-22) the
-auction averages 137.90, 236.47 and 268.66 (the original's own demo year 1 averaged 123.55), later
-vintages price above earlier ones, abatement takes 0.71% of the cap off year one, offsets surrendered
-are 2.99% of the cap, offsets trade at a 12.8% discount to same-year allowances on the exchange, and a
-mid-run collar shock moves the market inside one virtual month. Three envelopes are open and recorded
-as skipped measurements rather than tuned away: **every bot complies** (485 of 726 company-years do),
-**year one clears at the floor** (137.90 against 100-110) and the **leaderboard spread** (up to
-122.04 per tonne, from year-3 penalties). Whether to hold the brief's bands or the original's observed
-figures is an open decision. Treat the price path and the leaderboard as directionally right, and do
-not present a specific number as the original's.
+The clone is behaviourally faithful within envelopes taken from what the original was observed doing
+(set 2026-10-23), not numerically identical to it; reports/2026-10-21-fidelity-match.md checks every
+rule and screen against the sources. On the seeded three-year run of the shipped scenario the auction
+averages 126.63, 235.68 and 250.38 (the original's own demo year 1 averaged 123.55), every
+company-year complies with no penalties, later vintages price above earlier ones, abatement takes
+0.71% of the cap off year one, offsets surrendered are 2.99% of the cap, offsets trade at a 9.6%
+discount to same-year allowances on the exchange, and a mid-run collar shock moves the market inside
+one virtual month. One envelope is open and recorded as a skipped measurement rather than tuned away:
+the **leaderboard spread** runs from -68.64 to 108.80 per tonne against the lecture's +/-40, which is
+the scenario's price level and allocation spread rather than the bots. Treat the price path and the
+leaderboard as directionally right, and do not present a specific number as the original's.
 
 These figures are the ones in tests/CarbonSim.Engine.Tests/Golden/fidelity-golden.md, which the
 suite asserts on every run: if a change moves the seeded run, that file changes and the build says

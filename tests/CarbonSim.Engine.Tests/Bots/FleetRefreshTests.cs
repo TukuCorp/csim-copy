@@ -1,5 +1,7 @@
 using CarbonSim.Engine.Bots;
 using CarbonSim.Engine.Domain;
+using CarbonSim.Engine.Run;
+using CarbonSim.Engine.Snapshot;
 using FluentAssertions;
 
 namespace CarbonSim.Engine.Tests.Bots;
@@ -57,6 +59,29 @@ public sealed class FleetRefreshTests
 
         refreshed.Bots.Should().Contain(bot => ReferenceEquals(bot, aiBot));
         refreshed.Bots.Single(bot => bot.Company.Id == 1).Units.Select(unit => unit.Id).Should().Equal(1, 2);
+    }
+
+    [Fact]
+    public void A_bot_saved_before_the_final_pass_existed_restores_with_one_in_the_middle_of_its_band()
+    {
+        Simulation simulation = TestSimulation.Build();
+        SimulationRun run = SimulationRun.Create(simulation, new TestTimeProvider(), SimulationBots.Create(simulation));
+        SimulationSnapshot captured = SimulationSnapshots.Capture(simulation, run.Clock, run.Exchange, run.Otc, run.Auctions, run.Bots);
+        SimulationSnapshot older = captured with
+        {
+            Bots = new BotsSnapshot(
+            [
+                .. captured.Bots!.Bots.Select(bot => bot with
+                {
+                    TriggerTimes = [.. bot.TriggerTimes.Where(time => time.Trigger != BotTrigger.FinalPass)],
+                }),
+            ]),
+        };
+
+        ComplianceBot restored = SimulationSnapshots.Restore(older, new TestTimeProvider()).Bots!.Bots.Single();
+
+        restored.TriggerTime(BotTrigger.FinalPass).Should().Be(0.92m);
+        run.Bots!.Bots.Single().TriggerTime(BotTrigger.FinalPass).Should().BeInRange(0.88m, 0.96m, "a new bot draws its own");
     }
 
     [Fact]

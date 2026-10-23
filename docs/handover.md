@@ -105,12 +105,14 @@ detail (configuration, tunnels, TLS, PostgreSQL, backup and restore, password re
 
 ## 5. Known gaps
 
-**Three fidelity envelopes stay open.** The seeded three-year run of scenarios/vietnam-2024.json
-holds every envelope except full compliance (485 of 726 company-years comply at the shipped
-calibration), the year-1 price band (137.90 against the brief's 100-110) and the leaderboard spread
-(up to 122.04 per tonne). All three are skipped with their measurements, and
-reports/2026-10-21-fidelity-match.md records the calibration grid showing they conflict with the
-price-path envelope on this scenario. Nothing is hand-tuned to pass. The numbers live in
+**One fidelity envelope stays open.** Since 2026-10-23 the envelopes hold the clone to what the
+original was observed doing (the owner's decision; sources in reports/fidelity/audit-c-numbers.md,
+section 3). The seeded three-year run of scenarios/vietnam-2024.json holds all of them but the
+leaderboard spread: every company-year complies (726 of 726, no penalties), year 1 clears at 126.63
+(the original's demo 123.55) and prices rise to 250.38 by year 3. The spread runs from -68.64 to
+108.80 per tonne against the lecture's +/-40; it comes from the scenario's price level and its
+allocation spread rather than from the bots, so it is a skipped measurement until the scenario is
+re-authored. Nothing is hand-tuned to pass. The numbers live in
 tests/CarbonSim.Engine.Tests/Golden/fidelity-golden.md, which the suite asserts on every run.
 
 **A crash loses the year in progress.** Runs are saved when created and at each year end. A reload

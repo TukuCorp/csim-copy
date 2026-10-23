@@ -1667,3 +1667,50 @@ quoting admin-area gains as overall gains.
 
 Not done: per-sector free allocation, schedule of sales by vintage, add/delete companies and units,
 the three open fidelity envelopes (need the owner's choice of target), bots on forward lots.
+
+## Fidelity targets re-grounded on the original, and calibration to them (2026-10-23)
+
+User decision (2026-10-23): the fidelity envelopes target the original's observed figures, not the
+brief's bands. Goal: close the gap to ~75% overall, then commit and push to main. Targets from audit
+C §3a/§3c C1 (reports/fidelity/audit-c-numbers.md), each citing its source in the test:
+
+- [x] Re-ground the envelopes (test text first): E1 = zero penalties in year 1, >= 74% compliant company-years (Mexico 74-84%), shortfall <= 5% of obligations (Dominican Republic); E2 = year-1 auction average 100-130 (demo 123.55), year 3 above year 1 and below the ceiling (no ">= 200": DR's floor was raised and shocked); E6 = bot cost of compliance within the lecture's -40 to +40 per tonne
+- [x] Measure which re-grounded envelopes the shipped run already meets: on the old golden 2 of 6 held (shortfall <= 5%, price rises under the ceiling); 4 failed (year-1 penalties 3, compliance 66.8%, year-1 price 137.90, spread 122.04)
+- [x] Calibrate (golden re-baselined deliberately, each lever measured, see the review); bots on forward lots not needed
+- [ ] Gate, docs quoting the golden (lesson 12), review, /verify, commit, push main
+- [x] Gate and docs (handover, tester guide, runbook; the 2026-10-21 report marked superseded)
+
+### Review
+
+Measured on the seeded Normal run, one lever at a time (diagnostic dump of each auction and each
+year-end; the dump was a throwaway test, not committed):
+
+| Lever | Year-1 / 2 / 3 auction | Compliant | Penalties | Spread | Kept? |
+|---|---|---|---|---|---|
+| Before (2026-10-22 golden) | 137.90 / 236.47 / 268.66 | 485 | 241 | -79.91 to 122.04 | - |
+| Final pass after the last auction (88-96% of the year) | 126.63 / 235.68 / 270.56 | 512 | 214 | -56.99 to 121.73 | yes |
+| Willingness to pay counts only abatement that can still operate | 126.63 / 294.12 / 299.50 | 500 | 226 | -80.98 to 119.34 | no, reverted: prices to the ceiling, compliance down |
+| Last-year surplus priced to sell (best bid, else the bot's bid side) | 126.63 / 235.68 / 251.40 | 535 | 191 | -74.16 to 118.86 | yes |
+| Long bots bank only next year's forecast need | 126.87 / 236.31 / 251.86 | 516 | 210 | -77.96 to 117.32 | no, reverted: the fleet needs the year-1 carry-over |
+| Late surplus re-offered at the bid side in every year when nobody bids | (no change: only reached once the bot pulls its own quote) | | | | yes, harmless |
+| Final pass buys the whole shortfall in allowances, not offsets nobody sells | 126.63 / 235.68 / 250.38 | 726 | 0 | -68.64 to 108.80 | yes |
+
+The root cause of most non-compliance was the bot's own: at each late pass a short bot bid offsets for
+up to its whole usage room and allowances only for the rest, so with no offsets on offer it never bid
+for the allowances long companies were offering. Supply was there all along (year 3 ended with 16 Mt
+banked and 1.6 Mt forfeited against 7 Mt short).
+
+Envelopes now: E1 (three tests), E2 (two), E3, E4, E5 (two) hold; E6, the spread, is a measured
+skip: with no penalties left, the top (108.80) is the price level set by the menus' 240 rung and the
+bottom (-68.64) is the scenario's deliberate allocation spread, so closing it is a scenario
+re-authoring, not a bot fix. `The_sharper_bot_setting_complies_at_least_as_well` replaces "comes closer"
+because both settings now reach zero. Hard offsets now trade at a 2.4% premium (envelope 3 is
+measured on Normal only); worth a look if Hard becomes the default.
+
+Test maintenance from the extra seeded draw: two ComplianceBotTests sample the book at minute 4 (the
+end of the 12-20% quoting window) instead of 3; BotFillBroadcastTests' non-trading order is at 90,
+under the long bot's leftover offer at 98. A bot saved before the final pass restores with 0.92
+(FleetRefreshTests, bite-checked: without the fallback restore throws KeyNotFoundException).
+
+Re-score (estimate): numbers about 70% to about 88% (one envelope open instead of three, all
+re-grounded on the original), rules up a point for the bot fixes; overall about 72% to about 76-77%.

@@ -1,0 +1,115 @@
+{
+  "task": "Fidelity envelopes re-grounded on the original's observed figures; bots gain a FinalPass after the year's last auction so the seeded run complies fully; legacy bot snapshots restore FinalPass at 0.92; envelope six skip reason re-measured; docs updated to the new golden figures",
+  "claims": [
+    {
+      "id": "envelopes-one-two-pass",
+      "claim": "Envelope one (year 1 zero penalties, >=74% company-years comply, shortfall <=5% of obligations) and envelope two (year-1 auction average 100-130; year 3 above year 1 and below 300) pass on the seeded run; on the previous engine they fail (year-1 penalties 3, compliance 66.8%, year-1 price 137.90)",
+      "run": "dotnet test tests/CarbonSim.Engine.Tests --filter \"FullyQualifiedName~Envelope_one|FullyQualifiedName~Envelope_two\"",
+      "expect_exit": 0,
+      "expect_output": "Failed:\\s+0, Passed:\\s+[1-9]",
+      "timeout": 900,
+      "fails_on_base": true,
+      "base_fail_pattern": "Expected Measured\\.PenaltyCountByYear\\[0\\] to be 0|Expected compliant to be greater|Expected Measured\\.AuctionAveragePriceByYear\\[0\\] to be between|error CS|Failed:\\s+[1-9]"
+    },
+    {
+      "id": "envelopes-regrounded-in-source",
+      "claim": "FidelityTests.cs holds the re-grounded bounds: year-1 penalties be 0, compliance >= 0.74, shortfall <= 5% of obligations, year-1 auction average in 100-130, year 3 > year 1 and < 300, with no Skip on envelopes one and two",
+      "run": "f=tests/CarbonSim.Engine.Tests/FidelityTests.cs; grep -q 'PenaltyCountByYear\\[0\\].Should().Be(0)' $f && grep -q 'BeGreaterThanOrEqualTo(0.74m)' $f && grep -q 'obligations \\* 0.05m' $f && grep -q 'AuctionAveragePriceByYear\\[0\\].Should().BeInRange(100m, 130m)' $f && grep -q 'yearThree.Should().BeGreaterThan(yearOne)' $f && grep -q 'yearThree.Should().BeLessThan(300m)' $f && ! grep -B1 -E 'void Envelope_(one|two)_' $f | grep -q 'Skip' && echo BOUNDS-OK || { echo BOUNDS-MISSING; exit 1; }",
+      "expect_exit": 0,
+      "expect_output": "BOUNDS-OK",
+      "timeout": 60,
+      "fails_on_base": true,
+      "base_fail_pattern": "BOUNDS-MISSING"
+    },
+    {
+      "id": "final-pass-in-engine",
+      "claim": "BotTrigger has FinalPass, drawn in 0.88-0.96, and on it the bot settles with lastChance: true (no offsets wanted, whole shortfall covered with allowances)",
+      "run": "grep -q 'FinalPass' src/CarbonSim.Engine/Bots/BotAction.cs && grep -q 'BotTrigger.FinalPass\\] = random.NextDecimal(0.88m, 0.96m)' src/CarbonSim.Engine/Bots/ComplianceBot.cs && grep -A2 'Due(year, BotTrigger.FinalPass, elapsed)' src/CarbonSim.Engine/Bots/ComplianceBot.cs | grep -q 'lastChance: true' && grep -q 'offsetsWanted = lastChance ? 0m' src/CarbonSim.Engine/Bots/ComplianceBot.cs && echo FINALPASS-OK || { echo FINALPASS-MISSING; exit 1; }",
+      "expect_exit": 0,
+      "expect_output": "FINALPASS-OK",
+      "timeout": 60,
+      "fails_on_base": true,
+      "base_fail_pattern": "FINALPASS-MISSING"
+    },
+    {
+      "id": "golden-full-compliance",
+      "claim": "The seeded run's golden records 726 of 726 compliant company-years and 0 penalties for the Normal run (first section)",
+      "run": "g=tests/CarbonSim.Engine.Tests/Golden/fidelity-golden.md; awk '/Compliant company-years/{print; exit}' $g | grep -q 'Compliant company-years: 726 of 726' && awk '/^- Penalties:/{print; exit}' $g | grep -q 'Penalties: 0 worth 0; market shortfall 0 t' && echo GOLDEN-OK || { echo GOLDEN-NOT-FULL; exit 1; }",
+      "expect_exit": 0,
+      "expect_output": "GOLDEN-OK",
+      "timeout": 60,
+      "fails_on_base": true,
+      "base_fail_pattern": "GOLDEN-NOT-FULL"
+    },
+    {
+      "id": "golden-test-passes",
+      "claim": "The golden test The_seeded_run_still_matches_the_golden passes against the new golden",
+      "run": "dotnet test tests/CarbonSim.Engine.Tests --filter \"FullyQualifiedName~The_seeded_run_still_matches_the_golden\"",
+      "expect_exit": 0,
+      "expect_output": "Failed:\\s+0, Passed:\\s+[1-9]",
+      "timeout": 900,
+      "fails_on_base": true,
+      "base_fail_pattern": "error CS|Failed:\\s+[1-9]"
+    },
+    {
+      "id": "legacy-bot-restores-final-pass",
+      "claim": "A bot saved before FinalPass existed restores with FinalPass at 0.92",
+      "run": "dotnet test tests/CarbonSim.Engine.Tests --filter \"FullyQualifiedName~A_bot_saved_before_the_final_pass_existed_restores_with_one_in_the_middle_of_its_band\"",
+      "expect_exit": 0,
+      "expect_output": "Failed:\\s+0, Passed:\\s+[1-9]",
+      "timeout": 600,
+      "fails_on_base": true,
+      "base_fail_pattern": "KeyNotFoundException|error CS|Failed:\\s+[1-9]"
+    },
+    {
+      "id": "envelope-six-skip-measured",
+      "claim": "Envelope six is skipped with a reason quoting -68.64 to 108.80, matching the golden's first 'Bot cost of compliance per tonne' line",
+      "run": "g=$(awk '/Bot cost of compliance per tonne/{sub(/.*per tonne: /,\"\"); print; exit}' tests/CarbonSim.Engine.Tests/Golden/fidelity-golden.md); echo \"golden: $g\"; s=$(grep -A1 'Skip = ' tests/CarbonSim.Engine.Tests/FidelityTests.cs | grep -B1 'void Envelope_six_' | grep 'Skip = '); [ \"$g\" = '-68.64 to 108.80' ] && printf '%s' \"$s\" | grep -qF -- \"$g\" && echo SKIP-MATCH || { echo SKIP-NOMATCH; exit 1; }",
+      "expect_exit": 0,
+      "expect_output": "golden: -68\\.64 to 108\\.80[\\s\\S]*SKIP-MATCH",
+      "timeout": 60,
+      "fails_on_base": true,
+      "base_fail_pattern": "SKIP-NOMATCH"
+    },
+    {
+      "id": "docs-figures-current",
+      "claim": "docs/handover.md, docs/tester-guide.md and docs/trainer-runbook.md no longer quote 137.90, 268.66, '485 of 726' or 122.04, and quote the golden's 126.63 / full 726 compliance",
+      "run": "if grep -nE '137\\.90|268\\.66|485 of 726|122\\.04' docs/handover.md docs/tester-guide.md docs/trainer-runbook.md; then echo DOCS-STALE; exit 1; fi; grep -q 'Auction average price by year: 126.63' tests/CarbonSim.Engine.Tests/Golden/fidelity-golden.md && grep -q '126.63' docs/handover.md && grep -q '726 of 726' docs/handover.md && grep -q '126.63' docs/trainer-runbook.md && grep -q 'All 726 company-years comply' docs/tester-guide.md && echo DOCS-OK || { echo DOCS-MISSING-NEW; exit 1; }",
+      "expect_exit": 0,
+      "expect_output": "DOCS-OK",
+      "timeout": 60,
+      "fails_on_base": true,
+      "base_fail_pattern": "DOCS-STALE|137\\.90|485 of 726|122\\.04"
+    },
+    {
+      "id": "build-zero-warnings",
+      "claim": "dotnet build CarbonSim.sln has 0 warnings and 0 errors",
+      "run": "dotnet build CarbonSim.sln --no-incremental",
+      "expect_exit": 0,
+      "expect_output": "0 Warning\\(s\\)[\\s\\S]*0 Error\\(s\\)",
+      "timeout": 900,
+      "fails_on_base": false,
+      "base_fail_pattern": null
+    },
+    {
+      "id": "format-clean",
+      "claim": "dotnet format CarbonSim.sln --verify-no-changes is clean",
+      "run": "dotnet format CarbonSim.sln --verify-no-changes",
+      "expect_exit": 0,
+      "expect_output": null,
+      "timeout": 900,
+      "fails_on_base": false,
+      "base_fail_pattern": null
+    },
+    {
+      "id": "full-suite-green",
+      "claim": "dotnet test CarbonSim.sln is fully green across the 3 test projects",
+      "run": "dotnet test CarbonSim.sln > .verify/full-suite.log 2>&1; ! grep -q 'Failed!' .verify/full-suite.log && grep -c 'Passed!' .verify/full-suite.log",
+      "expect_exit": 0,
+      "expect_output": "^3$",
+      "timeout": 1500,
+      "fails_on_base": true,
+      "base_fail_pattern": "^[0-2]$|^$"
+    }
+  ]
+}

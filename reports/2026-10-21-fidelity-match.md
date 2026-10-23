@@ -1,5 +1,10 @@
 # Fidelity match against the original CarbonSim - 2026-10-21
 
+> **Superseded calibration (2026-10-23).** The envelopes now follow the original's observed figures
+> and the seeded run was re-calibrated; the figures quoted below are this report's own and are
+> historical. Current numbers: tests/CarbonSim.Engine.Tests/Golden/fidelity-golden.md and the
+> 2026-10-23 section of activeContext.md.
+
 Three read-only audits compared the clone with the public sources: rules
 ([audit-a-rules.md](fidelity/audit-a-rules.md), 107 rows), screens
 ([audit-b-screens.md](fidelity/audit-b-screens.md), 35 acceptance-script steps and 41 admin

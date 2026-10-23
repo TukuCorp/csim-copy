@@ -68,6 +68,10 @@ public sealed class ComplianceBot
                 [BotTrigger.Trade] = random.NextDecimal(0.12m, 0.20m),
                 // And a second pass late in the year, when a bot stops quoting and starts dealing.
                 [BotTrigger.TradeAgain] = random.NextDecimal(0.60m, 0.80m),
+                // And once more after the year's last auction has closed (about 86% of the year with
+                // four auctions), so a position the last auction left open, or a surplus nobody bid
+                // for earlier, still meets the other side before the year end.
+                [BotTrigger.FinalPass] = random.NextDecimal(0.88m, 0.96m),
             })
     {
     }
@@ -157,6 +161,10 @@ public sealed class ComplianceBot
             snapshot.ExpectedPrice,
             snapshot.TriggerTimes.ToDictionary(time => time.Trigger, time => time.AtFractionOfYear));
 
+        // A bot saved before the final pass existed has no time drawn for it, and drawing one now would
+        // move the seeded stream; it takes the middle of the band instead.
+        bot._triggerAt.TryAdd(BotTrigger.FinalPass, 0.92m);
+
         foreach (BotTriggerDoneSnapshot done in snapshot.Done)
         {
             bot._done.Add((done.Year, done.Trigger));
@@ -239,7 +247,12 @@ public sealed class ComplianceBot
 
         if (Due(year, BotTrigger.TradeAgain, elapsed))
         {
-            Settle(simulation, year, markets, actions);
+            Settle(simulation, year, markets, actions, lastChance: false);
+        }
+
+        if (Due(year, BotTrigger.FinalPass, elapsed))
+        {
+            Settle(simulation, year, markets, actions, lastChance: true);
         }
 
         return actions;
@@ -443,7 +456,14 @@ public sealed class ComplianceBot
 
             if (surplus > 0m)
             {
-                Sell(markets, Product.Allowance(year), surplus, ask, actions, year, "surplus allowances");
+                // In the last year a tonne kept past the year end is worth nothing (FAQ #14), so the
+                // surplus is priced to sell: into the best bid where one is showing, otherwise on the
+                // buyers' side of the bot's own band rather than above it.
+                decimal price = LastYear(simulation, year)
+                    ? markets.Exchange.Book(Product.Allowance(year)).BestBid ?? bid
+                    : ask;
+
+                Sell(markets, Product.Allowance(year), surplus, price, actions, year, "surplus allowances");
             }
 
             return;
@@ -465,7 +485,7 @@ public sealed class ComplianceBot
     /// it, a long one at the best bid it can see. This is what turns a book of two-sided quotes
     /// into trades; without it every buyer waits for every seller and nothing ever changes hands.
     /// </summary>
-    private void Settle(Simulation simulation, int year, BotMarkets markets, List<BotAction> actions)
+    private void Settle(Simulation simulation, int year, BotMarkets markets, List<BotAction> actions, bool lastChance)
     {
         Parameters parameters = simulation.Rules;
         Product allowance = Product.Allowance(year);
@@ -485,6 +505,21 @@ public sealed class ComplianceBot
             {
                 CancelQuotes(markets, allowance, actions, year);
                 Sell(markets, allowance, surplus, bestBid, actions, year, "what it cannot bank");
+            }
+            else if (surplus > 0m)
+            {
+                // Nobody is bidding. The surplus is what the bot has decided not to keep, so late in the
+                // year its offer comes down to the price the bot itself would pay for a tonne, where a
+                // short company can meet it, rather than resting above the market to the year end.
+                CancelQuotes(markets, allowance, actions, year);
+                Sell(
+                    markets,
+                    allowance,
+                    surplus,
+                    _expectedPrice * _settings.ReservationPriceFactor * (1m - QuoteSpread + QuoteRung),
+                    actions,
+                    year,
+                    "what it cannot use");
             }
 
             // Surplus offsets are worth more sold than kept, because only a share of them can be
@@ -514,7 +549,9 @@ public sealed class ComplianceBot
         // the bot would end up bidding for twice the offsets it can surrender.
         CancelQuotes(markets, Product.Offset, actions, year, OrderSide.Buy);
 
-        decimal offsetsWanted = Math.Min(shortfall, Math.Max(0m, pricingOffsetEstimate - offsetsHeld));
+        // On the last pass of the year there is nothing left to wait for: an offset bid nobody has met
+        // would leave that part of the position to the penalty, so the whole of it goes to allowances.
+        decimal offsetsWanted = lastChance ? 0m : Math.Min(shortfall, Math.Max(0m, pricingOffsetEstimate - offsetsHeld));
 
         if (offsetsWanted > 0m)
         {
@@ -642,6 +679,8 @@ public sealed class ComplianceBot
             0,
             MidpointRounding.AwayFromZero);
     }
+
+    private static bool LastYear(Simulation simulation, int year) => year >= simulation.Allocation.Years.Count;
 
     private decimal HeldAllowances(Simulation simulation, int year)
     {
