@@ -215,7 +215,7 @@
   <data name="Buying" xml:space="preserve"><value>Buying</value></data>
   <data name="Selling" xml:space="preserve"><value>Selling</value></data>
   <data name="OtcBestPrice" xml:space="preserve"><value>OTC best price</value></data>
-  <data name="FillOrKillHint" xml:space="preserve"><value>Leave this unticked to let the order fill in part; tick it to cancel whatever cannot be filled at once.</value></data>
+  <data name="FillOrKillHint" xml:space="preserve"><value>Untick partial fills to fill the whole order at once or not at all. Immediate or cancel takes what can be filled now and cancels the rest instead of leaving it on the book.</value></data>
   <data name="Dismiss" xml:space="preserve"><value>Dismiss</value></data>
   <data name="Compliant" xml:space="preserve"><value>Compliant</value></data>
   <data name="AdminSwitchOff" xml:space="preserve"><value>Switch messaging off</value></data>
@@ -467,4 +467,44 @@
   <data name="Counterparty" xml:space="preserve"><value>Counterparty</value></data>
   <data name="InProgress" xml:space="preserve"><value>In progress</value></data>
   <data name="OtcLastTrade" xml:space="preserve"><value>OTC last trade</value></data>
+  <data name="PartialFillsAccepted" xml:space="preserve"><value>Partial fills accepted</value></data>
+  <data name="SystemModifications" xml:space="preserve"><value>End-of-year system modifications</value></data>
+  <data name="SystemModificationsHint" xml:space="preserve"><value>Changes the offset usage limit, the banking limit and the cash penalty for the next reconciliation. Players are told the new figures.</value></data>
+  <data name="SystemModificationsApplied" xml:space="preserve"><value>The compliance rules have been changed.</value></data>
+  <data name="ComplianceRulesChangedLine" xml:space="preserve"><value>Compliance rules changed: offset usage limit {0}, banking limit {1}, penalty {2} per tonne.</value></data>
+  <data name="AutoResumeIn_X" xml:space="preserve"><value>Resumes by itself in {0} s</value></data>
+  <data name="CancelUnpause" xml:space="preserve"><value>Cancel the automatic resume</value></data>
+  <data name="FreeAllowanceSectorAllocation" xml:space="preserve"><value>Free allocation for this sector (leave empty for the system share)</value></data>
+  <data name="AutoResumeAfterAuctionSeconds" xml:space="preserve"><value>Resume by itself after each auction pause (seconds, 0 to wait for the trainer)</value></data>
+  <data name="Overall" xml:space="preserve"><value>Whole simulation</value></data>
+  <data name="LeaderboardYear_X" xml:space="preserve"><value>Year {0}</value></data>
+  <data name="FilterBySector" xml:space="preserve"><value>Sector</value></data>
+  <data name="Penalties" xml:space="preserve"><value>Penalties</value></data>
+  <data name="EndOfYearCompanyReport" xml:space="preserve"><value>End-of-year company report</value></data>
+  <data name="CapitalOnHandStartOfThisYear" xml:space="preserve"><value>Capital at the start of the year</value></data>
+  <data name="OperatingNetProfitLoss" xml:space="preserve"><value>Operating profit</value></data>
+  <data name="NetAbatementCostProfit" xml:space="preserve"><value>Abatement running result</value></data>
+  <data name="AbatementCapital" xml:space="preserve"><value>Abatement capital spent</value></data>
+  <data name="AllowancesPurchasedAtAuction" xml:space="preserve"><value>Allowances bought at auction</value></data>
+  <data name="AllowancesPurchasedInSecondaryMarket" xml:space="preserve"><value>Bought on the exchange and OTC</value></data>
+  <data name="InstrumentSales" xml:space="preserve"><value>Allowances and offsets sold</value></data>
+  <data name="CompliancePenalties" xml:space="preserve"><value>Compliance penalties</value></data>
+  <data name="ComplianceNetProfitLoss" xml:space="preserve"><value>Compliance result</value></data>
+  <data name="OtherFines" xml:space="preserve"><value>Other fines</value></data>
+  <data name="LoanInterest" xml:space="preserve"><value>Loan interest</value></data>
+  <data name="ChangeInCapitalOnHand" xml:space="preserve"><value>Change in capital</value></data>
+  <data name="CapitalOnHandEndOfThisYear" xml:space="preserve"><value>Capital at the end of the year</value></data>
+  <data name="LiveMarkets" xml:space="preserve"><value>Live markets</value></data>
+  <data name="LiveAllowanceAuctionUpdates" xml:space="preserve"><value>Allowance auction, live</value></data>
+  <data name="ExchangeMarketLiveUpdates" xml:space="preserve"><value>Exchange, live</value></data>
+  <data name="AllowancesToBeAuctioned" xml:space="preserve"><value>On offer</value></data>
+  <data name="TotalBids" xml:space="preserve"><value>Bids</value></data>
+  <data name="Bidders" xml:space="preserve"><value>Companies bidding</value></data>
+  <data name="HighestBid" xml:space="preserve"><value>Highest bid</value></data>
+  <data name="ForwardAuction" xml:space="preserve"><value>(forward)</value></data>
+  <data name="OrdersResting" xml:space="preserve"><value>Orders resting</value></data>
+  <data name="OfferVolume" xml:space="preserve"><value>Offer volume</value></data>
+  <data name="TradesThisYear" xml:space="preserve"><value>Trades this year</value></data>
+  <data name="PercentFilled" xml:space="preserve"><value>Filled</value></data>
+  <data name="OnHand_X" xml:space="preserve"><value>{0} on hand</value></data>
 </root>

@@ -93,6 +93,10 @@ else
                     <dd><input id="setup-pause-after-auction" type="checkbox" checked="@(Draft.Parameters.PauseAfterAuction ?? false)" @onchange="e => Draft.Parameters.PauseAfterAuction = e.Value is true" /></dd>
                 </div>
                 <div>
+                    <dt><label for="setup-auto-resume">@Strings["AutoResumeAfterAuctionSeconds"]</label></dt>
+                    <dd><input id="setup-auto-resume" type="text" inputmode="decimal" @bind="Draft.Parameters.AutoResumeAfterAuctionSeconds" @bind:culture="CultureInfo.CurrentCulture" /></dd>
+                </div>
+                <div>
                     <dt><label for="setup-automatic-surrender">@Strings["AdminAutomaticSurrender"]</label></dt>
                     <dd><input id="setup-automatic-surrender" type="checkbox" checked="@(Draft.Parameters.AutomaticSurrender ?? true)" @onchange="e => Draft.Parameters.AutomaticSurrender = e.Value is true" /></dd>
                 </div>
@@ -190,10 +194,12 @@ else
                 DraftSector sector = Draft.Sectors[s];
                 string sectorNameId = $"setup-sector-{s}-name";
                 string sectorShareId = $"setup-sector-{s}-share";
+                string sectorFreeShareId = $"setup-sector-{s}-free-share";
 
                 <fieldset class="card">
                     <label for="@sectorNameId">@Strings["AdminSectorName"]<input id="@sectorNameId" type="text" @bind="sector.Name" /></label>
                     <label for="@sectorShareId">@Strings["AdminEmissionShare"]<input id="@sectorShareId" type="text" inputmode="decimal" step="0.01" @bind="sector.EmissionShare" @bind:culture="CultureInfo.CurrentCulture" /></label>
+                    <label for="@sectorFreeShareId">@Strings["FreeAllowanceSectorAllocation"]<input id="@sectorFreeShareId" type="text" inputmode="decimal" placeholder="@Percent(Draft.Parameters.FreeAllocationShare)" value="@Percent(sector.FreeAllocationShare)" @onchange="e => SetOptionalPercent(e.Value?.ToString(), v => sector.FreeAllocationShare = v)" /></label>
 
                     <table class="grid">
                         <thead>
@@ -305,6 +311,18 @@ else
         {
             set(percent / 100m);
         }
+    }
+
+    /// <summary>As <see cref="SetPercent"/>, but an empty box clears the value, for a setting that may be left unset.</summary>
+    private static void SetOptionalPercent(string? text, Action<decimal?> set)
+    {
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            set(null);
+            return;
+        }
+
+        SetPercent(text, set);
     }
 
     /// <summary>The level the select shows: a scenario that never names one plays at Normal.</summary>

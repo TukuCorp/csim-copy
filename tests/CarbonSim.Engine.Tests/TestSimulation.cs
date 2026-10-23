@@ -41,7 +41,9 @@ internal static class TestSimulation
         // which is what the forward-vintage tests ask for explicitly.
         decimal forwardVintageShare = 0m,
         bool automaticSurrender = true,
-        bool unlimitedBanking = false)
+        bool unlimitedBanking = false,
+        bool pauseAfterAuction = false,
+        TimeSpan? autoResumeAfterAuction = null)
     {
         return new Parameters
         {
@@ -64,6 +66,8 @@ internal static class TestSimulation
             ForwardVintageShare = forwardVintageShare,
             AutomaticSurrender = automaticSurrender,
             UnlimitedBanking = unlimitedBanking,
+            PauseAfterAuction = pauseAfterAuction,
+            AutoResumeAfterAuction = autoResumeAfterAuction ?? TimeSpan.Zero,
             BausGrowthBySector =
             [
                 new SectorBausGrowth("Power", 0.02m, 0.06m),
@@ -94,12 +98,15 @@ internal static class TestSimulation
         decimal governmentReserveToAuctionPercent = 0m,
         decimal forwardVintageShare = 0m,
         bool automaticSurrender = true,
-        bool unlimitedBanking = false)
+        bool unlimitedBanking = false,
+        bool pauseAfterAuction = false,
+        TimeSpan? autoResumeAfterAuction = null,
+        decimal? cementFreeAllocationShare = null)
     {
         decimal companyCapital = capital ?? CompanyCapital;
         decimal credit = overdraftLimit ?? 0m;
         Sector power = new("Power", PowerShare, PowerMenu);
-        Sector cement = new("Cement", CementShare, CementMenu);
+        Sector cement = new("Cement", CementShare, CementMenu, cementFreeAllocationShare);
 
         Player human = new(1, "Nguyen Van A", PlayerKind.Human);
         Player bot = new(2, "AI Unit 2", PlayerKind.Ai);
@@ -122,7 +129,9 @@ internal static class TestSimulation
                 governmentReserveToAuctionPercent: governmentReserveToAuctionPercent,
                 forwardVintageShare: forwardVintageShare,
                 automaticSurrender: automaticSurrender,
-                unlimitedBanking: unlimitedBanking),
+                unlimitedBanking: unlimitedBanking,
+                pauseAfterAuction: pauseAfterAuction,
+                autoResumeAfterAuction: autoResumeAfterAuction),
             [power, cement],
             [evn, cementCompany, aiPower]);
 

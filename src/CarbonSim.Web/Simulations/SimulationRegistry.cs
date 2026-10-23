@@ -784,6 +784,7 @@ public sealed class SimulationRegistry
         {
             "allowpartial" or "partial" => FillPolicy.AllowPartial,
             "fillorkill" or "fok" => FillPolicy.FillOrKill,
+            "immediateorcancel" or "ioc" => FillPolicy.ImmediateOrCancel,
             _ => throw new ArgumentException($"Unknown fill policy '{fill}'.", nameof(fill)),
         };
 }

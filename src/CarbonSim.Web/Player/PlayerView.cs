@@ -65,6 +65,12 @@ public sealed record PlayerView(
     /// <summary>How long until the trainer's warned halt stops trading, or null when none is pending.</summary>
     public TimeSpan? TimeToHalt { get; init; }
 
+    /// <summary>The company's end-of-year report for each year that has started.</summary>
+    public IReadOnlyList<CarbonSim.Engine.Finance.CompanyYearReport> CompanyReports { get; init; } = [];
+
+    /// <summary>The board for each year that has started, beside the whole-run board in <see cref="Leaderboard"/>.</summary>
+    public IReadOnlyList<LeaderboardYearView> LeaderboardYears { get; init; } = [];
+
     /// <summary>What the year end would surrender now, or null before the first year and once it is settled.</summary>
     public SurrenderView? Surrender { get; init; }
 }
@@ -245,7 +251,11 @@ public sealed record AuctionView(
     decimal VolumeSold,
     IReadOnlyList<AuctionLotView> Lots,
     IReadOnlyList<MyBidView> MyBids,
-    IReadOnlyList<AuctionAwardView> MyAwards);
+    IReadOnlyList<AuctionAwardView> MyAwards)
+{
+    /// <summary>How many bids the auction drew; kept back until it has cleared, because the bids are sealed.</summary>
+    public int? BidCount { get; init; }
+}
 
 public sealed record OrderView(
     long Id,
@@ -336,7 +346,16 @@ public sealed record LeaderboardRow(
 {
     /// <summary>The unit and whoever plays it, named once: "(AI)" marks a bot.</summary>
     public string UnitLabel => Display.Unit(Unit, Player, IsAutomated);
+
+    /// <summary>The company's sector, for the board's sector filter.</summary>
+    public string Sector { get; init; } = string.Empty;
+
+    /// <summary>The cash penalties the company paid over the board's period.</summary>
+    public decimal Penalties { get; init; }
 }
+
+/// <summary>The leaderboard for one year of the run (catalog `LeaderboardYear_X`).</summary>
+public sealed record LeaderboardYearView(int Year, IReadOnlyList<LeaderboardRow> Rows);
 
 public sealed record ChatLine(int Year, string From, string Text);
 

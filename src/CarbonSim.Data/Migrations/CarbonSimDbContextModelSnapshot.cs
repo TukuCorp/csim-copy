@@ -541,6 +541,9 @@ namespace CarbonSim.Data.Migrations
                     b.Property<TimeSpan>("AuctionNotice")
                         .HasColumnType("TEXT");
 
+                    b.Property<TimeSpan>("AutoResumeAfterAuction")
+                        .HasColumnType("TEXT");
+
                     b.Property<int>("CloseNoticedThrough")
                         .HasColumnType("INTEGER");
 
@@ -567,6 +570,9 @@ namespace CarbonSim.Data.Migrations
 
                     b.Property<bool>("PauseAfterAuction")
                         .HasColumnType("INTEGER");
+
+                    b.Property<DateTimeOffset?>("ResumeAt")
+                        .HasColumnType("TEXT");
 
                     b.Property<DateTimeOffset?>("RunningSince")
                         .HasColumnType("TEXT");
@@ -1129,6 +1135,9 @@ namespace CarbonSim.Data.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<decimal>("EmissionShare")
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal?>("FreeAllocationShare")
                         .HasColumnType("TEXT");
 
                     b.HasKey("SimulationId", "Name");

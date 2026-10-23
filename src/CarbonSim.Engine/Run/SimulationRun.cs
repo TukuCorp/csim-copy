@@ -165,6 +165,10 @@ public sealed class SimulationRun
     {
         List<BotAction> actions = [];
 
+        // A pause after an auction that resumes itself does so here, so the tick that resumes it
+        // also trades.
+        Clock.ResumeIfDue();
+
         if (Clock.State == SimulationState.Running)
         {
             IReadOnlyList<ClockEvent> events = Clock.Advance();
@@ -282,6 +286,38 @@ public sealed class SimulationRun
                 newCeiling,
                 releasedBids),
         };
+    }
+
+    /// <summary>
+    /// The trainer's end-of-year modifications to the system: the offset usage limit, the banking limit
+    /// and the cash penalty per tonne; a null leaves that rule as it is. Everything is checked before
+    /// anything moves, and the next reconciliation reads the new figures. The revision moves so the bots
+    /// re-plan against them.
+    /// </summary>
+    public RunResult ChangeComplianceRules(decimal? offsetUsageLimit, decimal? bankingLimit, decimal? penaltyPerTonne)
+    {
+        if (offsetUsageLimit is < 0m or > 1m)
+        {
+            throw new ArgumentOutOfRangeException(nameof(offsetUsageLimit), offsetUsageLimit, "The offset usage limit is a share of the obligation, between 0 and 1.");
+        }
+
+        if (bankingLimit is < 0m or > 1m)
+        {
+            throw new ArgumentOutOfRangeException(nameof(bankingLimit), bankingLimit, "The banking limit is a share of the obligation, between 0 and 1.");
+        }
+
+        if (penaltyPerTonne is < 0m)
+        {
+            throw new ArgumentOutOfRangeException(nameof(penaltyPerTonne), penaltyPerTonne, "A penalty cannot be negative.");
+        }
+
+        Parameters rules = Simulation.Rules;
+        rules.OffsetUsageLimit = offsetUsageLimit ?? rules.OffsetUsageLimit;
+        rules.BankingLimit = bankingLimit ?? rules.BankingLimit;
+        rules.PenaltyPerTonne = penaltyPerTonne ?? rules.PenaltyPerTonne;
+        Simulation.RulesRevision++;
+
+        return Collect();
     }
 
     /// <summary>

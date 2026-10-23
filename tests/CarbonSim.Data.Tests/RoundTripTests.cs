@@ -107,6 +107,25 @@ public sealed class RoundTripTests
     }
 
     [Fact]
+    public async Task A_pending_auto_resume_and_its_wait_survive_the_trip()
+    {
+        using SqliteTestDatabase database = new();
+        TrainingRun run = TrainingRun.Start(Scenario);
+        SimulationSnapshot captured = SimulationSnapshots.Capture(
+            run.Simulation, run.Clock, run.Exchange, run.Otc, run.Auctions, run.Bots);
+        DateTimeOffset resumeAt = new(2026, 10, 23, 9, 30, 0, TimeSpan.Zero);
+        SimulationSnapshot saved = captured with
+        {
+            Clock = captured.Clock with { ResumeAt = resumeAt, AutoResumeAfterAuction = TimeSpan.FromSeconds(45) },
+        };
+
+        SimulationSnapshot loaded = await SaveAndLoad(database, saved);
+
+        loaded.Clock.ResumeAt.Should().Be(resumeAt);
+        loaded.Clock.AutoResumeAfterAuction.Should().Be(TimeSpan.FromSeconds(45));
+    }
+
+    [Fact]
     public async Task Manual_surrender_its_instructions_and_unlimited_banking_survive_the_trip()
     {
         using SqliteTestDatabase database = new();

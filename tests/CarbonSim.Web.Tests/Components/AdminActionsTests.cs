@@ -210,6 +210,26 @@ public sealed class AdminActionsTests : AdminScreenTestContext
     }
 
     [Fact]
+    public void The_setup_screen_sets_a_sectors_own_free_share_and_the_auction_auto_resume()
+    {
+        Session.Draft = ScenarioDraft.Parse(File.ReadAllText(Path.Combine("scenarios", "vietnam-2024.json")));
+
+        IRenderedComponent<AdminSetup> page = RenderComponent<AdminSetup>();
+        page.Find("#setup-sector-0-free-share").GetAttribute("value").Should().BeEmpty("a sector without its own share takes the system's");
+        page.Find("#setup-sector-0-free-share").Change("50");
+        page.Find("#setup-auto-resume").Change("30");
+
+        Simulation simulation = ScenarioLoader.LoadJson(Session.Draft.ToJson(), "setup-sector-share");
+
+        simulation.Sectors[0].FreeAllocationShare.Should().Be(0.5m);
+        simulation.Sectors[1].FreeAllocationShare.Should().BeNull();
+        simulation.Rules.AutoResumeAfterAuction.Should().Be(TimeSpan.FromSeconds(30));
+
+        page.Find("#setup-sector-0-free-share").Change(string.Empty);
+        Session.Draft.Sectors[0].FreeAllocationShare.Should().BeNull("clearing the box hands the sector back to the system's share");
+    }
+
+    [Fact]
     public void The_setup_screen_edits_each_companys_name_capital_and_credit_limit()
     {
         Session.Draft = new ScenarioDraft
@@ -291,6 +311,36 @@ public sealed class AdminActionsTests : AdminScreenTestContext
         page.Find("#admin-leaderboard-toggle").Click();
 
         Session.Actions.Should().Equal("access:False::", "access::True:", "access:::False");
+    }
+
+    [Fact]
+    public void The_end_of_year_modifications_send_the_offset_limit_banking_limit_and_penalty()
+    {
+        IRenderedComponent<AdminRun> page = Render();
+
+        page.Find("#compliance-offset-limit").GetAttribute("value").Should().Be("10", "the form opens on the rules in force, in per cent");
+        page.Find("#compliance-offset-limit").Change("5");
+        page.Find("#compliance-banking-limit").Change("50");
+        page.Find("#compliance-penalty").Change("450");
+        page.Find("#admin-change-compliance").Click();
+
+        Session.Actions.Should().ContainSingle().Which.Should().Be("compliance:0.05:0.5:450");
+    }
+
+    [Fact]
+    public void A_pause_that_will_resume_itself_says_when_and_can_be_called_off()
+    {
+        Snapshot = AdminViewFixture.Sample(SimulationId) with
+        {
+            Run = AdminViewFixture.Detail(SimulationId, "PausedAfterAuction") with { TimeToAutoResume = TimeSpan.FromSeconds(20) },
+        };
+
+        IRenderedComponent<AdminRun> page = Render();
+
+        page.Find("#admin-auto-resume").TextContent.Should().Contain("20");
+        page.Find("#admin-cancel-auto-resume").Click();
+
+        Session.Actions.Should().ContainSingle().Which.Should().Be("cancel-auto-resume");
     }
 
     [Fact]

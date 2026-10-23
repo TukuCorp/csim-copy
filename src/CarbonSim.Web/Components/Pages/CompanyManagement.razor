@@ -42,6 +42,11 @@ else
             }
         </section>
 
+        <section class="card wide" tabindex="0">
+            <h2>@Strings["EndOfYearCompanyReport"]</h2>
+            <CompanyReportTable Reports="view.CompanyReports" />
+        </section>
+
         @if (view.System.AiTradeAssistance)
         {
             @* FAQ #7: with the trainer's permission a player hands a unit to the AI and takes it back. *@

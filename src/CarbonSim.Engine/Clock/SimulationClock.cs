@@ -27,6 +27,7 @@ public sealed class SimulationClock
     private TimeSpan _elapsed;
     private DateTimeOffset? _runningSince;
     private DateTimeOffset? _haltAt;
+    private DateTimeOffset? _resumeAt;
     private int _openNoticedThrough;
     private int _openedThrough;
     private int _closeNoticedThrough;
@@ -43,7 +44,11 @@ public sealed class SimulationClock
 
         _simulation = simulation;
         _timeProvider = timeProvider;
-        _options = options ?? new SimulationClockOptions { PauseAfterAuction = simulation.Rules.PauseAfterAuction };
+        _options = options ?? new SimulationClockOptions
+        {
+            PauseAfterAuction = simulation.Rules.PauseAfterAuction,
+            AutoResumeAfterAuction = simulation.Rules.AutoResumeAfterAuction,
+        };
 
         if (_simulation.Rules.AuctionsPerYear < 1)
         {
@@ -174,7 +179,9 @@ public sealed class SimulationClock
             _closedThrough,
             _haltedForYearEnd,
             _options.PauseAfterAuction,
-            _options.AuctionNotice);
+            _options.AuctionNotice,
+            _resumeAt,
+            _options.AutoResumeAfterAuction);
     }
 
     /// <summary>
@@ -194,7 +201,27 @@ public sealed class SimulationClock
         _closeNoticedThrough = snapshot.CloseNoticedThrough;
         _closedThrough = snapshot.ClosedThrough;
         _haltedForYearEnd = snapshot.HaltedForYearEnd;
+        _resumeAt = snapshot.ResumeAt;
     }
+
+    /// <summary>How long until a pause after an auction resumes itself, or null when none is pending.</summary>
+    public TimeSpan? TimeToAutoResume => _resumeAt is { } resumeAt && State == SimulationState.PausedAfterAuction
+        ? (resumeAt - _timeProvider.GetUtcNow()) is { } left && left > TimeSpan.Zero ? left : TimeSpan.Zero
+        : null;
+
+    /// <summary>Resumes a pause after an auction whose wait is over; anything else is left as it is.</summary>
+    public IReadOnlyList<ClockEvent> ResumeIfDue()
+    {
+        if (State == SimulationState.PausedAfterAuction && _resumeAt is { } resumeAt && _timeProvider.GetUtcNow() >= resumeAt)
+        {
+            return Resume();
+        }
+
+        return [];
+    }
+
+    /// <summary>The trainer calls off a pending resume; the clock then waits for them.</summary>
+    public void CancelAutoResume() => _resumeAt = null;
 
     /// <summary>Begins year 1. Only a pending simulation can start.</summary>
     public IReadOnlyList<ClockEvent> Start()
@@ -269,6 +296,7 @@ public sealed class SimulationClock
         }
 
         _runningSince = _timeProvider.GetUtcNow();
+        _resumeAt = null;
         _simulation.State = SimulationState.Running;
 
         return [];
@@ -394,6 +422,9 @@ public sealed class SimulationClock
                 {
                     Freeze();
                     _simulation.State = SimulationState.PausedAfterAuction;
+                    _resumeAt = _options.AutoResumeAfterAuction > TimeSpan.Zero
+                        ? _timeProvider.GetUtcNow() + _options.AutoResumeAfterAuction
+                        : null;
                     return;
                 }
             }

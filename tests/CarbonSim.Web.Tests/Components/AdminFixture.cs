@@ -125,6 +125,18 @@ public sealed class StubAdminSession : IAdminSession
         return Task.CompletedTask;
     }
 
+    public Task ChangeComplianceRulesAsync(Guid simulationId, decimal? offsetUsageLimit, decimal? bankingLimit, decimal? penaltyPerTonne, CancellationToken cancellationToken = default)
+    {
+        Actions.Add(FormattableString.Invariant($"compliance:{offsetUsageLimit}:{bankingLimit}:{penaltyPerTonne}"));
+        return Task.CompletedTask;
+    }
+
+    public Task CancelAutoResumeAsync(Guid simulationId, CancellationToken cancellationToken = default)
+    {
+        Actions.Add("cancel-auto-resume");
+        return Task.CompletedTask;
+    }
+
     public Task SetMarketAccessAsync(Guid simulationId, bool? exchange, bool? otc, bool? leaderboard, CancellationToken cancellationToken = default)
     {
         Actions.Add($"access:{exchange}:{otc}:{leaderboard}");

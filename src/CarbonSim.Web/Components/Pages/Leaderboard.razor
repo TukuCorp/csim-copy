@@ -15,15 +15,55 @@ else
         <p class="notice notice-status market-closed" role="status">@Strings["LeaderboardNotVisible"]</p>
     }
     <section class="card wide" tabindex="0">
-        <QuickGrid Items="@view.Leaderboard.AsQueryable()" Class="grid" RowClass="@((LeaderboardRow row) => row.IsMine ? "row-mine" : string.Empty)">
-            <TemplateColumn Title="@Strings["Rank"]" Context="row">@row.Rank</TemplateColumn>
-            <TemplateColumn Title="@Strings["Company"]" Context="row">@row.Company @(row.IsMine ? "*" : null)</TemplateColumn>
-            <TemplateColumn Title="@Strings["UnitNamePlayer"]" Context="row">@row.UnitLabel</TemplateColumn>
-            <TemplateColumn Title="@Strings["CostOfCompliance"]" Context="row">@Display.Signed(row.OverallCostOfCompliance)</TemplateColumn>
-            <TemplateColumn Title="@Strings["OverallMarginalCostOfCompliance"]" Context="row">@Display.Signed(row.MarginalCostOfCompliance)</TemplateColumn>
-            <TemplateColumn Title="@Strings["FinalLongShortPosition"]" Context="row">@Display.Position(row.FinalPosition, Strings)</TemplateColumn>
-            <TemplateColumn Title="@Strings["System"]" Context="row">@view.System.Name</TemplateColumn>
-        </QuickGrid>
+        <label>
+            @Strings["Leaderboard"]
+            <select id="leaderboard-period" @bind="_period">
+                <option value="0">@Strings["Overall"]</option>
+                @foreach (LeaderboardYearView board in view.LeaderboardYears)
+                {
+                    <option value="@board.Year">@Strings["LeaderboardYear_X", board.Year]</option>
+                }
+            </select>
+        </label>
+        <label>
+            @Strings["FilterBySector"]
+            <select id="leaderboard-sector" @bind="_sector">
+                <option value="">@Strings["AdminEveryone"]</option>
+                @foreach (string sector in view.Leaderboard.Select(row => row.Sector).Where(sector => sector.Length > 0).Distinct().Order(StringComparer.Ordinal))
+                {
+                    <option value="@sector">@sector</option>
+                }
+            </select>
+        </label>
+        <table class="grid" id="leaderboard-table">
+            <thead>
+                <tr>
+                    <th>@Strings["Rank"]</th>
+                    <th>@Strings["Company"]</th>
+                    <th>@Strings["UnitNamePlayer"]</th>
+                    <th>@Strings["CostOfCompliance"]</th>
+                    <th>@Strings[_period == 0 ? "OverallMarginalCostOfCompliance" : "MarginalCostOfComplianceThisYear"]</th>
+                    <th>@Strings["FinalLongShortPosition"]</th>
+                    <th>@Strings["Penalties"]</th>
+                    <th>@Strings["System"]</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (LeaderboardRow row in Rows(view))
+                {
+                    <tr class="@(row.IsMine ? "row-mine" : null)">
+                        <td>@row.Rank</td>
+                        <td class="leaderboard-company">@row.Company @(row.IsMine ? "*" : null)</td>
+                        <td>@row.UnitLabel</td>
+                        <td>@Display.Signed(row.OverallCostOfCompliance)</td>
+                        <td>@Display.Signed(row.MarginalCostOfCompliance)</td>
+                        <td>@Display.Position(row.FinalPosition, Strings)</td>
+                        <td>@Display.Money(row.Penalties)</td>
+                        <td>@view.System.Name</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
     </section>
 }
 
@@ -33,4 +73,12 @@ else
     [Parameter] public Guid SimulationId { get; set; }
 
     private PlayerView? View => Screen?.View;
+
+    // 0 is the whole run; a year number is that year's board.
+    private int _period;
+    private string _sector = string.Empty;
+
+    private IEnumerable<LeaderboardRow> Rows(PlayerView view) =>
+        (view.LeaderboardYears.FirstOrDefault(board => board.Year == _period)?.Rows ?? view.Leaderboard)
+            .Where(row => _sector.Length == 0 || string.Equals(row.Sector, _sector, StringComparison.Ordinal));
 }

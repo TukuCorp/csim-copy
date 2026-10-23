@@ -86,7 +86,8 @@ public sealed record SectorBausGrowthSnapshot(string Sector, decimal MinAnnualRa
 public sealed record SectorSnapshot(
     string Name,
     decimal EmissionShare,
-    IReadOnlyList<AbatementMenuSnapshot> AbatementMenu);
+    IReadOnlyList<AbatementMenuSnapshot> AbatementMenu,
+    decimal? FreeAllocationShare = null);
 
 /// <summary>An abatement project as the scenario defines it for a sector, before being sized for a unit.</summary>
 public sealed record AbatementMenuSnapshot(

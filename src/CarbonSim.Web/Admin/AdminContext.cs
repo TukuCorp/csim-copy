@@ -32,6 +32,8 @@ public static class AdminRoute
     public static string Reports(Guid simulationId) => $"/{Prefix}/run/{simulationId:D}/reports";
 
     public static string Surrender(Guid simulationId) => $"/{Prefix}/run/{simulationId:D}/surrender";
+
+    public static string Markets(Guid simulationId) => $"/{Prefix}/run/{simulationId:D}/markets";
 }
 
 /// <summary>How often an open console screen re-reads the runs; null in tests, so nothing polls.</summary>

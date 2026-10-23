@@ -102,6 +102,9 @@ public sealed class DraftParameters
     /// <summary>Whether the clock stops after every auction (absent means no).</summary>
     public bool? PauseAfterAuction { get; set; }
 
+    /// <summary>Seconds a pause after an auction waits before resuming itself (absent or 0 means the trainer resumes).</summary>
+    public decimal? AutoResumeAfterAuctionSeconds { get; set; }
+
     /// <summary>Easy, Normal or Hard (absent means Normal).</summary>
     public string? AiDifficulty { get; set; }
 
@@ -128,6 +131,9 @@ public sealed class DraftSector
     public string? Name { get; set; }
 
     public decimal? EmissionShare { get; set; }
+
+    /// <summary>The sector's own free allocation share (absent takes the system's).</summary>
+    public decimal? FreeAllocationShare { get; set; }
 
     public List<DraftAbatementOption> AbatementOptions { get; set; } = [];
 }

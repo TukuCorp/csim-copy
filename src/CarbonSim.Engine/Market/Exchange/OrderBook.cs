@@ -222,9 +222,10 @@ public sealed class OrderBook
 
                 Match(order, order.Price);
 
-                if (request.FillPolicy == FillPolicy.FillOrKill)
+                if (request.FillPolicy is FillPolicy.FillOrKill or FillPolicy.ImmediateOrCancel)
                 {
                     CancelRemainder(order);
+                    ReleaseUnusedCash(order);
                 }
                 else if (order.Remaining > 0m && order.Status != OrderStatus.Cancelled)
                 {

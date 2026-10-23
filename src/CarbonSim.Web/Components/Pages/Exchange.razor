@@ -174,9 +174,13 @@ else
                     <input id="order-stop-price" type="text" inputmode="decimal" @bind="_stopPrice" @bind:culture="CultureInfo.CurrentCulture" />
                 </label>
             }
-            @* Partial fill is what an unticked order does; ticking the box makes it fill or kill. *@
-            <label class="check" title="@Strings["FillOrKillHint"]">
-                <input id="order-fill-or-kill" type="checkbox" @bind="_fillOrKill" /> @Strings["ImmediateOrCancel"]
+            @* The original's two flags: without partial fills an order fills in full or not at all;
+               immediate-or-cancel takes what crosses now and drops the rest instead of resting it. *@
+            <label class="check">
+                <input id="order-partial-fill" type="checkbox" @bind="_partialFills" /> @Strings["PartialFillsAccepted"]
+            </label>
+            <label class="check">
+                <input id="order-ioc" type="checkbox" @bind="_immediateOrCancel" disabled="@(!_partialFills)" /> @Strings["ImmediateOrCancel"]
             </label>
             <p class="muted small">@Strings["FillOrKillHint"]</p>
             <p id="order-capital-cost" class="small muted">@Strings["CapitalCost"]: @Display.Money(Display.PriceFromInput(_price ?? 0m) * _volume)</p>
@@ -222,7 +226,8 @@ else
     private decimal _volume = 1_000m;
     private decimal? _price;
     private decimal? _stopPrice;
-    private bool _fillOrKill;
+    private bool _partialFills = true;
+    private bool _immediateOrCancel;
     private OrderNotice? _orderNotice;
 
     private PlayerView? View => Screen?.View;
@@ -285,7 +290,7 @@ else
         decimal volume = _volume;
         decimal? price = kind == "Limit" && _price is { } typed ? Display.PriceFromInput(typed) : null;
         decimal? stopPrice = kind == "StopLoss" && _stopPrice is { } stop ? Display.PriceFromInput(stop) : null;
-        string fillPolicy = _fillOrKill ? "FillOrKill" : "AllowPartial";
+        string fillPolicy = !_partialFills ? "FillOrKill" : _immediateOrCancel ? "ImmediateOrCancel" : "AllowPartial";
 
         _orderNotice = null;
 

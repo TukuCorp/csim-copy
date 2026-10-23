@@ -46,6 +46,12 @@ else
                     <button class="button ghost" id="admin-resume" @onclick="ResumeAsync">@Strings["AdminResume"]</button>
                 }
 
+                @if (run.TimeToAutoResume is { } resumeIn)
+                {
+                    <span id="admin-auto-resume" class="muted small">@Strings["AutoResumeIn_X", (int)Math.Ceiling(resumeIn.TotalSeconds)]</span>
+                    <button class="button ghost" id="admin-cancel-auto-resume" @onclick="CancelAutoResumeAsync">@Strings["CancelUnpause"]</button>
+                }
+
                 @if (run.State is "Running" or "Paused" or "PausedAfterAuction")
                 {
                     <button class="button ghost" id="admin-halt" @onclick="() => HaltAsync()">@Strings["AdminHalt"]</button>
@@ -224,6 +230,28 @@ else
         </section>
 
         <section class="card">
+            <h2>@Strings["SystemModifications"]</h2>
+            <p class="muted small">@Strings["SystemModificationsHint"]</p>
+            <label for="compliance-offset-limit">
+                @Strings["OffsetUsageLimit"] (%)
+                <input id="compliance-offset-limit" type="text" inputmode="decimal" @bind="_offsetLimitPercent" @bind:culture="CultureInfo.CurrentCulture" />
+            </label>
+            <label for="compliance-banking-limit">
+                @Strings["BankingLimit"] (%)
+                <input id="compliance-banking-limit" type="text" inputmode="decimal" @bind="_bankingLimitPercent" @bind:culture="CultureInfo.CurrentCulture" />
+            </label>
+            <label for="compliance-penalty">
+                @Strings["PenaltyPerTonne"] (@Display.Currency.Code)
+                <input id="compliance-penalty" type="text" inputmode="decimal" @bind="_penalty" @bind:culture="CultureInfo.CurrentCulture" />
+            </label>
+            <button class="button" id="admin-change-compliance" @onclick="ChangeComplianceAsync">@Strings["AdminApply"]</button>
+            @if (_complianceNotice is { } compliance)
+            {
+                <p class="notice @(compliance.IsError ? "notice-error" : "notice-status")" role="status">@compliance.Text</p>
+            }
+        </section>
+
+        <section class="card">
             <h2>@Strings["AdminChangeRules"]</h2>
             <p class="muted small">@Strings["AdminChangeRulesHint"]</p>
             <label for="rules-floor">
@@ -324,6 +352,10 @@ else
     private ConsoleNotice? _rulesNotice;
     private decimal _floor;
     private decimal _ceiling;
+    private ConsoleNotice? _complianceNotice;
+    private decimal? _offsetLimitPercent;
+    private decimal? _bankingLimitPercent;
+    private decimal? _penalty;
     private int _fineUnitId;
     private decimal _fineAmount = 10_000m;
     private string _fineDescription = string.Empty;
@@ -359,7 +391,15 @@ else
             _floor = run.Parameters.AuctionFloorPrice;
             _ceiling = run.Parameters.AuctionCeilingPrice;
         }
+
+        // The modifications open on the rules in force, in per cent as the trainer reads them.
+        _offsetLimitPercent ??= Percent(run.Parameters.OffsetUsageLimit);
+        _bankingLimitPercent ??= Percent(run.Parameters.BankingLimit);
+        _penalty ??= run.Parameters.PenaltyPerTonne;
     }
+
+    // A share as the per cent a trainer types, without the trailing zeros the multiplication leaves (10, not 10.0).
+    private static decimal Percent(decimal share) => share * 100m / 1.000000000000000000000000000m;
 
     private static int Selected(int chosen, IEnumerable<int> available) =>
         available.Contains(chosen) ? chosen : available.First();
@@ -499,6 +539,16 @@ else
             Strings["AdminShockAppliedToUnit", UnitName(run, _shockUnitId), _shockYear, Display.Tonnes(_shockTonnes)],
             notice => _shockNotice = notice);
     }
+
+    /// <summary>The end-of-year modifications: offset usage limit, banking limit and cash penalty.</summary>
+    private Task ChangeComplianceAsync() =>
+        ActAsync(
+            session => session.ChangeComplianceRulesAsync(SimulationId, _offsetLimitPercent / 100m, _bankingLimitPercent / 100m, _penalty),
+            Strings["SystemModificationsApplied"],
+            notice => _complianceNotice = notice);
+
+    private Task CancelAutoResumeAsync() =>
+        Context.ActAsync(session => session.CancelAutoResumeAsync(SimulationId), Strings["CancelUnpause"]);
 
     /// <summary>Moves the collar the year trades under; the market re-quotes at once.</summary>
     private Task ChangeRulesAsync() =>

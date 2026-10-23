@@ -45,6 +45,12 @@ public interface IAdminSession
     Task SetMessagingAsync(Guid simulationId, bool enabled, CancellationToken cancellationToken = default);
 
     /// <summary>Opens or closes the exchange, the OTC market or the leaderboard mid-run; null leaves one as it is.</summary>
+    /// <summary>The end-of-year system modifications: offset usage limit, banking limit and cash penalty; null leaves one as it is.</summary>
+    Task ChangeComplianceRulesAsync(Guid simulationId, decimal? offsetUsageLimit, decimal? bankingLimit, decimal? penaltyPerTonne, CancellationToken cancellationToken = default);
+
+    /// <summary>Calls off a pause after an auction that would resume itself.</summary>
+    Task CancelAutoResumeAsync(Guid simulationId, CancellationToken cancellationToken = default);
+
     Task SetMarketAccessAsync(Guid simulationId, bool? exchange, bool? otc, bool? leaderboard, CancellationToken cancellationToken = default);
 
     /// <summary>Posts the trainer's line to the room, or to one company when one is named.</summary>

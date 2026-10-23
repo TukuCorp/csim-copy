@@ -32,6 +32,7 @@ else
         <section class="card wide" tabindex="0">
             <h2>@Strings["AdminPriceReport"]</h2>
             <p><a class="button ghost small-button" href="@Csv(AdminReport.Prices)">@Strings["AdminExportCsv"]</a></p>
+            <EChart Option="@PriceChart(run)" Height="240px" Label="@Strings["AdminPriceReport"]" /> 
             <table class="grid">
                 <thead>
                     <tr>
@@ -98,6 +99,20 @@ else
         </section>
 
         <section class="card wide" tabindex="0">
+            <h2>@Strings["EndOfYearCompanyReport"]</h2>
+            <label>
+                @Strings["Company"]
+                <select id="admin-company-report-company" @bind="_reportCompany">
+                    @foreach (AdminCompanyReportView company in run.CompanyReports)
+                    {
+                        <option value="@company.Company">@company.Company</option>
+                    }
+                </select>
+            </label>
+            <CompanyReportTable Reports="ReportFor(run)" />
+        </section>
+
+        <section class="card wide" tabindex="0">
             <h2>@Strings["AdminUnitReport"]</h2>
             <p><a class="button ghost small-button" href="@Csv(AdminReport.Units)">@Strings["AdminExportCsv"]</a></p>
             <table class="grid">
@@ -132,18 +147,39 @@ else
         <section class="card wide" tabindex="0">
             <h2>@Strings["Leaderboard"]</h2>
             <p><a class="button ghost small-button" href="@Csv(AdminReport.Leaderboard)">@Strings["AdminExportCsv"]</a></p>
-            <table class="grid">
+            <label>
+                @Strings["Leaderboard"]
+                <select id="admin-leaderboard-period" @bind="_period">
+                    <option value="0">@Strings["Overall"]</option>
+                    @foreach (AdminLeaderYearView board in run.LeaderboardYears)
+                    {
+                        <option value="@board.Year">@Strings["LeaderboardYear_X", board.Year]</option>
+                    }
+                </select>
+            </label>
+            <label>
+                @Strings["FilterBySector"]
+                <select id="admin-leaderboard-sector" @bind="_sector">
+                    <option value="">@Strings["AdminEveryone"]</option>
+                    @foreach (string sector in run.Leaderboard.Select(row => row.Sector).Where(sector => sector.Length > 0).Distinct().Order(StringComparer.Ordinal))
+                    {
+                        <option value="@sector">@sector</option>
+                    }
+                </select>
+            </label>
+            <table class="grid" id="admin-leaderboard-table">
                 <thead>
                     <tr>
                         <th>@Strings["Rank"]</th>
                         <th>@Strings["Company"]</th>
                         <th>@Strings["UnitNamePlayer"]</th>
-                        <th>@Strings["OverallMarginalCostOfCompliance"]</th>
+                        <th>@Strings[_period == 0 ? "OverallMarginalCostOfCompliance" : "MarginalCostOfComplianceThisYear"]</th>
                         <th>@Strings["FinalLongShortPosition"]</th>
+                        <th>@Strings["Penalties"]</th>
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach (AdminLeaderView row in run.Leaderboard)
+                    @foreach (AdminLeaderView row in LeaderRows(run))
                     {
                         <tr>
                             <td>@row.Rank</td>
@@ -151,6 +187,7 @@ else
                             <td>@Display.Unit(row.Unit, row.Player, automated: false)</td>
                             <td>@Display.Signed(row.MarginalCost)</td>
                             <td>@Display.Tonnes(row.FinalPosition)</td>
+                            <td>@Display.Money(row.Penalties)</td>
                         </tr>
                     }
                 </tbody>
@@ -167,4 +204,27 @@ else
     private AdminRunDetail? Run => Snapshot?.RunId == SimulationId ? Snapshot?.Run : null;
 
     private string Csv(string report) => $"/api/admin/runs/{SimulationId:D}/reports/{report}.csv";
+
+    private string? _reportCompany;
+
+    /// <summary>Each channel's yearly average; a year with nothing traded in a channel is a gap.</summary>
+    private string PriceChart(AdminRunDetail run) => Charts.YearlyAveragePrices(
+        [.. run.Prices.Select(price => Strings["Year_X", price.Year].Value)],
+        [
+            (Strings["AverageAllowancePriceAllChannels"].Value, [.. run.Prices.Select(price => price.AllowanceVolume > 0m ? price.AllowanceAverage : (decimal?)null)]),
+            (Strings["Offset"].Value, [.. run.Prices.Select(price => price.OffsetVolume > 0m ? price.OffsetAverage : (decimal?)null)]),
+            (Strings["AllowanceAuction"].Value, [.. run.Prices.Select(price => price.AuctionAverage)]),
+        ]);
+
+    /// <summary>The picked company's reports; the first company until the trainer picks one.</summary>
+    private IReadOnlyList<CarbonSim.Engine.Finance.CompanyYearReport> ReportFor(AdminRunDetail run) =>
+        (run.CompanyReports.FirstOrDefault(company => company.Company == _reportCompany) ?? run.CompanyReports.FirstOrDefault())?.Years ?? [];
+
+    // 0 is the whole run; a year number is that year's board.
+    private int _period;
+    private string _sector = string.Empty;
+
+    private IEnumerable<AdminLeaderView> LeaderRows(AdminRunDetail run) =>
+        (run.LeaderboardYears.FirstOrDefault(board => board.Year == _period)?.Rows ?? run.Leaderboard)
+            .Where(row => _sector.Length == 0 || string.Equals(row.Sector, _sector, StringComparison.Ordinal));
 }

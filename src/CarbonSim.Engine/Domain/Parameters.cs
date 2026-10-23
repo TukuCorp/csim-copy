@@ -30,14 +30,18 @@ public sealed record Parameters
     /// <summary>Business-as-usual growth band per sector, keyed by sector name.</summary>
     public required IReadOnlyList<SectorBausGrowth> BausGrowthBySector { get; init; }
 
+    // The offset limit, the banking limit and the cash penalty are the trainer's end-of-year
+    // modifications (SimulationRun.ChangeComplianceRules), so like the collar they are settable by
+    // the run rather than init-only; the scenario loader insists on all three and Validate checks them.
+
     /// <summary>Share of a year's obligation that may be met with offsets.</summary>
-    public required decimal OffsetUsageLimit { get; init; }
+    public decimal OffsetUsageLimit { get; internal set; }
 
     /// <summary>Share of the obligation a company may carry into the next year (1.0 = all of it).</summary>
-    public required decimal BankingLimit { get; init; }
+    public decimal BankingLimit { get; internal set; }
 
     /// <summary>Cash penalty per tonne of uncovered obligation, in simulation currency.</summary>
-    public required decimal PenaltyPerTonne { get; init; }
+    public decimal PenaltyPerTonne { get; internal set; }
 
     /// <summary>Allowances debited from the next year's allocation per tonne of uncovered obligation.</summary>
     public required decimal PenaltyAllowanceDebit { get; init; }
@@ -120,6 +124,12 @@ public sealed record Parameters
     /// the option with its clock, so this is read once, when the run is built.
     /// </summary>
     public bool PauseAfterAuction { get; init; }
+
+    /// <summary>
+    /// How long a pause after an auction lasts before the clock resumes itself (catalog
+    /// `AutoResumeAfterAuctionSeconds`); zero leaves the pause to the trainer.
+    /// </summary>
+    public TimeSpan AutoResumeAfterAuction { get; init; }
 
     /// <summary>
     /// How sharp the exercise's bots are (the original's "AI Difficulty"). The fleet is built at it,
@@ -240,6 +250,11 @@ public sealed record Parameters
                 "governmentReserveToAuctionPercent",
                 "must be between 0 and 1",
                 GovernmentReserveToAuctionPercent));
+        }
+
+        if (AutoResumeAfterAuction < TimeSpan.Zero)
+        {
+            errors.Add(Message("autoResumeAfterAuctionSeconds", "must not be negative", AutoResumeAfterAuction.TotalSeconds));
         }
 
         if (ForwardVintageShare is < 0m or > 1m)

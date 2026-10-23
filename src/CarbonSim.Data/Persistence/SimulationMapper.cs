@@ -96,6 +96,7 @@ public static class SimulationMapper
                         SimulationId = id,
                         Name = sector.Name,
                         EmissionShare = sector.EmissionShare,
+                        FreeAllocationShare = sector.FreeAllocationShare,
                     }),
             ],
             AbatementMenu =
@@ -546,6 +547,8 @@ public static class SimulationMapper
                 HaltedForYearEnd = snapshot.Clock.HaltedForYearEnd,
                 PauseAfterAuction = snapshot.Clock.PauseAfterAuction,
                 AuctionNotice = snapshot.Clock.AuctionNotice,
+                ResumeAt = snapshot.Clock.ResumeAt,
+                AutoResumeAfterAuction = snapshot.Clock.AutoResumeAfterAuction,
             },
             Bots = [.. BotRecords(id, snapshot)],
             BotUnits =
@@ -720,7 +723,8 @@ public static class SimulationMapper
                                     entry.AnnualNetRevenuePerTonne,
                                     entry.ImplementationYears,
                                     entry.LifetimeYears)),
-                        ])),
+                        ],
+                        sector.FreeAllocationShare)),
             ],
             [
                 .. run.Players
@@ -1070,6 +1074,8 @@ public static class SimulationMapper
             clock.ClosedThrough,
             clock.HaltedForYearEnd,
             clock.PauseAfterAuction,
-            clock.AuctionNotice);
+            clock.AuctionNotice,
+            clock.ResumeAt,
+            clock.AutoResumeAfterAuction);
     }
 }

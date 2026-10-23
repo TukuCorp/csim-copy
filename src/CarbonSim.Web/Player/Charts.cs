@@ -119,6 +119,38 @@ public static class Charts
             Options);
     }
 
+    /// <summary>
+    /// The historical average carbon price: one line per channel across the years, a gap where a
+    /// year had no trade in that channel rather than a fall to zero.
+    /// </summary>
+    public static string YearlyAveragePrices(
+        IReadOnlyList<string> years,
+        IReadOnlyList<(string Name, IReadOnlyList<decimal?> Prices)> series)
+    {
+        ArgumentNullException.ThrowIfNull(years);
+        ArgumentNullException.ThrowIfNull(series);
+
+        return JsonSerializer.Serialize(
+            new
+            {
+                grid = new { left = 56, right = 24, top = 34, bottom = 28 },
+                tooltip = new { trigger = "axis" },
+                legend = new { data = series.Select(line => line.Name).ToArray(), top = 0, textStyle = new { fontSize = 11 } },
+                xAxis = new { type = "category", data = years },
+                yAxis = new { type = "value", scale = true },
+                series = series.Select((line, index) => (object)new
+                {
+                    name = line.Name,
+                    type = "line",
+                    connectNulls = false,
+                    data = line.Prices,
+                    itemStyle = new { color = ProductColours[index % ProductColours.Length] },
+                    lineStyle = new { type = CloseStyles[index % CloseStyles.Length] },
+                }).ToArray(),
+            },
+            Options);
+    }
+
     /// <summary>Operating profit with and without the abatement the company has committed to.</summary>
     public static string NetProfit(decimal normalOperatingProfit, decimal withAbatement, string normalLabel, string abatementLabel)
     {

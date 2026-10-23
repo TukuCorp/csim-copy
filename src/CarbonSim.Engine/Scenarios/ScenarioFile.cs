@@ -75,6 +75,9 @@ internal sealed class ParametersFile
     /// <summary>Whether the clock stops after every auction until the trainer resumes it; absent means no.</summary>
     public bool? PauseAfterAuction { get; set; }
 
+    /// <summary>Seconds a pause after an auction waits before resuming itself; absent or 0 waits for the trainer.</summary>
+    public decimal? AutoResumeAfterAuctionSeconds { get; set; }
+
     /// <summary>Easy, Normal or Hard, in any case; absent means Normal.</summary>
     public string? AiDifficulty { get; set; }
 
@@ -101,6 +104,9 @@ internal sealed class SectorFile
     public string? Name { get; set; }
 
     public decimal? EmissionShare { get; set; }
+
+    /// <summary>The share of this sector's slice of the cap given free; absent takes the system's share.</summary>
+    public decimal? FreeAllocationShare { get; set; }
 
     public List<AbatementOptionFile>? AbatementOptions { get; set; }
 }

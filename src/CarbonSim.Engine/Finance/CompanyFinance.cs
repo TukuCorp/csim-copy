@@ -61,6 +61,36 @@ public sealed class CompanyFinance
         _simulation.Cash.MovementsFor(company, year, CashCategory.Interest);
 
     /// <summary>
+    /// The company's year from the cash ledger, line by line. Every movement is stamped with the year it
+    /// happened in, so the capital a year opened with is today's capital less everything since.
+    /// </summary>
+    public CompanyYearReport YearReport(Company company, int year)
+    {
+        ArgumentNullException.ThrowIfNull(company);
+        RequireYear(year);
+
+        CashLedger cash = _simulation.Cash;
+        decimal sinceStart = cash.Movements
+            .Where(movement => ReferenceEquals(movement.Company, company) && movement.Year >= year)
+            .Sum(movement => movement.Amount);
+        decimal start = company.Capital - sinceStart;
+
+        return new CompanyYearReport(
+            year,
+            start,
+            cash.MovementsFor(company, year, CashCategory.OperatingProfit),
+            cash.MovementsFor(company, year, CashCategory.AbatementNetRevenue),
+            cash.MovementsFor(company, year, CashCategory.AbatementCapital),
+            cash.MovementsFor(company, year, CashCategory.AuctionPurchase),
+            cash.MovementsFor(company, year, CashCategory.SecondaryPurchase, CashCategory.OtcPurchase),
+            cash.MovementsFor(company, year, CashCategory.InstrumentSale),
+            cash.MovementsFor(company, year, CashCategory.Penalty),
+            cash.MovementsFor(company, year, CashCategory.Fine),
+            cash.MovementsFor(company, year, CashCategory.Interest),
+            start + cash.MovementsFor(company, year));
+    }
+
+    /// <summary>
     /// Closes the books on a year: interest first, on the balance the company is carrying, then
     /// the year's operating profit and abatement result are paid in. Charging interest first
     /// means a good year cannot erase what borrowing cost.

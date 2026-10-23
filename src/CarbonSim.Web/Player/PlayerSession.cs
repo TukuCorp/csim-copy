@@ -337,6 +337,10 @@ public sealed class PlayerSession : IPlayerSession
             run.MessagingEnabled)
         {
             TimeToHalt = run.Clock.TimeToHalt,
+            CompanyReports = started ? [.. Enumerable.Range(1, year).Select(each => simulation.Finance.YearReport(company, each))] : [],
+            LeaderboardYears = parameters.LeaderboardVisible && started
+                ? [.. Enumerable.Range(1, year).Select(each => new LeaderboardYearView(each, BuildLeaderboardYear(run, company, each)))]
+                : [],
             Surrender = started && simulation.Compliance.For(company, year) is null
                 ? BuildSurrender(simulation, standing, company, year)
                 : null,
@@ -581,7 +585,10 @@ public sealed class PlayerSession : IPlayerSession
             auction.Results.Sum(result => result.VolumeSold),
             [.. auction.Lots.Select(lot => new AuctionLotView(lot.Vintage, lot.Volume, lot.IsForward))],
             myBids,
-            myAwards);
+            myAwards)
+        {
+            BidCount = auction.IsCleared ? auction.Bids.Count : null,
+        };
     }
 
     private static decimal AuctionableForYear(HostedRun run, int year)
@@ -817,6 +824,20 @@ public sealed class PlayerSession : IPlayerSession
             "leaderboard",
             () => (IReadOnlyList<LeaderboardEntry>)Leaderboard.Rank(run.Simulation));
 
+        return Rows(ranked, company);
+    }
+
+    private static IReadOnlyList<LeaderboardRow> BuildLeaderboardYear(HostedRun run, Company company, int year)
+    {
+        IReadOnlyList<LeaderboardEntry> ranked = run.Shared(
+            $"leaderboard:{year}",
+            () => (IReadOnlyList<LeaderboardEntry>)Leaderboard.RankYear(run.Simulation, year));
+
+        return Rows(ranked, company);
+    }
+
+    private static List<LeaderboardRow> Rows(IReadOnlyList<LeaderboardEntry> ranked, Company company)
+    {
         return
         [
             .. ranked.Select(entry => new LeaderboardRow(
@@ -828,7 +849,11 @@ public sealed class PlayerSession : IPlayerSession
                 entry.OverallMarginalCostOfCompliance,
                 entry.FinalPosition,
                 entry.IsAutomated,
-                ReferenceEquals(entry.Company, company))),
+                ReferenceEquals(entry.Company, company))
+            {
+                Sector = entry.Company.Sector.Name,
+                Penalties = entry.Penalties,
+            }),
         ];
     }
 

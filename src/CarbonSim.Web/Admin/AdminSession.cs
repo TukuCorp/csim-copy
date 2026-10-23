@@ -5,6 +5,7 @@ using CarbonSim.Engine.Allocation;
 using CarbonSim.Engine.Compliance;
 using CarbonSim.Engine.Domain;
 using CarbonSim.Engine.Market;
+using CarbonSim.Engine.Market.Exchange;
 using CarbonSim.Engine.Reporting;
 using CarbonSim.Web.Player;
 using CarbonSim.Web.Simulations;
@@ -232,6 +233,25 @@ public sealed class AdminSession : IAdminSession
     {
         await RequireAdministratorAsync().ConfigureAwait(false);
         await _driver.SetMessagingAsync(simulationId, enabled, cancellationToken).ConfigureAwait(false);
+    }
+
+    public async Task ChangeComplianceRulesAsync(
+        Guid simulationId,
+        decimal? offsetUsageLimit,
+        decimal? bankingLimit,
+        decimal? penaltyPerTonne,
+        CancellationToken cancellationToken = default)
+    {
+        await RequireAdministratorAsync().ConfigureAwait(false);
+        await _driver
+            .ChangeComplianceRulesAsync(simulationId, offsetUsageLimit, bankingLimit, penaltyPerTonne, cancellationToken)
+            .ConfigureAwait(false);
+    }
+
+    public async Task CancelAutoResumeAsync(Guid simulationId, CancellationToken cancellationToken = default)
+    {
+        await RequireAdministratorAsync().ConfigureAwait(false);
+        await _driver.CancelAutoResumeAsync(simulationId, cancellationToken).ConfigureAwait(false);
     }
 
     public async Task SetMarketAccessAsync(
@@ -480,17 +500,10 @@ public sealed class AdminSession : IAdminSession
                 opportunities));
         }
 
-        List<AdminLeaderView> leaderboard =
-        [
-            .. Leaderboard.Rank(simulation).Select(entry => new AdminLeaderView(
-                entry.Rank,
-                entry.Company.Name,
-                string.Join(", ", entry.Company.Units.Select(unit => unit.Name)),
-                entry.Company.Owner.Name,
-                entry.OverallMarginalCostOfCompliance,
-                entry.FinalPosition,
-                entry.IsAutomated)),
-        ];
+        List<AdminLeaderView> leaderboard = LeaderRows(Leaderboard.Rank(simulation));
+        List<AdminLeaderYearView> leaderboardYears = simulation.CurrentYear >= 1
+            ? [.. Enumerable.Range(1, year).Select(each => new AdminLeaderYearView(each, LeaderRows(Leaderboard.RankYear(simulation, each))))]
+            : [];
 
         List<AdminPriceView> prices = [];
 
@@ -581,11 +594,81 @@ public sealed class AdminSession : IAdminSession
             simulation.State == SimulationState.YearEnded && simulation.CurrentYear >= parameters.Years)
         {
             RuleChanges = [.. run.RuleChanges],
+            LeaderboardYears = leaderboardYears,
+            LiveAuction = simulation.CurrentYear >= 1 ? LiveAuction(run.Auctions.ForSection(year, run.Clock.CurrentAuction), run.Clock.IsAuctionOpen) : null,
+            LiveBooks = LiveBooks(run, year),
+            CompanyReports = simulation.CurrentYear >= 1
+                ? [.. simulation.Companies.Select(company => new AdminCompanyReportView(
+                    company.Name,
+                    [.. Enumerable.Range(1, year).Select(each => simulation.Finance.YearReport(company, each))]))]
+                : [],
+            TimeToAutoResume = run.Clock.TimeToAutoResume,
             ExchangeAccess = parameters.ExchangeAccess,
             OtcAccess = parameters.OtcAccess,
             LeaderboardVisible = parameters.LeaderboardVisible,
         };
     }
+
+    private static AdminLiveAuctionView LiveAuction(Auction auction, bool open) => new(
+        auction.Year,
+        auction.Sequence,
+        open && !auction.IsCleared,
+        auction.IsCleared,
+        [
+            .. auction.Lots.Select(lot =>
+            {
+                List<AuctionBid> bids = [.. auction.Bids.Where(bid => bid.Vintage == lot.Vintage)];
+
+                return new AdminLiveLotView(
+                    lot.Vintage,
+                    lot.IsForward,
+                    lot.Volume,
+                    bids.Count,
+                    bids.Select(bid => bid.Unit.Company).Distinct().Count(),
+                    bids.Sum(bid => bid.Volume),
+                    bids.Count == 0 ? null : bids.Max(bid => bid.Price),
+                    auction.Results.FirstOrDefault(result => result.Vintage == lot.Vintage)?.ClearingPrice);
+            }),
+        ]);
+
+    private static List<AdminLiveBookView> LiveBooks(HostedRun run, int year) =>
+    [
+        .. run.Exchange.Products.Select(product =>
+        {
+            OrderBook book = run.Exchange.Book(product);
+            List<MarketTrade> trades =
+            [
+                .. run.Simulation.Journal.In(year).Where(trade => trade.Channel == TradeChannel.Exchange && trade.Product == product),
+            ];
+
+            return new AdminLiveBookView(
+                product.IsOffset ? ProductView.Offset : ProductView.Allowance(product.Vintage),
+                book.BestBid,
+                book.BestOffer,
+                book.HasTraded ? book.LastTradePrice : null,
+                book.OpenOrders.Count,
+                book.OpenOrders.Where(order => order.Side == OrderSide.Buy).Sum(order => order.Remaining),
+                book.OpenOrders.Where(order => order.Side == OrderSide.Sell).Sum(order => order.Remaining),
+                trades.Count,
+                trades.Sum(trade => trade.Volume));
+        }),
+    ];
+
+    private static List<AdminLeaderView> LeaderRows(IReadOnlyList<LeaderboardEntry> ranked) =>
+    [
+        .. ranked.Select(entry => new AdminLeaderView(
+            entry.Rank,
+            entry.Company.Name,
+            string.Join(", ", entry.Company.Units.Select(unit => unit.Name)),
+            entry.Company.Owner.Name,
+            entry.OverallMarginalCostOfCompliance,
+            entry.FinalPosition,
+            entry.IsAutomated)
+        {
+            Sector = entry.Company.Sector.Name,
+            Penalties = entry.Penalties,
+        }),
+    ];
 
     private static AdminParametersView ToParametersView(Parameters parameters) => new(
         parameters.Cap,

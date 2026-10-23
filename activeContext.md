@@ -1781,3 +1781,83 @@ Still open: the leaderboard spread envelope (scenario re-authoring), bots on for
 player-set bank volume, an order-centric trade history, per-sector free allocation, adding and
 deleting companies and units, multiple trading systems, direct messages.
 
+
+## Console depth, year-end changes and the remaining screen gaps (2026-10-23, second pass)
+
+User goal: "Get to 85% same cadence". Start: about 80% (rules ~89, player screens ~77, console
+~66, numbers ~88). The console has the most headroom, so most items are audit B section 3 rows;
+each keeps scenario defaults, so the calibrated golden should not move.
+
+- [x] Auto-resume after an auction pause (audit A E15, admin #8; catalog `AutoResumeAfterAuctionSeconds`, `CancelUnpause`): scenario/setup seconds, the clock resumes itself, the trainer can cancel a pending auto-resume
+- [x] Free allocation per sector (audit A B2, admin #34; catalog `FreeAllocationSectorAllocation`): an optional per-sector share overriding the system share; setup column
+- [x] Year-end system modifications (audit A K6, admin #12; catalog `SystemModifications`): the trainer changes the offset usage limit, banking limit and cash penalty between years
+- [x] Immediate-or-cancel as its own order flag (audit A F3, step 24; catalog `ImmediateOrCancel`, `PartialFillsAccepted`, `CancellationReason_ImmediateUnfilled`): fill what crosses, cancel the rest
+- [x] Console live views of the auction and the exchange (admin #14, #15; catalog `LiveAllowanceAuctionUpdates`, `ExchangeMarketLiveUpdates`)
+- [x] Year-end company report with profit and loss (admin #17; catalog `EndOfYearCompanyReport`, `CapitalOnHandStartOfThisYear`, `LoanInterest`, `OtherFines`) on the console and the player's Company Management
+- [x] Leaderboard by year, filtered by sector, with the penalty shown (admin #20, step 30; catalog `LeaderboardYear_X`, `FilterBySector`)
+- [x] Historical average carbon price chart on the console reports (admin #19)
+- [x] Small screen gaps: OTC product picker shows the quantity on hand (step 25), auction history shows % filled and the bid count (step 17)
+- [ ] Gate: build 0 warnings and format clean (done); Engine suite green and golden unchanged (done); full Data and Web suites after the last edit still to run (see Pending)
+- [x] Docs (runbook, tester guide, handover) and this review; commit and push main at the user's request
+- [ ] /verify (see Pending)
+
+### Review
+
+Built test-first at each layer:
+
+- **Auto-resume after an auction pause** (audit A E15, admin #8). `Parameters.AutoResumeAfterAuction`
+  (scenario `autoResumeAfterAuctionSeconds`, setup field); the clock sets a resume time when it pauses
+  after an auction and `SimulationRun.Advance` resumes it once due (`SimulationClock.ResumeIfDue`); the
+  trainer can call it off (`CancelAutoResume`, console button beside the countdown). The wait and a
+  pending resume are in the clock snapshot and the `Clocks` table.
+- **Free allocation per sector** (audit A B2, admin #34). `Sector.FreeAllocationShare` (scenario
+  sector `freeAllocationShare`, setup box per sector, `Sectors` table); a sector with its own share
+  gets that share of its slice of the cap, the rest keep the system share, and with no sector share
+  the plan takes the old path unchanged (golden unchanged).
+- **End-of-year system modifications** (audit A K6, admin #12). `SimulationRun.ChangeComplianceRules`
+  moves the offset usage limit, banking limit and cash penalty (range-checked before anything moves,
+  rules revision bumped, kept by a save); the console form opens on the rules in force in per cent and
+  the room gets a line in Messages.
+- **Immediate-or-cancel** (audit A F3, step 24). `FillPolicy.ImmediateOrCancel`: fill what crosses,
+  cancel the rest, hand back the unused cash. The order form has the original's two flags. Found on the
+  way: a fill-or-kill limit order filled in full below its limit kept its unused cash escrowed; it now
+  hands it back (test fails without the change, passes with it).
+- **Console live markets** (admin #14, #15). New page /admin/run/{id}/markets: the current auction lot
+  by lot (bids, bidders, bid volume, highest bid, clearing price) and every exchange book (best bid and
+  offer, last trade, resting orders and volumes, this year's trades).
+- **End-of-year company report** (admin #17). `CompanyFinance.YearReport` from the cash ledger: opening
+  capital, every profit-and-loss line, closing capital; the lines add up to the change in capital. On
+  the player's Company Management and, for any company, on the console's reports.
+- **Leaderboard by year and sector, with penalties** (admin #20, step 30). `Leaderboard.RankYear` and a
+  `Penalties` figure on every entry; both boards have a period and a sector select.
+- **Historical average price chart** (admin #19) on the console reports, a gap where a year had no
+  trade in a channel.
+- **Small screen gaps**: the OTC product list shows the quantity on hand (step 25); a cleared auction
+  shows the share filled and its bid count, kept back while the bids are sealed (step 17).
+
+Migration `AutoResumeAndSectorShare` (nullable sector share, zero wait, null resume time, so saved
+exercises play as before).
+
+Verified after the last code edit: build 0 warnings 0 errors; `dotnet format --verify-no-changes`
+clean; Engine 360 passed + 1 skipped (E6, the leaderboard spread), golden unchanged. Each new web test
+class passed when run with its neighbouring suites during the work (LeaderboardControls, CompanyReportScreens,
+AdminMarkets, ConsoleReports, ConsoleModification, OrderFlags, SmallScreenGaps, AdminActions,
+AdminScreens, Localization and others); Data 21 passed after the migration.
+
+Re-score (estimate, same method; not yet backed by a full suite run): console about 66% to about 80%
+(#8, #12, #14, #15, #17, #19, #20, #34 to have or partial-plus), rules about 89% to about 91% (B2, E15,
+F3, K6), player screens about 77% to about 81% (steps 17, 24, 25, 30 and the company report); numbers
+unchanged at about 88%. Overall about 80% to about 85%.
+
+### Pending
+
+- **The full Data and Web suites after the last edit were not run.** A background `dotnet test
+  CarbonSim.sln` was stopped by Claude Code because the machine ran low on memory (not a test
+  failure); the user asked to document this and commit. Next step: run the three test projects one at
+  a time in the foreground and fix anything red.
+- **/verify was not run** for this pass, for the same reason. Next step: a `.verify/` checks file for
+  the claims above, run with the runner once memory allows.
+- Not built (unchanged): the leaderboard spread envelope, bots on forward lots, a player-set bank
+  volume, an order-centric trade history, adding and deleting companies and units, a schedule of sales
+  by vintage, multiple trading systems, direct messages.
+

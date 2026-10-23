@@ -164,6 +164,9 @@ public sealed record LeaderboardEntry(
     bool IsAutomated,
     bool InCompliance)
 {
+    /// <summary>The cash penalties the company paid over the board's period.</summary>
+    public decimal Penalties { get; init; }
+
     public override string ToString() =>
         $"#{Rank} {Company.Name}: {OverallMarginalCostOfCompliance} per tonne, position {FinalPosition}";
 }
@@ -176,34 +179,67 @@ public sealed record LeaderboardEntry(
 /// </summary>
 public static class Leaderboard
 {
+    /// <summary>The board for the whole run.</summary>
     public static IReadOnlyList<LeaderboardEntry> Rank(Simulation simulation)
     {
         ArgumentNullException.ThrowIfNull(simulation);
 
-        List<LeaderboardEntry> entries = [];
         Standing standing = new(simulation);
         int year = Math.Max(1, Math.Min(simulation.CurrentYear, simulation.Allocation.Years.Count));
 
+        return Ranked(
+            simulation,
+            company => Scoring.Overall(simulation, company),
+            // Every closed year covered, and the year in play covered as it stands.
+            (company, score) => score.Shortfall == 0m
+                && (standing.IsSettled(company, year) || standing.Shortfall(company, year) == 0m),
+            company => -simulation.Allocation.Years.Sum(each => simulation.Cash.MovementsFor(company, each, CashCategory.Penalty)));
+    }
+
+    /// <summary>
+    /// The board for one year (catalog `LeaderboardYear_X`): that year's cost per tonne, and compliance
+    /// as that year settled, or as it stands while it is live.
+    /// </summary>
+    public static IReadOnlyList<LeaderboardEntry> RankYear(Simulation simulation, int year)
+    {
+        ArgumentNullException.ThrowIfNull(simulation);
+
+        Standing standing = new(simulation);
+
+        return Ranked(
+            simulation,
+            company => Scoring.ForYear(simulation, company, year),
+            (company, _) => standing.Covered(company, year),
+            company => -simulation.Cash.MovementsFor(company, year, CashCategory.Penalty));
+    }
+
+    private static List<LeaderboardEntry> Ranked(
+        Simulation simulation,
+        Func<Company, CompanyScore> score,
+        Func<Company, CompanyScore, bool> inCompliance,
+        Func<Company, decimal> penalties)
+    {
+        List<LeaderboardEntry> entries = [];
+
         foreach (Company company in simulation.Companies)
         {
-            CompanyScore score = Scoring.Overall(simulation, company);
-
-            // Every closed year covered, and the year in play covered as it stands.
-            bool inCompliance = score.Shortfall == 0m
-                && (standing.IsSettled(company, year) || standing.Shortfall(company, year) == 0m);
+            CompanyScore scored = score(company);
 
             entries.Add(new LeaderboardEntry(
                 0,
                 company,
-                score.CostOfCompliance,
-                score.MarginalCostOfCompliance,
+                scored.CostOfCompliance,
+                scored.MarginalCostOfCompliance,
                 Scoring.FinalLongShortPosition(simulation, company),
                 company.Owner.Kind == PlayerKind.Ai,
-                inCompliance));
+                inCompliance(company, scored))
+            {
+                Penalties = penalties(company),
+            });
         }
 
         // Level on cost per tonne, the company that was left holding more ranks first.
-        List<LeaderboardEntry> ranked =
+        return
         [
             .. entries
                 .OrderByDescending(entry => entry.InCompliance)
@@ -212,7 +248,5 @@ public static class Leaderboard
                 .ThenBy(entry => entry.Company.Id)
                 .Select((entry, index) => entry with { Rank = index + 1 }),
         ];
-
-        return ranked;
     }
 }

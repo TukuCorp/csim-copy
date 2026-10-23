@@ -9,6 +9,9 @@ public sealed class SimulationClockOptions
     /// <summary>"Pause after each auction": stop the clock at every auction close until resumed.</summary>
     public bool PauseAfterAuction { get; init; }
 
+    /// <summary>How long a pause after an auction waits before resuming itself; zero waits for the trainer.</summary>
+    public TimeSpan AutoResumeAfterAuction { get; init; }
+
     /// <summary>How long before an auction opens (and before it closes) players are told.</summary>
     public TimeSpan AuctionNotice { get; init; } = TimeSpan.FromSeconds(30);
 }

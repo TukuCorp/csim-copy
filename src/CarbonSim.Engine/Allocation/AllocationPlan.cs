@@ -53,20 +53,28 @@ public sealed class AllocationPlan
             _growthByUnit[unit.Id] = simulation.Random.NextDecimal(growth.MinAnnualRate, growth.MaxAnnualRate);
         }
 
+        Sector[] yearSectors = [.. simulation.Sectors];
+        decimal shareTotal = yearSectors.Sum(sector => sector.EmissionShare);
+        bool perSector = yearSectors.Any(sector => sector.FreeAllocationShare is not null);
+
         for (int year = 1; year <= parameters.Years; year++)
         {
             _caps[year - 1] = Round(parameters.Cap * Pow(1m - parameters.AnnualCapReductionRate, year - 1));
-            _freeAllocation[year - 1] = Round(_caps[year - 1] * parameters.FreeAllocationShare);
+            _freeAllocation[year - 1] = perSector
+                ? SectorCakes(_caps[year - 1], yearSectors, shareTotal, parameters.FreeAllocationShare).Sum()
+                : Round(_caps[year - 1] * parameters.FreeAllocationShare);
         }
 
         foreach (int year in Years)
         {
             decimal freeCake = _freeAllocation[year - 1];
-            Sector[] yearSectors = [.. simulation.Sectors];
-            decimal shareTotal = yearSectors.Sum(sector => sector.EmissionShare);
-            decimal[] sectorCakes = shareTotal > 0m
-                ? Split(freeCake, [.. yearSectors.Select(sector => sector.EmissionShare / shareTotal)])
-                : new decimal[yearSectors.Length];
+            // One share for every sector splits one cake by emission share; a sector with a share of
+            // its own is given that share of its own slice of the cap instead.
+            decimal[] sectorCakes = perSector
+                ? SectorCakes(_caps[year - 1], yearSectors, shareTotal, parameters.FreeAllocationShare)
+                : shareTotal > 0m
+                    ? Split(freeCake, [.. yearSectors.Select(sector => sector.EmissionShare / shareTotal)])
+                    : new decimal[yearSectors.Length];
 
             for (int index = 0; index < yearSectors.Length; index++)
             {
@@ -90,6 +98,12 @@ public sealed class AllocationPlan
             }
         }
     }
+
+    /// <summary>Each sector's free cake when shares are set per sector: its slice of the cap times its share.</summary>
+    private static decimal[] SectorCakes(decimal cap, Sector[] sectors, decimal shareTotal, decimal systemShare) =>
+        shareTotal > 0m
+            ? [.. sectors.Select(sector => Round(cap * sector.EmissionShare / shareTotal * (sector.FreeAllocationShare ?? systemShare)))]
+            : new decimal[sectors.Length];
 
     /// <summary>The virtual years the plan covers, in order.</summary>
     public IReadOnlyList<int> Years { get; }

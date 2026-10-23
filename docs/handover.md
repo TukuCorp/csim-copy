@@ -128,9 +128,10 @@ migration set is SQLite-only; PostgreSQL builds from the model.
 **One trading system per simulation**, as the snapshot and the registry both assume.
 
 **Admin setup covers the exercise, not the roster.** The setup screen edits the rules, the AI
-difficulty, each company's name, capital and credit limit, the sectors and their menus. Adding or
-deleting companies and units, per-sector free allocation, a per-vintage schedule of sales and setup
-import/export still come from the scenario JSON (audit B #33-#36, #40).
+difficulty, each company's name, capital and credit limit, the sectors (with an optional free
+allocation share each) and their menus. Adding or deleting companies and units, a per-vintage
+schedule of sales and setup import/export still come from the scenario JSON (audit B #33, #35, #36,
+#40).
 
 **Manual surrender covers the surrender, not the bank.** In a manual exercise a human company sets
 how many allowances and offsets it surrenders (`ComplianceRegister.SetSurrender`, one plan behind the
@@ -141,10 +142,11 @@ limit; the original's separate bank volume (`VolumeToBeBanked_tCO2e`) is not bui
 side and cost; the original's order-centric history (order type, partial fill, price limit, target
 volume) needs the exchange to keep closed orders, which it does not.
 
-**A mid-run change moves only the price collar and the market switches.** The trainer can move the
-collar and open or close the exchange, the OTC market and the leaderboard inside a year
-(`SimulationRun.SetMarketAccess`); the cap, allocation and auction lots are fixed when an exercise is
-built.
+**A mid-run change moves the collar, the compliance rules and the market switches only.** The
+trainer can move the collar, change the offset usage limit, banking limit and cash penalty
+(`SimulationRun.ChangeComplianceRules`), and open or close the exchange, the OTC market and the
+leaderboard inside a year (`SimulationRun.SetMarketAccess`); the cap, allocation and auction lots
+are fixed when an exercise is built.
 
 ## 6. Prioritised next steps
 

@@ -63,6 +63,9 @@ Work through these over the session. Note anything that surprised you.
 - [ ] Check the surrender screen just before the year closes and again just after.
 - [ ] In a manual-surrender exercise, set a surrender smaller than your obligation and check that the estimated penalty is what the year end charges.
 - [ ] On the Abatement screen, switch between the simulation and lifetime views and compare a project's cost per tonne.
+- [ ] Place an exchange order with Immediate or cancel ticked against a thin book, and check that what did not fill is not left resting.
+- [ ] After the first year closes, read your company's end-of-year report on Company management and check that the lines add up to the change in capital.
+- [ ] On the Leaderboard, switch to Year 1 and filter by your sector.
 - [ ] Switch to Tiếng Việt and type a price the Vietnamese way (for example 120,25).
 - [ ] Open the game on a phone and see whether any screen is unusable.
 

@@ -214,7 +214,7 @@
   <data name="Buying" xml:space="preserve"><value>Mua</value></data>
   <data name="Selling" xml:space="preserve"><value>Bán</value></data>
   <data name="OtcBestPrice" xml:space="preserve"><value>Giá OTC tốt nhất</value></data>
-  <data name="FillOrKillHint" xml:space="preserve"><value>Để trống nếu muốn lệnh được khớp một phần; tích vào để hủy phần không khớp được ngay.</value></data>
+  <data name="FillOrKillHint" xml:space="preserve"><value>Bỏ chọn khớp một phần để lệnh được khớp toàn bộ ngay hoặc không khớp. Khớp ngay hoặc hủy sẽ khớp phần có thể khớp ngay và hủy phần còn lại thay vì để lại trên sổ lệnh.</value></data>
   <data name="Dismiss" xml:space="preserve"><value>Đóng</value></data>
   <data name="Compliant" xml:space="preserve"><value>Đã tuân thủ</value></data>
   <data name="AdminSwitchOff" xml:space="preserve"><value>Tắt nhắn tin</value></data>
@@ -467,4 +467,44 @@
   <data name="Counterparty" xml:space="preserve"><value>Đối tác</value></data>
   <data name="InProgress" xml:space="preserve"><value>Đang diễn ra</value></data>
   <data name="OtcLastTrade" xml:space="preserve"><value>Giao dịch OTC gần nhất</value></data>
+  <data name="PartialFillsAccepted" xml:space="preserve"><value>Chấp nhận khớp một phần</value></data>
+  <data name="SystemModifications" xml:space="preserve"><value>Điều chỉnh hệ thống cuối năm</value></data>
+  <data name="SystemModificationsHint" xml:space="preserve"><value>Thay đổi giới hạn sử dụng tín chỉ bù trừ, giới hạn lưu giữ và tiền phạt cho lần đối chiếu tiếp theo. Người chơi được thông báo các con số mới.</value></data>
+  <data name="SystemModificationsApplied" xml:space="preserve"><value>Các quy tắc tuân thủ đã được thay đổi.</value></data>
+  <data name="ComplianceRulesChangedLine" xml:space="preserve"><value>Quy tắc tuân thủ đã thay đổi: giới hạn sử dụng tín chỉ bù trừ {0}, giới hạn lưu giữ {1}, tiền phạt {2} mỗi tấn.</value></data>
+  <data name="AutoResumeIn_X" xml:space="preserve"><value>Tự tiếp tục sau {0} giây</value></data>
+  <data name="CancelUnpause" xml:space="preserve"><value>Hủy tự động tiếp tục</value></data>
+  <data name="FreeAllowanceSectorAllocation" xml:space="preserve"><value>Phân bổ miễn phí cho ngành này (để trống để dùng tỷ lệ của hệ thống)</value></data>
+  <data name="AutoResumeAfterAuctionSeconds" xml:space="preserve"><value>Tự tiếp tục sau mỗi lần tạm dừng sau đấu giá (giây, 0 để chờ người điều phối)</value></data>
+  <data name="Overall" xml:space="preserve"><value>Toàn bộ mô phỏng</value></data>
+  <data name="LeaderboardYear_X" xml:space="preserve"><value>Năm {0}</value></data>
+  <data name="FilterBySector" xml:space="preserve"><value>Ngành</value></data>
+  <data name="Penalties" xml:space="preserve"><value>Tiền phạt</value></data>
+  <data name="EndOfYearCompanyReport" xml:space="preserve"><value>Báo cáo công ty cuối năm</value></data>
+  <data name="CapitalOnHandStartOfThisYear" xml:space="preserve"><value>Vốn đầu năm</value></data>
+  <data name="OperatingNetProfitLoss" xml:space="preserve"><value>Lợi nhuận hoạt động</value></data>
+  <data name="NetAbatementCostProfit" xml:space="preserve"><value>Kết quả vận hành dự án giảm phát thải</value></data>
+  <data name="AbatementCapital" xml:space="preserve"><value>Vốn đầu tư giảm phát thải</value></data>
+  <data name="AllowancesPurchasedAtAuction" xml:space="preserve"><value>Hạn ngạch mua qua đấu giá</value></data>
+  <data name="AllowancesPurchasedInSecondaryMarket" xml:space="preserve"><value>Mua trên sàn và giao dịch OTC</value></data>
+  <data name="InstrumentSales" xml:space="preserve"><value>Hạn ngạch và tín chỉ bù trừ đã bán</value></data>
+  <data name="CompliancePenalties" xml:space="preserve"><value>Tiền phạt tuân thủ</value></data>
+  <data name="ComplianceNetProfitLoss" xml:space="preserve"><value>Kết quả tuân thủ</value></data>
+  <data name="OtherFines" xml:space="preserve"><value>Các khoản phạt khác</value></data>
+  <data name="LoanInterest" xml:space="preserve"><value>Lãi vay</value></data>
+  <data name="ChangeInCapitalOnHand" xml:space="preserve"><value>Thay đổi vốn</value></data>
+  <data name="CapitalOnHandEndOfThisYear" xml:space="preserve"><value>Vốn cuối năm</value></data>
+  <data name="LiveMarkets" xml:space="preserve"><value>Thị trường trực tiếp</value></data>
+  <data name="LiveAllowanceAuctionUpdates" xml:space="preserve"><value>Đấu giá hạn ngạch, trực tiếp</value></data>
+  <data name="ExchangeMarketLiveUpdates" xml:space="preserve"><value>Sàn giao dịch, trực tiếp</value></data>
+  <data name="AllowancesToBeAuctioned" xml:space="preserve"><value>Lượng chào bán</value></data>
+  <data name="TotalBids" xml:space="preserve"><value>Số lệnh đặt</value></data>
+  <data name="Bidders" xml:space="preserve"><value>Số công ty đặt giá</value></data>
+  <data name="HighestBid" xml:space="preserve"><value>Giá đặt cao nhất</value></data>
+  <data name="ForwardAuction" xml:space="preserve"><value>(kỳ hạn)</value></data>
+  <data name="OrdersResting" xml:space="preserve"><value>Lệnh đang chờ</value></data>
+  <data name="OfferVolume" xml:space="preserve"><value>Khối lượng chào bán</value></data>
+  <data name="TradesThisYear" xml:space="preserve"><value>Số giao dịch năm nay</value></data>
+  <data name="PercentFilled" xml:space="preserve"><value>Đã khớp</value></data>
+  <data name="OnHand_X" xml:space="preserve"><value>còn {0}</value></data>
 </root>

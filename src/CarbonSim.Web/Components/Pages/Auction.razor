@@ -145,6 +145,7 @@ else
 
         <section class="card wide" tabindex="0">
             <h2>@Strings["MyAuctionHistory"]</h2>
+            <div id="auction-history">
             <QuickGrid Items="@view.Auctions.AsQueryable()" Class="grid">
                 <TemplateColumn Title="@Strings["Year"]" Context="row">@row.Year</TemplateColumn>
                 <TemplateColumn Title="@Strings["AuctionNumber"]" Context="row">@row.Sequence</TemplateColumn>
@@ -152,10 +153,13 @@ else
                 <TemplateColumn Title="@Strings["TotalVolume"]" Context="row">@Display.Tonnes(row.OfferedVolume)</TemplateColumn>
                 <TemplateColumn Title="@Strings["ClearedAt"]" Context="row">@Display.Price(row.ClearingPrice)</TemplateColumn>
                 <TemplateColumn Title="@Strings["TotalAwarded"]" Context="row">@Display.Tonnes(row.VolumeSold)</TemplateColumn>
+                <TemplateColumn Title="@Strings["PercentFilled"]" Context="row">@(row.IsCleared && row.OfferedVolume > 0m ? Display.Percent(row.VolumeSold / row.OfferedVolume) : "-")</TemplateColumn>
+                <TemplateColumn Title="@Strings["TotalBids"]" Context="row">@(row.BidCount?.ToString(CultureInfo.CurrentCulture) ?? "-")</TemplateColumn>
                 <TemplateColumn Title="@Strings["YouBid"]" Context="row">@Display.Tonnes(row.MyBids.Sum(bid => bid.Volume))</TemplateColumn>
                 <TemplateColumn Title="@Strings["MyWon"]" Context="row">@Display.Tonnes(row.MyBids.Sum(bid => bid.Awarded))</TemplateColumn>
                 <TemplateColumn Title="@Strings["MyPaid"]" Context="row">@Display.Money(row.MyBids.Sum(bid => bid.Cost))</TemplateColumn>
             </QuickGrid>
+            </div>
         </section>
     </div>
 }

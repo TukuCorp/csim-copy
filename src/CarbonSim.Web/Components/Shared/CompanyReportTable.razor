@@ -1,0 +1,55 @@
+@using CarbonSim.Engine.Finance
+@inject IStringLocalizer<SharedStrings> Strings
+
+@* The end-of-year company report: a line per figure, a column per year, money in positive. *@
+@if (Reports.Count == 0)
+{
+    <p class="muted">@Strings["NoRows"]</p>
+}
+else
+{
+    <table class="grid company-report">
+        <thead>
+            <tr>
+                <th></th>
+                @foreach (CompanyYearReport report in Reports)
+                {
+                    <th>@Strings["Year_X", report.Year]</th>
+                }
+            </tr>
+        </thead>
+        <tbody>
+            @foreach ((string key, Func<CompanyYearReport, decimal> figure) in Lines)
+            {
+                <tr>
+                    <th scope="row">@Strings[key]</th>
+                    @foreach (CompanyYearReport report in Reports)
+                    {
+                        <td>@Display.Money(figure(report))</td>
+                    }
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    [Parameter, EditorRequired] public IReadOnlyList<CompanyYearReport> Reports { get; set; } = [];
+
+    private static readonly (string Key, Func<CompanyYearReport, decimal> Figure)[] Lines =
+    [
+        ("CapitalOnHandStartOfThisYear", report => report.CapitalAtStart),
+        ("OperatingNetProfitLoss", report => report.OperatingProfit),
+        ("NetAbatementCostProfit", report => report.AbatementNetRevenue),
+        ("AbatementCapital", report => report.AbatementCapital),
+        ("AllowancesPurchasedAtAuction", report => report.AuctionPurchases),
+        ("AllowancesPurchasedInSecondaryMarket", report => report.SecondaryMarketPurchases),
+        ("InstrumentSales", report => report.InstrumentSales),
+        ("CompliancePenalties", report => report.CompliancePenalties),
+        ("ComplianceNetProfitLoss", report => report.ComplianceNet),
+        ("OtherFines", report => report.OtherFines),
+        ("LoanInterest", report => report.LoanInterest),
+        ("ChangeInCapitalOnHand", report => report.ChangeInCapital),
+        ("CapitalOnHandEndOfThisYear", report => report.CapitalAtEnd),
+    ];
+}

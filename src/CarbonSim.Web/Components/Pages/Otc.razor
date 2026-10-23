@@ -47,7 +47,7 @@ else
                 <select id="offer-product" @bind="_productKey">
                     @foreach (ProductView product in view.TradableProducts)
                     {
-                        <option value="@product.Key">@Display.Product(product, Strings)</option>
+                        <option value="@product.Key">@Display.Product(product, Strings) (@Strings["OnHand_X", Display.Tonnes(OnHand(view, product))])</option>
                     }
                 </select>
             </label>
@@ -117,6 +117,10 @@ else
     [CascadingParameter] private PlayerScreenSnapshot? Screen { get; set; }
 
     [Parameter] public Guid SimulationId { get; set; }
+
+    /// <summary>What the company has free to offer of a product: held, less what is already set aside.</summary>
+    private static decimal OnHand(PlayerView view, ProductView product) =>
+        view.Holdings.FirstOrDefault(holding => holding.Product.Key == product.Key)?.Available ?? 0m;
 
     private int _sellerUnitId;
     private int _buyerUnitId;

@@ -1,0 +1,96 @@
+@page "/admin/run/{SimulationId:guid}/markets"
+@layout AdminLayout
+@inject IStringLocalizer<SharedStrings> Strings
+
+@if (Run is not { } run)
+{
+    <p class="muted">@Strings["AdminSelectRunHint"]</p>
+}
+else
+{
+    <PageTitle>@Strings["LiveMarkets"]</PageTitle>
+    <h1>@Strings["LiveMarkets"]</h1>
+
+    <div class="cards">
+        <section class="card wide" tabindex="0">
+            <h2>@Strings["LiveAllowanceAuctionUpdates"]</h2>
+            @if (run.LiveAuction is { } auction)
+            {
+                <p class="muted small">
+                    @Strings["Year_X", auction.Year] &middot; @Strings["AuctionNumber"] @auction.Sequence &middot;
+                    @(auction.Cleared ? Strings["AuctionHasEnded"] : auction.Open ? Strings["InProgress"] : Strings["None"])
+                </p>
+            }
+            <table class="grid" id="live-auction">
+                <thead>
+                    <tr>
+                        <th>@Strings["Vintage"]</th>
+                        <th>@Strings["AllowancesToBeAuctioned"]</th>
+                        <th>@Strings["TotalBids"]</th>
+                        <th>@Strings["Bidders"]</th>
+                        <th>@Strings["BidVolume"]</th>
+                        <th>@Strings["HighestBid"]</th>
+                        <th>@Strings["ClearedAt"]</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (AdminLiveLotView lot in run.LiveAuction?.Lots ?? [])
+                    {
+                        <tr>
+                            <td>@lot.Vintage @(lot.IsForward ? Strings["ForwardAuction"].Value : string.Empty)</td>
+                            <td>@Display.Tonnes(lot.Offered)</td>
+                            <td>@lot.Bids</td>
+                            <td>@lot.Bidders</td>
+                            <td>@Display.Tonnes(lot.BidVolume)</td>
+                            <td>@Display.Price(lot.HighestBid)</td>
+                            <td>@Display.Price(lot.ClearingPrice)</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </section>
+
+        <section class="card wide" tabindex="0">
+            <h2>@Strings["ExchangeMarketLiveUpdates"]</h2>
+            <table class="grid" id="live-books">
+                <thead>
+                    <tr>
+                        <th>@Strings["Product"]</th>
+                        <th>@Strings["BestBid"]</th>
+                        <th>@Strings["LastTrade"]</th>
+                        <th>@Strings["BestOffer"]</th>
+                        <th>@Strings["OrdersResting"]</th>
+                        <th>@Strings["BidVolume"]</th>
+                        <th>@Strings["OfferVolume"]</th>
+                        <th>@Strings["TradesThisYear"]</th>
+                        <th>@Strings["Volume"]</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (AdminLiveBookView book in run.LiveBooks)
+                    {
+                        <tr>
+                            <th scope="row">@Display.Product(book.Product, Strings)</th>
+                            <td>@Display.Price(book.BestBid)</td>
+                            <td>@Display.Price(book.LastTrade)</td>
+                            <td>@Display.Price(book.BestOffer)</td>
+                            <td>@book.RestingOrders</td>
+                            <td>@Display.Tonnes(book.BidVolume)</td>
+                            <td>@Display.Tonnes(book.AskVolume)</td>
+                            <td>@book.TradesThisYear</td>
+                            <td>@Display.Tonnes(book.VolumeThisYear)</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </section>
+    </div>
+}
+
+@code {
+    [CascadingParameter] private AdminSnapshot? Snapshot { get; set; }
+
+    [Parameter] public Guid SimulationId { get; set; }
+
+    private AdminRunDetail? Run => Snapshot?.RunId == SimulationId ? Snapshot?.Run : null;
+}

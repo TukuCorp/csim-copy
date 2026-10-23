@@ -37,6 +37,12 @@ public sealed class ClockRecord
     public bool PauseAfterAuction { get; set; }
 
     public TimeSpan AuctionNotice { get; set; }
+
+    /// <summary>When a pause after an auction resumes itself, or null when none is pending.</summary>
+    public DateTimeOffset? ResumeAt { get; set; }
+
+    /// <summary>How long a pause after an auction waits before resuming itself; zero waits for the trainer.</summary>
+    public TimeSpan AutoResumeAfterAuction { get; set; }
 }
 
 /// <summary>

@@ -74,6 +74,13 @@ not have to guess. When you explain the collar from the deck, give it in the cur
      companies always surrender for themselves.
    - **Bank every unused allowance** lifts the banking limit, so nothing is forfeited at the year
      end.
+   - **Pause the clock after each auction** stops the clock at every auction close. Give it a number
+     of seconds in **Resume by itself after each auction pause** and the clock starts again on its
+     own; 0 leaves it to you. While a pause is counting down, the console shows the seconds left and
+     a button to call the resume off.
+   - Each sector has its own **Free allocation for this sector** box. Leave it empty and the sector
+     takes the system's free allocation share; give it a figure to shelter one sector (say 100%)
+     while another buys more at auction. What a sector is not given goes into the auctions.
    - **Companies** lists every company with its name, starting capital and credit limit, all
      editable. To give the whole room the same budget, type a capital and/or a credit limit above
      the table and press **Give every company these figures**; a box left empty changes nothing.
@@ -171,6 +178,10 @@ Everything is on the exercise page (/admin/run/{id}).
   The shipped scenario hands every unit offsets with its free allocation each year (2% of its
   emissions, and 12% to one company in ten, which then has offsets to sell).
 - **Add abatement for a unit** — implements a project on a team's behalf, for a teachable moment.
+- **End-of-year system modifications** — change the offset usage limit, the banking limit and the
+  cash penalty per tonne between years (or during one). The form opens on the rules in force, in per
+  cent; the next year end uses the new figures, the room gets a line in **Messages** with them, and a
+  save keeps them.
 - **End-of-year modification** — writes a change in emissions (negative to cut) into one unit's
   business-as-usual path for a chosen year, so a shock survives a save and reload. It cannot be
   undone or listed separately, so keep a note of what you applied.
@@ -184,9 +195,9 @@ Everything is on the exercise page (/admin/run/{id}).
   band around its own last price, so it moves towards a new floor trade by trade rather than jumping.
   The bots re-value a tonne on the spot and re-quote on their next pass. The room is told rather than
   surprised: the change lands in each unit's **Messages**, and the console shows the last five changes
-  with who made them and how many bids the new collar released. Only the collar and the market
-  switches below can move mid-run - the cap, the free allocation split, the growth path and the
-  auction lots are all fixed when the exercise is built.
+  with who made them and how many bids the new collar released. The collar, the system
+  modifications above and the market switches below are what can move mid-run - the cap, the free
+  allocation split, the growth path and the auction lots are all fixed when the exercise is built.
 - **Exchange, OTC market and leaderboard switches** — open or close each one inside a running year,
   for an agenda that brings the markets in one at a time. Closing a market cancels every order or
   offer resting in it and hands back what it had set aside; the players' menu drops the entry at
@@ -209,9 +220,18 @@ Everything is on the exercise page (/admin/run/{id}).
 - **Exchange market** — the price chart is one candle per virtual year with the auction floor as a
   dashed line; the summary has a row per product, offsets included, with the exchange's bid, last and
   offer and the product's last OTC deal, so the offset discount reads straight off it. The top of the
-  book, the last ten trades, and the order form sit beside it. The top bar's last trade is the
+  book, the last ten trades, and the order form sit beside it. The order form has the original's two
+  flags: **Partial fills accepted** (on by default; off means fill the whole order at once or not at
+  all) and **Immediate or cancel** (take what crosses now and drop the rest instead of resting it). The top bar's last trade is the
   latest deal in either market, so an OTC deal shows there too.
-- **OTC market** — offers waiting for an answer and the team's own offers.
+- **OTC market** — offers waiting for an answer and the team's own offers; the product list says how
+  much of each product the team has free to offer.
+- **Allowance auction history** — once an auction has cleared, how much of it was filled and how
+  many bids it drew (kept back while the auction is open, because the bids are sealed).
+- **Company management** — the end-of-year company report: the capital each year opened with, its
+  operating profit, abatement result and capital, what the team spent at auction and in the
+  secondary markets, what it sold, its penalties, fines and loan interest, and the capital it closed
+  with, a column per year.
 - **Surrender and banking** — during the year: what the team can surrender (allowances, and
   offsets up to the usage limit), its position against the obligation, and the penalty the year end
   would charge as things stand. In a manual exercise the team sets its surrender here. After the
@@ -219,14 +239,22 @@ Everything is on the exercise page (/admin/run/{id}).
   status page shows, in a manual exercise, which companies have set a surrender.
 - **Leaderboard** — companies in compliance first (a short company cannot win, however cheap), then
   by marginal cost of compliance, so the cheapest compliers are at the top. Each unit is named with
-  the player who registered for it. Negative outliers are teams that were paid to abate.
+  the player who registered for it. Negative outliers are teams that were paid to abate. The board
+  can be read for the whole simulation or for one year, filtered by sector, and shows each company's
+  penalties.
 - **System info** — the whole system's totals this year and to date, including the government's
   auction revenue and reserve.
 
 ## 6. Reports and CSV
 
+The **Live markets** page (/admin/run/{id}/markets) is the trainer's view of the markets as they
+trade: the auction of the current quarter, lot by lot, with how many bids it has drawn, from how many
+companies, for how many tonnes and at what best price, then its clearing price; and every exchange
+book with its best bid and offer, last trade, resting orders and this year's trades.
+
 The **Reports** page (/admin/run/{id}/reports) renders five reports, each with an **Export as CSV**
-link. The same files are available directly:
+link, plus a chart of the yearly average price in each channel, the end-of-year report of any company
+you pick, and the leaderboard by year and sector. The same files are available directly:
 
 | Report | Path |
 |---|---|

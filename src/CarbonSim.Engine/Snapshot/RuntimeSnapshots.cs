@@ -30,7 +30,9 @@ public sealed record ClockSnapshot(
     int ClosedThrough,
     bool HaltedForYearEnd,
     bool PauseAfterAuction,
-    TimeSpan AuctionNotice);
+    TimeSpan AuctionNotice,
+    DateTimeOffset? ResumeAt = null,
+    TimeSpan AutoResumeAfterAuction = default);
 
 /// <summary>
 /// The bots of one simulation, in the order the engine built them. Trigger times are stored

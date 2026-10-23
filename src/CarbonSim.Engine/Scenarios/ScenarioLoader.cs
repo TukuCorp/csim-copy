@@ -169,6 +169,7 @@ public static class ScenarioLoader
             OtcAccess = file.OtcAccess ?? true,
             LeaderboardVisible = file.LeaderboardVisible ?? true,
             PauseAfterAuction = file.PauseAfterAuction ?? false,
+            AutoResumeAfterAuction = TimeSpan.FromSeconds((double)(file.AutoResumeAfterAuctionSeconds ?? 0m)),
             AiTradeAssistance = file.AiTradeAssistance ?? false,
             AiDifficulty = difficulty,
             AutomaticSurrender = file.AutomaticSurrender ?? true,
@@ -235,7 +236,17 @@ public static class ScenarioLoader
                 continue;
             }
 
-            sectors.Add(new Sector(name, file.EmissionShare.Value, ReadAbatementOptions(file.AbatementOptions, path, errors)));
+            if (file.FreeAllocationShare is < 0m or > 1m)
+            {
+                errors.Add($"{path}: freeAllocationShare must be between 0 and 1 (was {Invariant(file.FreeAllocationShare.Value)}).");
+                continue;
+            }
+
+            sectors.Add(new Sector(
+                name,
+                file.EmissionShare.Value,
+                ReadAbatementOptions(file.AbatementOptions, path, errors),
+                file.FreeAllocationShare));
         }
 
         if (sharesKnown && names.Count > 0 && shareTotal != 1m)

@@ -373,6 +373,66 @@ public sealed class SimulationClockService : BackgroundService
     /// that closes cancels what was resting in it; the parameters push is what makes an open player
     /// screen drop or restore the menu entry without waiting for the clock.
     /// </summary>
+    /// <summary>
+    /// The trainer's end-of-year modifications to the system: the offset usage limit, the banking limit
+    /// and the cash penalty. The room is told the new figures, and open screens re-read the rules.
+    /// </summary>
+    public async Task ChangeComplianceRulesAsync(
+        Guid simulationId,
+        decimal? offsetUsageLimit,
+        decimal? bankingLimit,
+        decimal? penaltyPerTonne,
+        CancellationToken cancellationToken = default)
+    {
+        using IServiceScope scope = _services.CreateScope();
+        IStringLocalizer<SharedStrings> strings = scope.ServiceProvider.GetRequiredService<IStringLocalizer<SharedStrings>>();
+        IHubContext<SimulationHub, ISimulationClient> hub =
+            scope.ServiceProvider.GetRequiredService<IHubContext<SimulationHub, ISimulationClient>>();
+        ChatEntry? line = null;
+
+        await ApplyAsync(
+            simulationId,
+            run =>
+            {
+                RunResult facts = run.Module.ChangeComplianceRules(offsetUsageLimit, bankingLimit, penaltyPerTonne);
+                Parameters rules = run.Simulation.Rules;
+
+                line = new ChatEntry(
+                    run.Simulation.CurrentYear,
+                    "Administrator",
+                    Bilingual.Both(
+                        strings,
+                        "ComplianceRulesChangedLine",
+                        Display.Percent(rules.OffsetUsageLimit),
+                        Display.Percent(rules.BankingLimit),
+                        Display.Price(rules.PenaltyPerTonne)));
+                run.Chat.Add(line);
+
+                return facts;
+            },
+            cancellationToken: cancellationToken).ConfigureAwait(false);
+
+        ChatEntry announced = line ?? throw new InvalidOperationException("The rule change was not recorded.");
+        string group = SimulationGroups.For(simulationId);
+
+        await hub.Clients.Group(group).ParametersChanged(cancellationToken).ConfigureAwait(false);
+        await hub.Clients.Group(group)
+            .MessageReceived(announced.From, announced.Text, announced.Year, cancellationToken)
+            .ConfigureAwait(false);
+    }
+
+    /// <summary>The trainer calls off a pause that would resume itself; the clock then waits for them.</summary>
+    public Task CancelAutoResumeAsync(Guid simulationId, CancellationToken cancellationToken = default) =>
+        ApplyAsync(
+            simulationId,
+            run =>
+            {
+                run.Module.Clock.CancelAutoResume();
+
+                return run.Module.Inspect();
+            },
+            cancellationToken: cancellationToken);
+
     public async Task SetMarketAccessAsync(
         Guid simulationId,
         bool? exchange,

@@ -112,7 +112,48 @@ public sealed record AdminLeaderView(
     string Player,
     decimal MarginalCost,
     decimal FinalPosition,
-    bool Automated);
+    bool Automated)
+{
+    /// <summary>The company's sector, for the board's sector filter.</summary>
+    public string Sector { get; init; } = string.Empty;
+
+    /// <summary>The cash penalties the company paid over the board's period.</summary>
+    public decimal Penalties { get; init; }
+}
+
+/// <summary>
+/// The auction of the current section as the trainer watches it (catalog `LiveAllowanceAuctionUpdates`):
+/// each lot with how many bids it has drawn, from how many companies, for how much, and the best price.
+/// </summary>
+public sealed record AdminLiveAuctionView(int Year, int Sequence, bool Open, bool Cleared, IReadOnlyList<AdminLiveLotView> Lots);
+
+public sealed record AdminLiveLotView(
+    int Vintage,
+    bool IsForward,
+    decimal Offered,
+    int Bids,
+    int Bidders,
+    decimal BidVolume,
+    decimal? HighestBid,
+    decimal? ClearingPrice);
+
+/// <summary>One exchange book as the trainer watches it (catalog `ExchangeMarketLiveUpdates`).</summary>
+public sealed record AdminLiveBookView(
+    ProductView Product,
+    decimal? BestBid,
+    decimal? BestOffer,
+    decimal? LastTrade,
+    int RestingOrders,
+    decimal BidVolume,
+    decimal AskVolume,
+    int TradesThisYear,
+    decimal VolumeThisYear);
+
+/// <summary>One company's end-of-year reports, a year each.</summary>
+public sealed record AdminCompanyReportView(string Company, IReadOnlyList<CarbonSim.Engine.Finance.CompanyYearReport> Years);
+
+/// <summary>The leaderboard for one year of the run (catalog `LeaderboardYear_X`).</summary>
+public sealed record AdminLeaderYearView(int Year, IReadOnlyList<AdminLeaderView> Rows);
 
 /// <summary>One virtual year's trading, for the historical average price report.</summary>
 public sealed record AdminPriceView(
@@ -178,6 +219,21 @@ public sealed record AdminRunDetail(
 {
     /// <summary>Every change an administrator has made to this run's rules, newest last.</summary>
     public IReadOnlyList<RuleChange> RuleChanges { get; init; } = [];
+
+    /// <summary>The auction of the current section, or null before the first year.</summary>
+    public AdminLiveAuctionView? LiveAuction { get; init; }
+
+    /// <summary>Every exchange book, with this year's trading in it.</summary>
+    public IReadOnlyList<AdminLiveBookView> LiveBooks { get; init; } = [];
+
+    /// <summary>Every company's end-of-year report, for each year that has started.</summary>
+    public IReadOnlyList<AdminCompanyReportView> CompanyReports { get; init; } = [];
+
+    /// <summary>The board for each year that has started, beside the whole-run board.</summary>
+    public IReadOnlyList<AdminLeaderYearView> LeaderboardYears { get; init; } = [];
+
+    /// <summary>How long until a pause after an auction resumes itself, or null when none is pending.</summary>
+    public TimeSpan? TimeToAutoResume { get; init; }
 
     /// <summary>Whether players may use the exchange right now.</summary>
     public bool ExchangeAccess { get; init; } = true;

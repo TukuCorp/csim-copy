@@ -76,7 +76,8 @@ public static class SimulationSnapshots
                     menu.UpfrontCostPerTonne,
                     menu.AnnualNetRevenuePerTonne,
                     menu.ImplementationYears,
-                    menu.LifetimeYears))]))],
+                    menu.LifetimeYears))],
+                sector.FreeAllocationShare))],
             [.. simulation.Players.Select(player => new PlayerSnapshot(player.Id, player.Name, player.Kind))],
             [.. simulation.Companies.Select(company => new CompanySnapshot(
                 company.Id,
@@ -158,7 +159,8 @@ public static class SimulationSnapshots
                     menu.UpfrontCostPerTonne,
                     menu.AnnualNetRevenuePerTonne,
                     menu.ImplementationYears,
-                    menu.LifetimeYears))]);
+                    menu.LifetimeYears))],
+                sector.FreeAllocationShare);
 
             sectorList.Add(rebuilt);
             sectors[sector.Name] = rebuilt;
@@ -262,6 +264,7 @@ public static class SimulationSnapshots
             {
                 PauseAfterAuction = snapshot.Clock.PauseAfterAuction,
                 AuctionNotice = snapshot.Clock.AuctionNotice,
+                AutoResumeAfterAuction = snapshot.Clock.AutoResumeAfterAuction,
             });
 
         clock.Restore(snapshot.Clock);

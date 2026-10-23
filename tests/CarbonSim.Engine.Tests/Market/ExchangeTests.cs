@@ -111,6 +111,24 @@ public sealed class ExchangeTests
     }
 
     [Fact]
+    public void An_immediate_or_cancel_order_takes_what_crosses_and_cancels_the_rest()
+    {
+        // Partial fills accepted, but nothing left resting (deck s16; catalog ImmediateOrCancel).
+        (Simulation simulation, Exchange exchange) = Build();
+        exchange.Place(Order(simulation, 1, OrderSide.Sell, 40m, price: 105m));
+        Company buyer = simulation.FindUnit(4).Company;
+        decimal cashBefore = simulation.Cash.Available(buyer);
+
+        Order buy = exchange.Place(Order(
+            simulation, 4, OrderSide.Buy, 100m, price: 110m, fillPolicy: FillPolicy.ImmediateOrCancel));
+
+        buy.FilledVolume.Should().Be(40m);
+        buy.Status.Should().Be(OrderStatus.Cancelled);
+        exchange.Book(Vintage1).OpenOrders.Should().BeEmpty("the rest is cancelled, not left on the book");
+        simulation.Cash.Available(buyer).Should().Be(cashBefore - (40m * 105m), "only the fill is paid for; the rest of the escrow comes back");
+    }
+
+    [Fact]
     public void A_fill_or_kill_order_executes_when_the_book_covers_it()
     {
         (Simulation simulation, Exchange exchange) = Build();
@@ -121,6 +139,20 @@ public sealed class ExchangeTests
 
         buy.Status.Should().Be(OrderStatus.Filled);
         exchange.Book(Vintage1).Trades.Should().ContainSingle().Which.Price.Should().Be(105m);
+    }
+
+    [Fact]
+    public void A_fill_or_kill_order_filled_below_its_limit_hands_back_the_cash_it_did_not_spend()
+    {
+        (Simulation simulation, Exchange exchange) = Build();
+        exchange.Place(Order(simulation, 1, OrderSide.Sell, 100m, price: 105m));
+        Company buyer = simulation.FindUnit(4).Company;
+        decimal cashBefore = simulation.Cash.Available(buyer);
+
+        exchange.Place(Order(simulation, 4, OrderSide.Buy, 100m, price: 110m, fillPolicy: FillPolicy.FillOrKill));
+
+        simulation.Cash.Available(buyer).Should().Be(cashBefore - (100m * 105m));
+        simulation.Cash.Escrowed(buyer).Should().Be(0m);
     }
 
     [Fact]

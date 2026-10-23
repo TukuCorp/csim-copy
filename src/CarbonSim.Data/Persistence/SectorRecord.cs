@@ -11,6 +11,9 @@ public sealed class SectorRecord
     public string Name { get; set; } = string.Empty;
 
     public decimal EmissionShare { get; set; }
+
+    /// <summary>The sector's own free allocation share, or null for the system's.</summary>
+    public decimal? FreeAllocationShare { get; set; }
 }
 
 /// <summary>One abatement project on a sector's menu, with its cost and effect per tonne.</summary>
