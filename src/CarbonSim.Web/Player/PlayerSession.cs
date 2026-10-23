@@ -186,6 +186,9 @@ public sealed class PlayerSession : IPlayerSession
     public Task SetAutoTradeAsync(Guid simulationId, int unitId, bool enabled, CancellationToken cancellationToken = default) =>
         ActAsync(actor => _runs.SetMyAutoTradeAsync(simulationId, actor, unitId, enabled));
 
+    public Task SetSurrenderAsync(Guid simulationId, decimal allowances, decimal offsets, CancellationToken cancellationToken = default) =>
+        ActAsync(actor => _runs.SetMySurrenderAsync(simulationId, actor, allowances, offsets));
+
     public Task CancelBidAsync(Guid simulationId, int bidId, CancellationToken cancellationToken = default) =>
         ActAsync(actor => _runs.CancelBidAsync(simulationId, actor, bidId));
 
@@ -334,7 +337,29 @@ public sealed class PlayerSession : IPlayerSession
             run.MessagingEnabled)
         {
             TimeToHalt = run.Clock.TimeToHalt,
+            Surrender = started && simulation.Compliance.For(company, year) is null
+                ? BuildSurrender(simulation, standing, company, year)
+                : null,
         };
+    }
+
+    private static SurrenderView BuildSurrender(Simulation simulation, Standing standing, Company company, int year)
+    {
+        SurrenderPlan plan = simulation.Compliance.Plan(company, year);
+
+        return new SurrenderView(
+            plan.Manual,
+            plan.HasInstruction,
+            plan.Obligation,
+            plan.AllowancesAvailable,
+            plan.OffsetsAvailable,
+            standing.OffsetLimit(company, year),
+            plan.Allowances,
+            plan.Offsets,
+            plan.ResultingPosition,
+            plan.Shortfall,
+            plan.EstimatedPenalty,
+            simulation.Rules.UnlimitedBanking);
     }
 
     private static FinancialView BuildFinance(Simulation simulation, Company company, int year, bool started)
@@ -436,6 +461,7 @@ public sealed class PlayerSession : IPlayerSession
             for (int index = 0; index < unit.AbatementOptions.Count; index++)
             {
                 AbatementOption option = unit.AbatementOptions[index];
+                AbatementEconomics horizon = simulation.Abatements.OverSimulation(option, year);
 
                 opportunities.Add(new AbatementOpportunityView(
                     unit.Id,
@@ -450,7 +476,12 @@ public sealed class PlayerSession : IPlayerSession
                     option.AnnualNetRevenue,
                     option.ForecastRoi ?? 0m,
                     option.NetCostPerTonne,
-                    simulation.Abatements.HasImplemented(unit, option)));
+                    simulation.Abatements.HasImplemented(unit, option))
+                {
+                    SimulationTonnes = horizon.Tonnes,
+                    SimulationCostPerTonne = horizon.NetCostPerTonne,
+                    SimulationRoi = horizon.ForecastRoi,
+                });
             }
 
             units.Add(new UnitView(
@@ -620,6 +651,7 @@ public sealed class PlayerSession : IPlayerSession
                 ]);
             IReadOnlyList<TradeRow> recent =
                 [.. recentTrades.Reverse().Select(trade => ToRow(trade, company))];
+            LastTrades last = run.Shared($"last-trades:{view.Key}", () => LastTradesOf(simulation, product));
 
             books.Add(new ProductBookView(
                 view,
@@ -633,10 +665,26 @@ public sealed class PlayerSession : IPlayerSession
                 levels.Asks,
                 myOrders,
                 recent,
-                run.Shared($"book-prices:{view.Key}", () => MonthPrices(simulation, product))));
+                run.Shared($"book-prices:{view.Key}", () => MonthPrices(simulation, product)))
+            {
+                OtcLastTrade = last.Otc,
+                MarketLastTrade = last.Market,
+            });
         }
 
         return books;
+    }
+
+    /// <summary>A product's latest OTC deal and its latest deal in either secondary market.</summary>
+    private sealed record LastTrades(decimal? Otc, decimal? Market);
+
+    private static LastTrades LastTradesOf(Simulation simulation, Product product)
+    {
+        MarketTrade? otc = simulation.Journal.Trades.LastOrDefault(trade => trade.Channel == TradeChannel.Otc && trade.Product == product);
+        MarketTrade? market = simulation.Journal.Trades.LastOrDefault(trade =>
+            trade.Channel is TradeChannel.Exchange or TradeChannel.Otc && trade.Product == product);
+
+        return new LastTrades(otc?.Price, market?.Price);
     }
 
     private static List<PeriodPriceView> MonthPrices(Simulation simulation, Product product) =>

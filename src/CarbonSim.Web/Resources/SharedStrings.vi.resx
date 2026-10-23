@@ -439,4 +439,32 @@
   <data name="AdminAnnounced" xml:space="preserve"><value>Đã gửi thông báo.</value></data>
   <data name="VirtualDate" xml:space="preserve"><value>Ngày trong năm</value></data>
   <data name="AdminAccessSaved" xml:space="preserve"><value>Đã lưu quyền truy cập thị trường.</value></data>
+  <data name="ManualSurrenderNote" xml:space="preserve"><value>Việc giao nộp là thủ công trong bài tập này: hãy đặt lượng giao nộp trước khi năm kết thúc. Nếu không đặt, sẽ không có gì được giao nộp.</value></data>
+  <data name="AllowancesOffsetsToSurrenderForComplianceThisYear" xml:space="preserve"><value>Giao nộp cho năm nay</value></data>
+  <data name="AllowancesAvailableForComplianceThisYear" xml:space="preserve"><value>Hạn ngạch dùng được năm nay</value></data>
+  <data name="OffsetsAvailableForComplianceThisYear" xml:space="preserve"><value>Tín chỉ bù trừ dùng được năm nay</value></data>
+  <data name="MaximumOffsetsAbleToBeSurrendered" xml:space="preserve"><value>Lượng tín chỉ bù trừ tối đa được giao nộp</value></data>
+  <data name="ResultingLongShortPosition" xml:space="preserve"><value>Vị thế so với nghĩa vụ</value></data>
+  <data name="TotalToBeSurrendered" xml:space="preserve"><value>Tổng lượng sẽ giao nộp</value></data>
+  <data name="EstimatedPenalty" xml:space="preserve"><value>Tiền phạt ước tính</value></data>
+  <data name="WarningComplianceShortfall_Penalty_X" xml:space="preserve"><value>Sẽ còn {0} t chưa được bù đắp và cuối năm sẽ bị phạt cho phần này.</value></data>
+  <data name="AutomaticUnlimitedAllowanceBanking" xml:space="preserve"><value>Mọi hạn ngạch chưa dùng đều được lưu giữ, bất kể giới hạn lưu giữ.</value></data>
+  <data name="VolumeToBeSurrendered_tCO2e" xml:space="preserve"><value>Hạn ngạch sẽ giao nộp (tCO2e)</value></data>
+  <data name="OffsetsToBeSurrendered_tCO2e" xml:space="preserve"><value>Tín chỉ bù trừ sẽ giao nộp (tCO2e)</value></data>
+  <data name="SurrenderAmountSet" xml:space="preserve"><value>Đặt lượng giao nộp</value></data>
+  <data name="AdminAutomaticSurrender" xml:space="preserve"><value>Tự động giao nộp khi cuối năm</value></data>
+  <data name="AdminUnlimitedBanking" xml:space="preserve"><value>Lưu giữ mọi hạn ngạch chưa dùng (không giới hạn)</value></data>
+  <data name="HasDoneSurrenderAction" xml:space="preserve"><value>Đã đặt giao nộp</value></data>
+  <data name="Yes" xml:space="preserve"><value>Có</value></data>
+  <data name="No" xml:space="preserve"><value>Không</value></data>
+  <data name="SimuliationTotal" xml:space="preserve"><value>Trong thời gian mô phỏng</value></data>
+  <data name="Lifetime" xml:space="preserve"><value>Trong vòng đời dự án</value></data>
+  <data name="SimulationReductions_tCO2e" xml:space="preserve"><value>Lượng giảm trước khi kết thúc mô phỏng (tCO2e)</value></data>
+  <data name="NOTE_OnceAnEmmissionReductionHasBeenImplemented" xml:space="preserve"><value>Dự án đã triển khai thì không thể hủy hay bán lại. Trong thời gian mô phỏng, dự án không kịp vận hành trước khi năm cuối kết thúc sẽ không có chi phí trên mỗi tấn.</value></data>
+  <data name="YouWon" xml:space="preserve"><value>Đã trúng</value></data>
+  <data name="YouPaid" xml:space="preserve"><value>Đã trả</value></data>
+  <data name="BuySell" xml:space="preserve"><value>Mua / bán</value></data>
+  <data name="Counterparty" xml:space="preserve"><value>Đối tác</value></data>
+  <data name="InProgress" xml:space="preserve"><value>Đang diễn ra</value></data>
+  <data name="OtcLastTrade" xml:space="preserve"><value>Giao dịch OTC gần nhất</value></data>
 </root>

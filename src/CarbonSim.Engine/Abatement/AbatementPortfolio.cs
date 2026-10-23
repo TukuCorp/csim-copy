@@ -70,6 +70,38 @@ public sealed class AbatementPortfolio
         }
     }
 
+    /// <summary>
+    /// What an option would deliver if it were bought now, counted over what is left of the run rather
+    /// than over its own life (FAQ #3-#4, the "Simulation" view): only the years it can operate before
+    /// the last year closes. One that cannot be finished in time delivers nothing, so it has no cost
+    /// per tonne and loses all its capital.
+    /// </summary>
+    public AbatementEconomics OverSimulation(AbatementOption option, int year)
+    {
+        ArgumentNullException.ThrowIfNull(option);
+        RequireYear(year);
+
+        decimal startsAt = year + ShareOfYear() + option.ImplementationYears;
+        decimal runEnds = _simulation.Allocation.Years.Count + 1;
+        decimal operating = Math.Clamp(runEnds - startsAt, 0m, option.LifetimeYears);
+        decimal tonnes = option.AnnualReduction * operating;
+        decimal revenue = option.AnnualNetRevenue * operating;
+
+        return new AbatementEconomics(
+            operating,
+            tonnes,
+            tonnes > 0m ? (option.UpfrontCost - revenue) / tonnes : null,
+            option.UpfrontCost == 0m ? null : (revenue - option.UpfrontCost) / option.UpfrontCost);
+    }
+
+    /// <summary>
+    /// Where the clock stands in the year, from 0 to 1. A build time runs from the moment of purchase,
+    /// so this is part of when a project starts.
+    /// </summary>
+    private decimal ShareOfYear() => _simulation.Rules.YearLength > TimeSpan.Zero
+        ? Math.Clamp((decimal)(_simulation.YearOffset / _simulation.Rules.YearLength), 0m, 1m)
+        : 0m;
+
     public IReadOnlyList<ImplementedAbatement> For(Unit unit)
     {
         ArgumentNullException.ThrowIfNull(unit);
@@ -120,11 +152,7 @@ public sealed class AbatementPortfolio
             CashCategory.AbatementCapital,
             $"{option.Code} {option.Name} on {unit.Name}");
 
-        // The build time runs from the moment of purchase, so where the clock stands in the year counts.
-        decimal shareOfYear = _simulation.Rules.YearLength > TimeSpan.Zero
-            ? Math.Clamp((decimal)(_simulation.YearOffset / _simulation.Rules.YearLength), 0m, 1m)
-            : 0m;
-        ImplementedAbatement project = ImplementedAbatement.Bought(unit, option, year, shareOfYear);
+        ImplementedAbatement project = ImplementedAbatement.Bought(unit, option, year, ShareOfYear());
 
         if (!_byUnit.TryGetValue(unit.Id, out List<ImplementedAbatement>? projects))
         {

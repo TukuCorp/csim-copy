@@ -297,7 +297,9 @@ public static class SimulationSnapshots
             parameters.OtcAccess,
             parameters.LeaderboardVisible,
             parameters.AiTradeAssistance,
-            parameters.AiDifficulty);
+            parameters.AiDifficulty,
+            parameters.AutomaticSurrender,
+            parameters.UnlimitedBanking);
     }
 
     private static Parameters Rebuild(ParametersSnapshot snapshot)
@@ -333,6 +335,8 @@ public static class SimulationSnapshots
             LeaderboardVisible = snapshot.LeaderboardVisible,
             AiTradeAssistance = snapshot.AiTradeAssistance,
             AiDifficulty = snapshot.AiDifficulty,
+            AutomaticSurrender = snapshot.AutomaticSurrender,
+            UnlimitedBanking = snapshot.UnlimitedBanking,
         };
     }
 

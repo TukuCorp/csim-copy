@@ -139,7 +139,14 @@ public sealed record AdminSurrenderView(
     decimal Forfeited,
     decimal Shortfall,
     decimal PenaltyCash,
-    bool Reconciled);
+    bool Reconciled)
+{
+    /// <summary>
+    /// Under manual surrender, whether a human company has set its surrender for the year; null
+    /// where the year end surrenders for the company.
+    /// </summary>
+    public bool? HasSetSurrender { get; init; }
+}
 
 /// <summary>Everything the console shows for one run, gathered while its gate was held.</summary>
 public sealed record AdminRunDetail(

@@ -24,6 +24,7 @@ public sealed class ComplianceRegister
     private readonly Dictionary<(Company Company, int Year), CompanyCompliance> _byCompanyYear = [];
     private readonly List<Fine> _fines = [];
     private readonly HashSet<(int CompanyId, int Year)> _reconciled = [];
+    private readonly Dictionary<(int CompanyId, int Year), SurrenderInstruction> _instructions = [];
 
     internal ComplianceRegister(Simulation simulation)
     {
@@ -92,7 +93,15 @@ public sealed class ComplianceRegister
             [.. _reconciled
                 .OrderBy(pair => pair.CompanyId)
                 .ThenBy(pair => pair.Year)
-                .Select(pair => new CompanyYearSnapshot(pair.CompanyId, pair.Year))]);
+                .Select(pair => new CompanyYearSnapshot(pair.CompanyId, pair.Year))],
+            [.. _instructions.Values
+                .OrderBy(instruction => instruction.Company.Id)
+                .ThenBy(instruction => instruction.Year)
+                .Select(instruction => new SurrenderInstructionSnapshot(
+                    instruction.Company.Id,
+                    instruction.Year,
+                    instruction.Allowances,
+                    instruction.Offsets))]);
     }
 
     /// <summary>
@@ -107,6 +116,7 @@ public sealed class ComplianceRegister
         _results.Clear();
         _fines.Clear();
         _reconciled.Clear();
+        _instructions.Clear();
 
         foreach (CompanyComplianceSnapshot result in snapshot.Results)
         {
@@ -138,6 +148,83 @@ public sealed class ComplianceRegister
         {
             _reconciled.Add((pair.CompanyId, pair.Year));
         }
+
+        foreach (SurrenderInstructionSnapshot instruction in snapshot.Instructions ?? [])
+        {
+            _instructions[(instruction.CompanyId, instruction.Year)] = new SurrenderInstruction(
+                _simulation.FindCompany(instruction.CompanyId),
+                instruction.Year,
+                instruction.Allowances,
+                instruction.Offsets);
+        }
+    }
+
+    /// <summary>The surrender a company has set for a year under manual surrender, or null.</summary>
+    public SurrenderInstruction? InstructionFor(Company company, int year)
+    {
+        ArgumentNullException.ThrowIfNull(company);
+
+        return _instructions.GetValueOrDefault((company.Id, year));
+    }
+
+    /// <summary>
+    /// A human company's own surrender for a live year under manual surrender, replacing any it set
+    /// before. Offsets are held to the usage limit and both volumes to what the company holds now;
+    /// what it holds at the year end is checked again then, so a surrender it can no longer meet
+    /// surrenders what is there.
+    /// </summary>
+    public SurrenderInstruction SetSurrender(Company company, int year, decimal allowances, decimal offsets)
+    {
+        ArgumentNullException.ThrowIfNull(company);
+        RequireYear(year);
+
+        if (!IsManual(company))
+        {
+            throw new InvalidOperationException(
+                $"Surrender is automatic for '{company.Name}': the year end surrenders for it.");
+        }
+
+        if (_reconciled.Contains((company.Id, year)))
+        {
+            throw new InvalidOperationException(
+                $"Company '{company.Name}' has already been reconciled for year {year}.");
+        }
+
+        SurrenderPlan plan = Plan(company, year);
+
+        if (allowances < 0m || allowances > plan.AllowancesAvailable)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(allowances),
+                allowances,
+                $"Allowances to surrender must be between 0 and the {plan.AllowancesAvailable} the company holds for year {year}.");
+        }
+
+        if (offsets < 0m || offsets > plan.OffsetsAvailable)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(offsets),
+                offsets,
+                $"Offsets to surrender must be between 0 and {plan.OffsetsAvailable}: what the company holds, up to the usage limit of {new Standing(_simulation).OffsetLimit(company, year)}.");
+        }
+
+        SurrenderInstruction instruction = new(company, year, allowances, offsets);
+        _instructions[(company.Id, year)] = instruction;
+
+        return instruction;
+    }
+
+    /// <summary>
+    /// What the year end would surrender for the company now, and the penalty that would follow,
+    /// counting what is set aside for resting orders as the company's (it is handed back at the halt).
+    /// Nothing moves.
+    /// </summary>
+    public SurrenderPlan Plan(Company company, int year)
+    {
+        ArgumentNullException.ThrowIfNull(company);
+        RequireYear(year);
+
+        return Plan(company, year, product => _simulation.Ledger.Held(company, product));
     }
 
     /// <summary>Reconciles one company for one year.</summary>
@@ -153,11 +240,12 @@ public sealed class ComplianceRegister
         }
 
         Parameters parameters = _simulation.Rules;
-        decimal obligation = new Standing(_simulation).Emissions(company, year);
+        SurrenderPlan plan = Plan(company, year, product => _simulation.Ledger.Available(company, product));
+        decimal obligation = plan.Obligation;
+        (decimal offsetsSurrendered, decimal allowancesSurrendered) = Surrender(company, year, plan);
+        decimal shortfall = plan.Shortfall;
 
-        (decimal offsetsSurrendered, decimal allowancesSurrendered, decimal shortfall) = Cover(company, year, obligation);
-
-        decimal penaltyCash = shortfall * parameters.PenaltyPerTonne;
+        decimal penaltyCash = plan.EstimatedPenalty;
         decimal penaltyAllowanceDebit = year < _simulation.Allocation.Years.Count
             ? shortfall * parameters.PenaltyAllowanceDebit
             : 0m;
@@ -234,21 +322,54 @@ public sealed class ComplianceRegister
         return fine;
     }
 
-    private (decimal Offsets, decimal Allowances, decimal Shortfall) Cover(
-        Company company,
-        int year,
-        decimal obligation)
+    /// <summary>
+    /// The one place the surrender is worked out: offsets first, never more than the usage limit,
+    /// then allowances of the year's vintage and older, never more than the obligation. Automatic
+    /// surrender covers as much as it can; a manual company covers what it set, as far as it holds it.
+    /// </summary>
+    private SurrenderPlan Plan(Company company, int year, Func<Product, decimal> balance)
     {
-        decimal offsetLimit = new Standing(_simulation).OffsetLimit(company, year);
-        decimal offsets = Math.Min(_simulation.Ledger.Available(company, Product.Offset), offsetLimit);
+        Standing standing = new(_simulation);
+        decimal obligation = standing.Emissions(company, year);
+        decimal offsetsAvailable = Math.Min(balance(Product.Offset), standing.OffsetLimit(company, year));
+        decimal allowancesAvailable = Standing.UsableVintages(year).Sum(balance);
+        bool manual = IsManual(company);
+        SurrenderInstruction? instruction = InstructionFor(company, year);
 
-        if (offsets > 0m)
+        decimal offsets = manual
+            ? Math.Min(Math.Min(instruction?.Offsets ?? 0m, offsetsAvailable), Math.Max(0m, obligation))
+            : offsetsAvailable;
+        decimal wanted = manual ? instruction?.Allowances ?? 0m : allowancesAvailable;
+        decimal allowances = Math.Min(wanted, Math.Min(allowancesAvailable, Math.Max(0m, obligation - offsets)));
+        decimal shortfall = Math.Max(0m, obligation - offsets - allowances);
+
+        return new SurrenderPlan(
+            company,
+            year,
+            manual,
+            instruction is not null,
+            obligation,
+            offsetsAvailable,
+            allowancesAvailable,
+            offsets,
+            allowances,
+            shortfall,
+            shortfall * _simulation.Rules.PenaltyPerTonne);
+    }
+
+    /// <summary>A human company surrenders by hand when the exercise says so; a bot never does.</summary>
+    private bool IsManual(Company company) =>
+        !_simulation.Rules.AutomaticSurrender && company.Owner.Kind == PlayerKind.Human;
+
+    /// <summary>Takes what the plan surrenders out of the ledger, this year's vintage first.</summary>
+    private (decimal Offsets, decimal Allowances) Surrender(Company company, int year, SurrenderPlan plan)
+    {
+        if (plan.Offsets > 0m)
         {
-            _simulation.Ledger.Consume(company, Product.Offset, offsets);
+            _simulation.Ledger.Consume(company, Product.Offset, plan.Offsets);
         }
 
-        decimal needed = obligation - offsets;
-        decimal allowances = 0m;
+        decimal needed = plan.Allowances;
 
         foreach (Product product in Standing.UsableVintages(year))
         {
@@ -257,8 +378,7 @@ public sealed class ComplianceRegister
                 break;
             }
 
-            decimal available = _simulation.Ledger.Available(company, product);
-            decimal take = Math.Min(available, needed);
+            decimal take = Math.Min(_simulation.Ledger.Available(company, product), needed);
 
             if (take <= 0m)
             {
@@ -266,11 +386,10 @@ public sealed class ComplianceRegister
             }
 
             _simulation.Ledger.Consume(company, product, take);
-            allowances += take;
             needed -= take;
         }
 
-        return (offsets, allowances, needed < 0m ? 0m : needed);
+        return (plan.Offsets, plan.Allowances);
     }
 
     private (decimal Banked, decimal Forfeited) Bank(
@@ -288,8 +407,9 @@ public sealed class ComplianceRegister
             return (0m, 0m);
         }
 
-        // A company with no emissions has no obligation to measure a banking cap against.
-        decimal cap = obligation <= 0m ? held : Round(obligation * parameters.BankingLimit);
+        // The banking override keeps everything; so does a company with no emissions, which has no
+        // obligation to measure a banking cap against.
+        decimal cap = parameters.UnlimitedBanking || obligation <= 0m ? held : Round(obligation * parameters.BankingLimit);
         decimal banked = Math.Min(held, cap);
         decimal forfeited = held - banked;
 

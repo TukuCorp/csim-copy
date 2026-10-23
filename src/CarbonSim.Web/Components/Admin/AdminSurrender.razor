@@ -12,7 +12,10 @@ else
     <h1>@Strings["AdminSurrenderStatus"]</h1>
 
     <section class="card wide" tabindex="0">
-        <p class="muted small">@Strings["AutomaticSurrender"]</p>
+        @if (!Manual(run))
+        {
+            <p class="muted small">@Strings["AutomaticSurrender"]</p>
+        }
         <table class="grid">
             <thead>
                 <tr>
@@ -26,6 +29,10 @@ else
                     <th>@Strings["Forfeited"]</th>
                     <th>@Strings["Shortfall"]</th>
                     <th>@Strings["PenaltyPerTonne"]</th>
+                    @if (Manual(run))
+                    {
+                        <th>@Strings["HasDoneSurrenderAction"]</th>
+                    }
                     <th>@Strings["Status"]</th>
                 </tr>
             </thead>
@@ -43,6 +50,10 @@ else
                         <td>@Display.Tonnes(row.Forfeited)</td>
                         <td>@Display.Tonnes(row.Shortfall)</td>
                         <td>@Display.Money(row.PenaltyCash)</td>
+                        @if (Manual(run))
+                        {
+                            <td class="surrender-set">@(row.HasSetSurrender switch { true => Strings["Yes"], false => Strings["No"], null => "-" })</td>
+                        }
                         <td>
                             @if (row.Reconciled)
                             {
@@ -66,4 +77,7 @@ else
     [Parameter] public Guid SimulationId { get; set; }
 
     private AdminRunDetail? Run => Snapshot?.RunId == SimulationId ? Snapshot?.Run : null;
+
+    /// <summary>Manual surrender is on when any company has a surrender of its own to set.</summary>
+    private static bool Manual(AdminRunDetail run) => run.Surrender.Any(row => row.HasSetSurrender is not null);
 }

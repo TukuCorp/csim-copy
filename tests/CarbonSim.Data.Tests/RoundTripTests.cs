@@ -107,6 +107,34 @@ public sealed class RoundTripTests
     }
 
     [Fact]
+    public async Task Manual_surrender_its_instructions_and_unlimited_banking_survive_the_trip()
+    {
+        using SqliteTestDatabase database = new();
+        TrainingRun run = TrainingRun.Start(Scenario);
+        SimulationSnapshot captured = SimulationSnapshots.Capture(
+            run.Simulation, run.Clock, run.Exchange, run.Otc, run.Auctions, run.Bots);
+        int companyId = captured.Companies[0].Id;
+        SimulationSnapshot saved = captured with
+        {
+            TradingSystem = captured.TradingSystem with
+            {
+                Parameters = captured.TradingSystem.Parameters with { AutomaticSurrender = false, UnlimitedBanking = true },
+            },
+            Compliance = captured.Compliance with
+            {
+                Instructions = [new SurrenderInstructionSnapshot(companyId, 1, 1_250_000m, 40_000m)],
+            },
+        };
+
+        SimulationSnapshot loaded = await SaveAndLoad(database, saved);
+
+        loaded.TradingSystem.Parameters.AutomaticSurrender.Should().BeFalse();
+        loaded.TradingSystem.Parameters.UnlimitedBanking.Should().BeTrue();
+        loaded.Compliance.Instructions.Should().ContainSingle()
+            .Which.Should().Be(new SurrenderInstructionSnapshot(companyId, 1, 1_250_000m, 40_000m));
+    }
+
+    [Fact]
     public async Task A_restored_run_carries_on_exactly_where_the_original_stopped()
     {
         using SqliteTestDatabase database = new();

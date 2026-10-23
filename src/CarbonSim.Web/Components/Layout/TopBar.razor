@@ -15,7 +15,7 @@
             <div><dt>@Strings["CurrentPosition"]</dt><dd>@Display.Position(view.Position, Strings)</dd></div>
             <div><dt>@Strings["OverallMarginalCostOfCompliance"]</dt><dd>@Display.Signed(view.Compliance.OverallMarginalCost)</dd></div>
             <div><dt>@Strings["BestOffer"]</dt><dd>@Display.Price(Quote?.BestOffer)</dd></div>
-            <div><dt>@Strings["LastTrade"]</dt><dd>@Display.Price(Quote?.LastTrade)</dd></div>
+            <div><dt>@Strings["LastTrade"]</dt><dd>@Display.Price(Quote?.MarketLastTrade ?? Quote?.LastTrade)</dd></div>
             <div><dt>@Strings["BestBid"]</dt><dd>@Display.Price(Quote?.BestBid)</dd></div>
             <div><dt>@Strings["NetRevenue"]</dt><dd>@Display.Signed(view.Finance.NetRevenueThisYear)</dd></div>
         </dl>

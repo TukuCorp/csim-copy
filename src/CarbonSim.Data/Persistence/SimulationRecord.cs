@@ -97,6 +97,12 @@ public sealed class ParametersRecord
     /// <summary>How sharp the exercise's bots are; a bot added mid-run plays at it.</summary>
     public BotDifficulty AiDifficulty { get; set; } = BotDifficulty.Normal;
 
+    /// <summary>Whether the year end surrenders for every company; off, humans surrender what they set.</summary>
+    public bool AutomaticSurrender { get; set; } = true;
+
+    /// <summary>Whether every unused allowance is banked whatever the banking limit.</summary>
+    public bool UnlimitedBanking { get; set; }
+
     public decimal OverdraftInterestRate { get; set; }
 }
 

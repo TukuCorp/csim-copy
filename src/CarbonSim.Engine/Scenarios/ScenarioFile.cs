@@ -78,6 +78,12 @@ internal sealed class ParametersFile
     /// <summary>Easy, Normal or Hard, in any case; absent means Normal.</summary>
     public string? AiDifficulty { get; set; }
 
+    /// <summary>Whether the year end surrenders for every company; absent means yes.</summary>
+    public bool? AutomaticSurrender { get; set; }
+
+    /// <summary>Whether every unused allowance is banked whatever the banking limit; absent means no.</summary>
+    public bool? UnlimitedBanking { get; set; }
+
     public List<BausGrowthFile>? BausGrowthBySector { get; set; }
 }
 

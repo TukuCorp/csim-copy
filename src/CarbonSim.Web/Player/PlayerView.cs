@@ -64,7 +64,28 @@ public sealed record PlayerView(
 
     /// <summary>How long until the trainer's warned halt stops trading, or null when none is pending.</summary>
     public TimeSpan? TimeToHalt { get; init; }
+
+    /// <summary>What the year end would surrender now, or null before the first year and once it is settled.</summary>
+    public SurrenderView? Surrender { get; init; }
 }
+
+/// <summary>
+/// The engine's surrender plan for the live year, as the Surrender and Banking screen reads it: what
+/// the company can surrender, what it will surrender, and the penalty that would follow.
+/// </summary>
+public sealed record SurrenderView(
+    bool Manual,
+    bool HasInstruction,
+    decimal Obligation,
+    decimal AllowancesAvailable,
+    decimal OffsetsAvailable,
+    decimal OffsetLimit,
+    decimal Allowances,
+    decimal Offsets,
+    decimal ResultingPosition,
+    decimal Shortfall,
+    decimal EstimatedPenalty,
+    bool UnlimitedBanking);
 
 /// <summary>A run the host is driving, for the waiting screen's list.</summary>
 public sealed record RunSummary(
@@ -183,7 +204,17 @@ public sealed record AbatementOpportunityView(
     decimal AnnualNetRevenue,
     decimal ForecastRoi,
     decimal CostPerTonne,
-    bool Implemented);
+    bool Implemented)
+{
+    /// <summary>Tonnes it would remove before the run ends if bought now (the "Simulation" view).</summary>
+    public decimal SimulationTonnes { get; init; }
+
+    /// <summary>Cost per tonne over what is left of the run; null when it would remove nothing in time.</summary>
+    public decimal? SimulationCostPerTonne { get; init; }
+
+    /// <summary>Return over what is left of the run; -100% when it would operate for none of it.</summary>
+    public decimal? SimulationRoi { get; init; }
+}
 
 public sealed record AbatementView(
     int UnitId,
@@ -250,7 +281,14 @@ public sealed record ProductBookView(
     IReadOnlyList<BookLevelView> AskLevels,
     IReadOnlyList<OrderView> MyOrders,
     IReadOnlyList<TradeRow> RecentTrades,
-    IReadOnlyList<PeriodPriceView> Prices);
+    IReadOnlyList<PeriodPriceView> Prices)
+{
+    /// <summary>The price of the product's latest OTC deal, or null before it has had one.</summary>
+    public decimal? OtcLastTrade { get; init; }
+
+    /// <summary>The price of the product's latest deal in either market, exchange or OTC.</summary>
+    public decimal? MarketLastTrade { get; init; }
+}
 
 /// <summary>One price level of the book: what is on offer at that price, added up.</summary>
 public sealed record BookLevelView(decimal Price, decimal Volume);

@@ -337,6 +337,23 @@ public sealed class SimulationRegistry
         }).ConfigureAwait(false);
     }
 
+    /// <summary>
+    /// Sets what the caller's company surrenders for the live year. The engine refuses it under
+    /// automatic surrender, for a settled year, and for more than the company holds.
+    /// </summary>
+    public async Task SetMySurrenderAsync(Guid simulationId, string actor, decimal allowances, decimal offsets)
+    {
+        string company = await ResolveCompanyAsync(actor).ConfigureAwait(false);
+
+        await ApplyAsync(simulationId, run =>
+        {
+            Company own = run.Simulation.Companies.Single(candidate => candidate.Name == company);
+            run.Simulation.Compliance.SetSurrender(own, run.Simulation.CurrentYear, allowances, offsets);
+
+            return run.Module.Inspect();
+        }).ConfigureAwait(false);
+    }
+
     /// <summary>Withdraws one of the caller's company's bids from the open auction.</summary>
     public async Task CancelBidAsync(Guid simulationId, string actor, int bidId)
     {

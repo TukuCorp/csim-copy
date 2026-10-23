@@ -67,6 +67,13 @@ not have to guess. When you explain the collar from the deck, give it in the cur
    - **AI difficulty** (Easy, Normal or Hard) sets how sharp every bot plays, including a bot that
      takes over a unit later through an AutoTrade switch. A scenario that does not name one plays at
      Normal.
+   - **Surrender automatically at the year end** is on by default. Turn it off for a manual
+     exercise: each human company then sets on its Surrender and banking screen how many allowances
+     and offsets it surrenders, and the year end surrenders exactly that. A company that sets
+     nothing surrenders nothing and pays the penalty, which is the point of the exercise. AI
+     companies always surrender for themselves.
+   - **Bank every unused allowance** lifts the banking limit, so nothing is forfeited at the year
+     end.
    - **Companies** lists every company with its name, starting capital and credit limit, all
      editable. To give the whole room the same budget, type a capital and/or a credit limit above
      the table and press **Give every company these figures**; a box left empty changes nothing.
@@ -187,17 +194,29 @@ Everything is on the exercise page (/admin/run/{id}).
 
 ## 5. What to point out on the player screens
 
-- **Dashboard** — finance, compliance, the long/short bar, abatement status, auction and trade
-  history. This is the screen to put on the projector at a debrief.
+- **Dashboard** — finance, compliance, the long/short bar, abatement status, a row for each of the
+  team's own auction bids (what it bid, what the lot cleared at, what it won and paid) and its own
+  trades with the side it was on and what they cost. This is the screen to put on the projector at a
+  debrief.
 - **Abatement** — the MACC shows cost per tonne from left (cheap) to right (dear); the status box
-  shows what is building, operating, in profit and complete.
+  shows what is building, operating, in profit and complete. The opportunities table reads **over
+  the simulation** by default: only the years a project can operate before the last year closes
+  count, so the same project looks dearer each year, and one that cannot be finished in time shows
+  no cost per tonne and a -100% return. **Over the project lifetime** shows the full-life figures.
+  This is the FAQ's teaching point: abate early or not at all.
 - **Allowance auction** — the bid form shows the collar and the capital the bid would commit; the
   vintages this auction are listed, and forward vintages are marked as a forward sale.
 - **Exchange market** — the price chart is one candle per virtual year with the auction floor as a
-  dashed line; the top of the book, the last ten trades, and the order form sit beside it.
+  dashed line; the summary has a row per product, offsets included, with the exchange's bid, last and
+  offer and the product's last OTC deal, so the offset discount reads straight off it. The top of the
+  book, the last ten trades, and the order form sit beside it. The top bar's last trade is the
+  latest deal in either market, so an OTC deal shows there too.
 - **OTC market** — offers waiting for an answer and the team's own offers.
-- **Surrender and banking** — the obligation, what was surrendered, what was banked, what was
-  forfeited, and the penalty if any. Surrender happens automatically when the year closes.
+- **Surrender and banking** — during the year: what the team can surrender (allowances, and
+  offsets up to the usage limit), its position against the obligation, and the penalty the year end
+  would charge as things stand. In a manual exercise the team sets its surrender here. After the
+  year: what was surrendered, banked and forfeited, and the penalty if any. The console's surrender
+  status page shows, in a manual exercise, which companies have set a surrender.
 - **Leaderboard** — companies in compliance first (a short company cannot win, however cheap), then
   by marginal cost of compliance, so the cheapest compliers are at the top. Each unit is named with
   the player who registered for it. Negative outliers are teams that were paid to abate.

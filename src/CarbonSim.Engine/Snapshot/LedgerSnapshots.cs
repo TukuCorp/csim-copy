@@ -53,7 +53,11 @@ public sealed record CashMovementSnapshot(
 public sealed record ComplianceRegisterSnapshot(
     IReadOnlyList<CompanyComplianceSnapshot> Results,
     IReadOnlyList<FineSnapshot> Fines,
-    IReadOnlyList<CompanyYearSnapshot> Reconciled);
+    IReadOnlyList<CompanyYearSnapshot> Reconciled,
+    IReadOnlyList<SurrenderInstructionSnapshot>? Instructions = null);
+
+/// <summary>A surrender a human company set for a year under manual surrender.</summary>
+public sealed record SurrenderInstructionSnapshot(int CompanyId, int Year, decimal Allowances, decimal Offsets);
 
 /// <summary>One company's obligations and outcomes for one compliance year.</summary>
 public sealed record CompanyComplianceSnapshot(

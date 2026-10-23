@@ -171,6 +171,8 @@ public static class ScenarioLoader
             PauseAfterAuction = file.PauseAfterAuction ?? false,
             AiTradeAssistance = file.AiTradeAssistance ?? false,
             AiDifficulty = difficulty,
+            AutomaticSurrender = file.AutomaticSurrender ?? true,
+            UnlimitedBanking = file.UnlimitedBanking ?? false,
         };
 
         errors.AddRange(parameters.Validate().Select(error => $"{Prefix}: {error}"));

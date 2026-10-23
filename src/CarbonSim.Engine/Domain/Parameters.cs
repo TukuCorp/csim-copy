@@ -128,6 +128,19 @@ public sealed record Parameters
     public BotDifficulty AiDifficulty { get; init; } = BotDifficulty.Normal;
 
     /// <summary>
+    /// Whether the year end surrenders for every company (the spec's surrender "automatic or
+    /// manual"). Off, a human company surrenders only what it has set itself; AI companies always
+    /// surrender for themselves.
+    /// </summary>
+    public bool AutomaticSurrender { get; init; } = true;
+
+    /// <summary>
+    /// The banking override: every unused allowance is banked, whatever <see cref="BankingLimit"/>
+    /// says (catalog `AutomaticUnlimitedAllowanceBanking`).
+    /// </summary>
+    public bool UnlimitedBanking { get; init; }
+
+    /// <summary>
     /// Returns one message per value that cannot be run, so an administrator sees every
     /// problem with a scenario in a single pass. Empty means the parameters are usable.
     /// </summary>

@@ -1714,3 +1714,70 @@ under the long bot's leftover offer at 98. A bot saved before the final pass res
 
 Re-score (estimate): numbers about 70% to about 88% (one envelope open instead of three, all
 re-grounded on the original), rules up a point for the bot fixes; overall about 72% to about 76-77%.
+
+## Manual surrender, simulation-horizon abatement and the player histories (2026-10-23)
+
+User goal: "Get to 80% then commit push". Start: about 76-77% overall (numbers about 88%, rules
+about 86%, admin console about 63%, player screens the remainder). Chosen as the open items with high
+source confidence that need no owner decision and leave the calibrated golden alone (scenario
+defaults keep today's behaviour):
+
+- [x] Engine: surrender mode and banking override (audit A D2, A6; catalog `AutomaticSurrender`, `AutomaticUnlimitedAllowanceBanking`): `Parameters.AutomaticSurrender` (default true) and `UnlimitedBanking`; a human company in manual mode sets allowance and offset volumes for the year (validated against the offset limit and its holdings); reconciliation surrenders what was set, nothing when nothing was set; one surrender plan feeds both the year end and a penalty preview
+- [x] Persistence: both switches in scenario, snapshot and EF; surrender instructions saved (migration)
+- [x] Player screen: Surrender and Banking shows what is available for compliance, the resulting position and the estimated penalty in both modes, and in manual mode a form to set the surrender (audit B #9)
+- [x] Console: both switches on the setup screen; Player Surrender Status shows who has set a surrender (audit B admin #13, #29)
+- [x] Abatement over the simulation horizon (audit A H6, FAQ #3-#4; catalog `SimuliationTotal`, `ProjectLifetime`): reductions and $/t counted over the years the run has left, a toggle on the Abatement screen, and the irreversibility note
+- [x] Dashboard: My Auction History per own bid (Year, Auc #, Vintage, You Bid, Bid Vol, Cleared At, You Won, You Paid) and an order-centric My Trade History (audit B #6)
+- [x] Exchange summary strip: one row per product including offsets, with OTC last trade; an OTC deal moves the last trade (audit B #8, #27)
+- [x] Gate: build 0 warnings, format clean, full suite green; golden numbers unchanged (bot-log fingerprint re-baselined, see the review)
+- [ ] Docs (runbook, tester guide, handover), review and re-score, /verify, commit, push main
+
+### Review
+
+Built test-first at each layer (engine, scenario and snapshot, EF, registry, screen):
+
+- **Manual surrender and the banking override** (audit A D2, A6; audit B #9, admin #13, #29).
+  `Parameters.AutomaticSurrender` (default on) and `UnlimitedBanking`, from the scenario, the
+  snapshot and the `Parameters` table (migration `ManualSurrender`; saved exercises default to
+  automatic). `ComplianceRegister.Plan` is the one surrender calculation: the year end acts on it and
+  the screen's penalty preview reads it, so the penalty a player is warned about is the one charged
+  (asserted end to end in `PlayerSurrenderTests`). In manual mode a human company sets allowance and
+  offset volumes (`SetSurrender`, refused above the offset limit, above holdings, under automatic
+  surrender and for a settled year; saved in the new `SurrenderInstructions` table); nothing set
+  means nothing surrendered; AI companies always surrender for themselves. The Surrender and Banking
+  screen shows what is usable, the position against the obligation (tested short, long and zero,
+  lesson 8), the estimated penalty, and the form in manual mode. The console's setup screen has both
+  switches; its surrender status page shows who has set a surrender and reads the plan, so a manual
+  company's shortfall is what it set, not everything it could surrender.
+- **Abatement over the simulation** (audit A H6; FAQ #3-#4). `AbatementPortfolio.OverSimulation`
+  counts only the years a project can operate before the last year closes, from where the clock
+  stands; a project that cannot finish in time has no cost per tonne and a -100% return. The table
+  opens over the simulation and switches to the project lifetime; the irreversibility note is on the
+  screen. The MACC stays on lifetime figures.
+- **Dashboard histories** (audit B #6). My auction history is one row per own bid: year, auction,
+  vintage, price bid, volume, the lot's clearing price (or "in progress"), won and paid. My trade
+  history adds buy/sell, cost and counterparty. Not order-centric: the exchange keeps no closed
+  orders (handover, known gaps).
+- **Exchange summary and OTC last trade** (audit B #8, #27). A row per product, offsets included,
+  with exchange bid, last and offer and the product's last OTC deal; the top bar's last trade is the
+  latest deal in either market.
+
+Gate after the last code edit: build 0 warnings 0 errors; `dotnet format --verify-no-changes` clean;
+`dotnet test CarbonSim.sln` green - Engine 341 passed + 1 skipped (E6, the leaderboard spread),
+Data 20, Web 258 passed + 1 skipped (the opt-in full load run), Playwright and axe walks included.
+
+Golden: every number is unchanged; the two bot-log fingerprints moved because five year-3 bot log
+lines print a surplus with a different decimal scale (`1657421.00000` now `1657421`, the same value)
+after reconciliation moved onto the shared plan. Re-baselined deliberately, measured by dumping the
+log before and after the change and diffing it (throwaway hook, not committed). No document quoted
+the old fingerprints.
+
+Re-score (estimate, same method as before): rules about 86% to about 89% (D2, A6, H6 from MISSING
+to MATCH; the player-set bank volume is still missing); player screens up about 8 points
+(acceptance steps 7, 9, 19 and 27 and the surrender screen); admin console about 63% to about 66%
+(#13 complete, #29 partial-plus); numbers unchanged at about 88%. Overall about 76-77% to about 80%.
+
+Still open: the leaderboard spread envelope (scenario re-authoring), bots on forward lots, a
+player-set bank volume, an order-centric trade history, per-sector free allocation, adding and
+deleting companies and units, multiple trading systems, direct messages.
+

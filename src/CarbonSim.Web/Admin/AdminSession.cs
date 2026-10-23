@@ -520,8 +520,11 @@ public sealed class AdminSession : IAdminSession
             CompanyCompliance? result = simulation.Compliance.For(company, year);
             decimal emissions = standing.Emissions(company, year);
             decimal free = simulation.Allocation.FreeAllocationFor(company, year);
-            decimal shortfall = result?.Shortfall ?? standing.Shortfall(company, year);
-            decimal covered = result?.Covered ?? Math.Min(emissions, standing.Held(company, year));
+            // A live year reads the engine's surrender plan, so under manual surrender the trainer sees
+            // what the company has actually set rather than everything it could surrender.
+            SurrenderPlan? plan = result is null ? simulation.Compliance.Plan(company, year) : null;
+            decimal shortfall = result?.Shortfall ?? plan!.Shortfall;
+            decimal covered = result?.Covered ?? plan!.Offsets + plan.Allowances;
 
             surrender.Add(new AdminSurrenderView(
                 company.Id,
@@ -536,7 +539,12 @@ public sealed class AdminSession : IAdminSession
                 result?.Forfeited ?? 0m,
                 shortfall,
                 result?.PenaltyCash ?? 0m,
-                result is not null));
+                result is not null)
+            {
+                HasSetSurrender = simulation.Rules.AutomaticSurrender || company.Owner.Kind != PlayerKind.Human
+                    ? null
+                    : simulation.Compliance.InstructionFor(company, year) is not null,
+            });
         }
 
         SystemReport report = SystemReport.For(simulation, year);

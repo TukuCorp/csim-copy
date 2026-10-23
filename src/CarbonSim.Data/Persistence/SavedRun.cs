@@ -63,6 +63,8 @@ public sealed class SavedRun
 
     public IReadOnlyList<ReconciledCompanyYearRecord> Reconciled { get; init; } = [];
 
+    public IReadOnlyList<SurrenderInstructionRecord> SurrenderInstructions { get; init; } = [];
+
     public IReadOnlyList<JournalTradeRecord> JournalTrades { get; init; } = [];
 
     public ExchangeRecord? Exchange { get; init; }

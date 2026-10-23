@@ -63,6 +63,8 @@ public sealed class CarbonSimDbContext(DbContextOptions<CarbonSimDbContext> opti
 
     public DbSet<ReconciledCompanyYearRecord> ReconciledCompanyYears => Set<ReconciledCompanyYearRecord>();
 
+    public DbSet<SurrenderInstructionRecord> SurrenderInstructions => Set<SurrenderInstructionRecord>();
+
     public DbSet<JournalTradeRecord> JournalTrades => Set<JournalTradeRecord>();
 
     public DbSet<ExchangeRecord> Exchanges => Set<ExchangeRecord>();

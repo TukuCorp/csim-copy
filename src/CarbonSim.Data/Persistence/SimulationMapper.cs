@@ -70,6 +70,8 @@ public static class SimulationMapper
             LeaderboardVisible = parameters.LeaderboardVisible,
             AiTradeAssistance = parameters.AiTradeAssistance,
             AiDifficulty = parameters.AiDifficulty,
+            AutomaticSurrender = parameters.AutomaticSurrender,
+            UnlimitedBanking = parameters.UnlimitedBanking,
                     OverdraftInterestRate = parameters.OverdraftInterestRate,
                 },
             ],
@@ -341,6 +343,18 @@ public static class SimulationMapper
                         SimulationId = id,
                         CompanyId = reconciled.CompanyId,
                         Year = reconciled.Year,
+                    }),
+            ],
+            SurrenderInstructions =
+            [
+                .. (snapshot.Compliance.Instructions ?? []).Select(
+                    instruction => new SurrenderInstructionRecord
+                    {
+                        SimulationId = id,
+                        CompanyId = instruction.CompanyId,
+                        Year = instruction.Year,
+                        Allowances = instruction.Allowances,
+                        Offsets = instruction.Offsets,
                     }),
             ],
             JournalTrades =
@@ -686,7 +700,9 @@ public static class SimulationMapper
                     parameters.OtcAccess,
                     parameters.LeaderboardVisible,
                     parameters.AiTradeAssistance,
-                    parameters.AiDifficulty)),
+                    parameters.AiDifficulty,
+                    parameters.AutomaticSurrender,
+                    parameters.UnlimitedBanking)),
             [
                 .. run.Sectors
                     .OrderBy(sector => sector.Name, StringComparer.Ordinal)
@@ -843,6 +859,16 @@ public static class SimulationMapper
                         .OrderBy(reconciled => reconciled.CompanyId)
                         .ThenBy(reconciled => reconciled.Year)
                         .Select(reconciled => new CompanyYearSnapshot(reconciled.CompanyId, reconciled.Year)),
+                ],
+                [
+                    .. run.SurrenderInstructions
+                        .OrderBy(instruction => instruction.CompanyId)
+                        .ThenBy(instruction => instruction.Year)
+                        .Select(instruction => new SurrenderInstructionSnapshot(
+                            instruction.CompanyId,
+                            instruction.Year,
+                            instruction.Allowances,
+                            instruction.Offsets)),
                 ]),
             new MarketJournalSnapshot(
                 [

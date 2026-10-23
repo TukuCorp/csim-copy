@@ -70,6 +70,12 @@ public sealed class StubPlayerSession : IPlayerSession
         return Task.CompletedTask;
     }
 
+    public Task SetSurrenderAsync(Guid simulationId, decimal allowances, decimal offsets, CancellationToken cancellationToken = default)
+    {
+        Actions.Add(FormattableString.Invariant($"surrender:{allowances}:{offsets}"));
+        return Task.CompletedTask;
+    }
+
     public Task CancelBidAsync(Guid simulationId, int bidId, CancellationToken cancellationToken = default)
     {
         Actions.Add(FormattableString.Invariant($"cancel-bid:{bidId}"));

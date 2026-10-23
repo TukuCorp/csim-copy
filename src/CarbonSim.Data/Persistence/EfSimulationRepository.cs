@@ -75,6 +75,7 @@ public sealed class EfSimulationRepository(CarbonSimDbContext context) : ISimula
             Compliances = await _context.CompanyCompliances.AsNoTracking().Where(row => row.SimulationId == simulationId).ToListAsync(cancellationToken).ConfigureAwait(false),
             Fines = await _context.Fines.AsNoTracking().Where(row => row.SimulationId == simulationId).ToListAsync(cancellationToken).ConfigureAwait(false),
             Reconciled = await _context.ReconciledCompanyYears.AsNoTracking().Where(row => row.SimulationId == simulationId).ToListAsync(cancellationToken).ConfigureAwait(false),
+            SurrenderInstructions = await _context.SurrenderInstructions.AsNoTracking().Where(row => row.SimulationId == simulationId).ToListAsync(cancellationToken).ConfigureAwait(false),
             JournalTrades = await _context.JournalTrades.AsNoTracking().Where(row => row.SimulationId == simulationId).ToListAsync(cancellationToken).ConfigureAwait(false),
             Exchange = await _context.Exchanges.AsNoTracking().SingleOrDefaultAsync(row => row.SimulationId == simulationId, cancellationToken).ConfigureAwait(false),
             OrderBooks = await _context.OrderBooks.AsNoTracking().Where(row => row.SimulationId == simulationId).ToListAsync(cancellationToken).ConfigureAwait(false),
@@ -161,6 +162,7 @@ public sealed class EfSimulationRepository(CarbonSimDbContext context) : ISimula
         _context.CompanyCompliances.AddRange(run.Compliances);
         _context.Fines.AddRange(run.Fines);
         _context.ReconciledCompanyYears.AddRange(run.Reconciled);
+        _context.SurrenderInstructions.AddRange(run.SurrenderInstructions);
         _context.JournalTrades.AddRange(run.JournalTrades);
 
         if (run.Exchange is not null)

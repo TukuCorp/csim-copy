@@ -75,7 +75,9 @@ public sealed record ParametersSnapshot(
     bool OtcAccess = true,
     bool LeaderboardVisible = true,
     bool AiTradeAssistance = false,
-    BotDifficulty AiDifficulty = BotDifficulty.Normal);
+    BotDifficulty AiDifficulty = BotDifficulty.Normal,
+    bool AutomaticSurrender = true,
+    bool UnlimitedBanking = false);
 
 /// <summary>The growth band a sector's business-as-usual emissions were drawn from.</summary>
 public sealed record SectorBausGrowthSnapshot(string Sector, decimal MinAnnualRate, decimal MaxAnnualRate);

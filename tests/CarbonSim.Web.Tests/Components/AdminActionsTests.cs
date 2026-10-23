@@ -1,4 +1,6 @@
 using Bunit;
+using CarbonSim.Engine.Domain;
+using CarbonSim.Engine.Scenarios;
 using CarbonSim.Web.Admin;
 using CarbonSim.Web.Components.Admin;
 using CarbonSim.Web.Resources;
@@ -185,6 +187,26 @@ public sealed class AdminActionsTests : AdminScreenTestContext
         page.Find("#setup-ai-difficulty").Change("Hard");
 
         Session.Draft.Parameters.AiDifficulty.Should().Be("Hard");
+    }
+
+    [Fact]
+    public void The_setup_screen_sets_manual_surrender_and_unlimited_banking_and_the_scenario_carries_them()
+    {
+        Session.Draft = ScenarioDraft.Parse(File.ReadAllText(Path.Combine("scenarios", "vietnam-2024.json")));
+
+        IRenderedComponent<AdminSetup> page = RenderComponent<AdminSetup>();
+        page.Find("#setup-automatic-surrender").HasAttribute("checked").Should().BeTrue("a scenario that never names it surrenders automatically");
+        page.Find("#setup-unlimited-banking").HasAttribute("checked").Should().BeFalse();
+        page.Find("#setup-automatic-surrender").Change(false);
+        page.Find("#setup-unlimited-banking").Change(true);
+
+        Session.Draft.Parameters.AutomaticSurrender.Should().BeFalse();
+        Session.Draft.Parameters.UnlimitedBanking.Should().BeTrue();
+
+        Parameters rules = ScenarioLoader.LoadJson(Session.Draft.ToJson(), "setup-surrender").Rules;
+
+        rules.AutomaticSurrender.Should().BeFalse();
+        rules.UnlimitedBanking.Should().BeTrue();
     }
 
     [Fact]

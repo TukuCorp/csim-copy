@@ -149,6 +149,33 @@ public sealed class AdminScreensTests : AdminScreenTestContext
     }
 
     [Fact]
+    public void Under_manual_surrender_the_trainer_sees_who_has_set_a_surrender()
+    {
+        AdminRunDetail detail = Snapshot.Run!;
+        Snapshot = Snapshot with
+        {
+            Run = detail with
+            {
+                Surrender =
+                [
+                    detail.Surrender[0] with { HasSetSurrender = true },
+                    detail.Surrender[1] with { HasSetSurrender = false },
+                ],
+            },
+        };
+
+        IRenderedComponent<AdminSurrender> page = RenderComponent<AdminSurrender>(parameters => parameters
+            .AddCascadingValue(Snapshot)
+            .Add(component => component.SimulationId, SimulationId));
+
+        page.Markup.Should().Contain(Localizer(Services)["HasDoneSurrenderAction"].Value);
+        page.FindAll("td.surrender-set").Select(cell => cell.TextContent.Trim()).Should().Equal(
+            Localizer(Services)["Yes"].Value,
+            Localizer(Services)["No"].Value);
+        page.Markup.Should().NotContain(Localizer(Services)["AutomaticSurrender"].Value);
+    }
+
+    [Fact]
     public void The_setup_screen_shows_the_parameters_and_registration()
     {
         Session.Draft = Draft();

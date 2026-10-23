@@ -75,19 +75,41 @@ else
 
         <section class="card wide" tabindex="0">
             <h2>@Strings["MyAuctionHistory"]</h2>
-            @if (view.Auctions.Count == 0)
+            @if (MyBids(view) is not { Count: > 0 } bids)
             {
                 <p class="muted">@Strings["NoRows"]</p>
             }
             else
             {
-                <QuickGrid Items="@view.Auctions.AsQueryable()" Class="grid">
-                    <TemplateColumn Title="@Strings["Year"]" Context="row">@row.Year</TemplateColumn>
-                    <TemplateColumn Title="@Strings["AuctionNumber"]" Context="row">@row.Sequence</TemplateColumn>
-                    <TemplateColumn Title="@Strings["TotalVolume"]" Context="row">@Display.Tonnes(row.OfferedVolume)</TemplateColumn>
-                    <TemplateColumn Title="@Strings["ClearedAt"]" Context="row">@Display.Price(row.ClearingPrice)</TemplateColumn>
-                    <TemplateColumn Title="@Strings["TotalAwarded"]" Context="row">@Display.Tonnes(row.VolumeSold)</TemplateColumn>
-                </QuickGrid>
+                <table class="grid" id="my-auction-history">
+                    <thead>
+                        <tr>
+                            <th>@Strings["Year"]</th>
+                            <th>@Strings["AuctionNumber"]</th>
+                            <th>@Strings["Vintage"]</th>
+                            <th>@Strings["YouBid"]</th>
+                            <th>@Strings["BidVolume"]</th>
+                            <th>@Strings["ClearedAt"]</th>
+                            <th>@Strings["YouWon"]</th>
+                            <th>@Strings["YouPaid"]</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach ((AuctionView auction, MyBidView bid) in bids)
+                        {
+                            <tr>
+                                <td>@auction.Year</td>
+                                <td>@auction.Sequence</td>
+                                <td>@bid.Vintage</td>
+                                <td>@Display.Price(bid.Price)</td>
+                                <td>@Display.Tonnes(bid.Volume)</td>
+                                <td>@(auction.IsCleared ? Display.Price(ClearedAt(auction, bid.Vintage)) : Strings["InProgress"])</td>
+                                <td>@Display.Tonnes(bid.Awarded)</td>
+                                <td>@Display.Money(bid.Cost)</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
             }
         </section>
 
@@ -99,15 +121,36 @@ else
             }
             else
             {
-                <QuickGrid Items="@view.MyTrades.AsQueryable()" Class="grid">
-                    <TemplateColumn Title="@Strings["Year"]" Context="row">@row.Year</TemplateColumn>
-                    <TemplateColumn Title="@Strings["Channel"]" Context="row">@row.Channel</TemplateColumn>
-                    <TemplateColumn Title="@Strings["Product"]" Context="row">@row.Product</TemplateColumn>
-                    <TemplateColumn Title="@Strings["Price"]" Context="row">@Display.Price(row.Price)</TemplateColumn>
-                    <TemplateColumn Title="@Strings["Volume"]" Context="row">@Display.Tonnes(row.Volume)</TemplateColumn>
-                    <TemplateColumn Title="@Strings["Buyer"]" Context="row">@row.Buyer</TemplateColumn>
-                    <TemplateColumn Title="@Strings["Seller"]" Context="row">@row.Seller</TemplateColumn>
-                </QuickGrid>
+                <table class="grid" id="my-trade-history">
+                    <thead>
+                        <tr>
+                            <th>@Strings["Year"]</th>
+                            <th>@Strings["Channel"]</th>
+                            <th>@Strings["Product"]</th>
+                            <th>@Strings["BuySell"]</th>
+                            <th>@Strings["Price"]</th>
+                            <th>@Strings["Volume"]</th>
+                            <th>@Strings["Cost"]</th>
+                            <th>@Strings["Counterparty"]</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (TradeRow trade in view.MyTrades)
+                        {
+                            bool bought = string.Equals(trade.Buyer, view.CompanyName, StringComparison.Ordinal);
+                            <tr>
+                                <td>@trade.Year</td>
+                                <td>@trade.Channel</td>
+                                <td>@trade.Product</td>
+                                <td>@(bought ? Strings["Buy"] : Strings["Sell"])</td>
+                                <td>@Display.Price(trade.Price)</td>
+                                <td>@Display.Tonnes(trade.Volume)</td>
+                                <td>@Display.Money(trade.Price * trade.Volume)</td>
+                                <td>@((bought ? trade.Seller : trade.Buyer) is { Length: > 0 } name ? name : "-")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
             }
         </section>
     </div>
@@ -119,4 +162,12 @@ else
     [Parameter] public Guid SimulationId { get; set; }
 
     private PlayerView? View => Screen?.View;
+
+    /// <summary>Every bid the company placed, oldest auction first, each with the auction it was in.</summary>
+    private static List<(AuctionView Auction, MyBidView Bid)> MyBids(PlayerView view) =>
+        [.. view.Auctions.SelectMany(auction => auction.MyBids.Select(bid => (auction, bid)))];
+
+    /// <summary>Each vintage clears on its own; the company's award carries its lot's price.</summary>
+    private static decimal? ClearedAt(AuctionView auction, int vintage) =>
+        auction.MyAwards.FirstOrDefault(award => award.Vintage == vintage)?.Price ?? auction.ClearingPrice;
 }

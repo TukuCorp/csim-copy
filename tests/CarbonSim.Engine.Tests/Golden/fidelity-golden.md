@@ -18,7 +18,7 @@ draw shows up as a change here even when every envelope still holds.
 - Penalties: 0 worth 0; market shortfall 0 t
 - Compliant company-years: 726 of 726
 - Bot cost of compliance per tonne: -68.64 to 108.80
-- BotAction log: 5,801 actions, sha256 6136bcc219e58c78da450078fe9addd676ee961c34f472ee1e703ed32449694b
+- BotAction log: 5,801 actions, sha256 8c32fcae8649efa8e2c1df4b0b74885ee4c974bcd814a66bbf1a72da814e68d1
 
 | Year | Resting bids | Resting asks | Resting volume | Exchange fills | Exchange volume | Exchange average price | Auction average price | Units penalised | Penalty value |
 |---|---|---|---|---|---|---|---|---|---|
@@ -48,7 +48,7 @@ draw shows up as a change here even when every envelope still holds.
 - Penalties: 0 worth 0; market shortfall 0 t
 - Compliant company-years: 726 of 726
 - Bot cost of compliance per tonne: -78.30 to 115.76
-- BotAction log: 5,871 actions, sha256 02e9756678b22de9096d41e567791a574106e192e5273933fb1e06dbcc847ceb
+- BotAction log: 5,871 actions, sha256 475ebf42118367d8f634bf4f6e557d73b4a9b91eb3554691b75d8925ba4e3435
 
 | Year | Resting bids | Resting asks | Resting volume | Exchange fills | Exchange volume | Exchange average price | Auction average price | Units penalised | Penalty value |
 |---|---|---|---|---|---|---|---|---|---|

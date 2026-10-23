@@ -132,6 +132,15 @@ difficulty, each company's name, capital and credit limit, the sectors and their
 deleting companies and units, per-sector free allocation, a per-vintage schedule of sales and setup
 import/export still come from the scenario JSON (audit B #33-#36, #40).
 
+**Manual surrender covers the surrender, not the bank.** In a manual exercise a human company sets
+how many allowances and offsets it surrenders (`ComplianceRegister.SetSurrender`, one plan behind the
+year end and the screen's penalty preview), but what is left is still banked automatically up to the
+limit; the original's separate bank volume (`VolumeToBeBanked_tCO2e`) is not built.
+
+**The trade history is per trade, not per order.** The dashboard lists the company's own trades with
+side and cost; the original's order-centric history (order type, partial fill, price limit, target
+volume) needs the exchange to keep closed orders, which it does not.
+
 **A mid-run change moves only the price collar and the market switches.** The trainer can move the
 collar and open or close the exchange, the OTC market and the leaderboard inside a year
 (`SimulationRun.SetMarketAccess`); the cap, allocation and auction lots are fixed when an exercise is

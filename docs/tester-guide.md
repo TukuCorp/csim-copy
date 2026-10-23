@@ -39,13 +39,13 @@ emit, short means you need more), and the best bid, offer and last price.
 
 | Screen | What to look at |
 |---|---|
-| Dashboard | Your finance and compliance, the long/short bar, auction and trade history |
+| Dashboard | Your finance and compliance, the long/short bar, your own auction bids and trades |
 | Company management, Unit information | What you own and what each unit emits |
-| Abatement | The cost curve: projects that cut emissions, cheapest first, with their cost per tonne |
+| Abatement | The cost curve: projects that cut emissions, cheapest first, with their cost per tonne over the simulation or over the project's life |
 | Allowance auction | Bid a volume and a price for a vintage while the window is open |
 | Exchange market | The price chart, the top of the book, and the order form |
 | OTC market | Offer allowances to a named company, and accept or reject offers sent to you |
-| Surrender and banking | What you will hand in at year end and what carries over |
+| Surrender and banking | What you can hand in at year end, the penalty you are heading for, and what carries over |
 | System info, Leaderboard | Market-wide totals, and how your cost of compliance ranks |
 | Messages | The room's chat and notices from the trainer |
 
@@ -61,6 +61,8 @@ Work through these over the session. Note anything that surprised you.
 - [ ] Send an OTC offer to another player's company and have them accept or reject it.
 - [ ] Implement an abatement project and watch it move from building to operating over the years.
 - [ ] Check the surrender screen just before the year closes and again just after.
+- [ ] In a manual-surrender exercise, set a surrender smaller than your obligation and check that the estimated penalty is what the year end charges.
+- [ ] On the Abatement screen, switch between the simulation and lifetime views and compare a project's cost per tonne.
 - [ ] Switch to Tiếng Việt and type a price the Vietnamese way (for example 120,25).
 - [ ] Open the game on a phone and see whether any screen is unusable.
 

@@ -1,5 +1,6 @@
 @page "/run/{SimulationId:guid}/surrender"
 @inject IStringLocalizer<SharedStrings> Strings
+@inject PlayerContext Context
 
 <PageTitle>@Strings["SurrenderAndBanking"]</PageTitle>
 <h1>@Strings["SurrenderAndBanking"]</h1>
@@ -10,9 +11,46 @@
 }
 else
 {
-    <p class="muted small">@Strings["AutomaticSurrender"]</p>
+    <p class="muted small">@Strings[view.Surrender?.Manual == true ? "ManualSurrenderNote" : "AutomaticSurrender"]</p>
 
     <div class="cards">
+        @if (view.Surrender is { } plan)
+        {
+            <section class="card" id="surrender-plan">
+                <h2>@Strings["AllowancesOffsetsToSurrenderForComplianceThisYear"]</h2>
+                <dl class="metrics">
+                    <div><dt>@Strings["ComplianceObligation"]</dt><dd>@Display.Tonnes(plan.Obligation)</dd></div>
+                    <div><dt>@Strings["AllowancesAvailableForComplianceThisYear"]</dt><dd id="surrender-allowances-available">@Display.Tonnes(plan.AllowancesAvailable)</dd></div>
+                    <div><dt>@Strings["OffsetsAvailableForComplianceThisYear"]</dt><dd id="surrender-offsets-available">@Display.Tonnes(plan.OffsetsAvailable)</dd></div>
+                    <div><dt>@Strings["MaximumOffsetsAbleToBeSurrendered"]</dt><dd>@Display.Tonnes(plan.OffsetLimit)</dd></div>
+                    <div><dt>@Strings["ResultingLongShortPosition"]</dt><dd>@Display.Position(-plan.ResultingPosition, Strings)</dd></div>
+                    <div><dt>@Strings["TotalToBeSurrendered"]</dt><dd>@Display.Tonnes(plan.Allowances + plan.Offsets)</dd></div>
+                    <div><dt>@Strings["EstimatedPenalty"]</dt><dd id="surrender-estimated-penalty">@Display.Money(plan.EstimatedPenalty)</dd></div>
+                </dl>
+                @if (plan.Shortfall > 0m)
+                {
+                    <p class="notice notice-error small">@Strings["WarningComplianceShortfall_Penalty_X", Display.Tonnes(plan.Shortfall)]</p>
+                }
+                @if (plan.UnlimitedBanking)
+                {
+                    <p class="muted small">@Strings["AutomaticUnlimitedAllowanceBanking"]</p>
+                }
+                @if (plan.Manual)
+                {
+                    <label>
+                        @Strings["VolumeToBeSurrendered_tCO2e"]
+                        @* Text, not number, so a Vietnamese player can type 1.000 for a thousand tonnes. *@
+                        <input id="surrender-allowances" type="text" inputmode="decimal" @bind="_allowances" @bind:culture="CultureInfo.CurrentCulture" />
+                    </label>
+                    <label>
+                        @Strings["OffsetsToBeSurrendered_tCO2e"]
+                        <input id="surrender-offsets" type="text" inputmode="decimal" @bind="_offsets" @bind:culture="CultureInfo.CurrentCulture" />
+                    </label>
+                    <button id="set-surrender" class="button" @onclick="SetSurrenderAsync">@Strings["SurrenderAmountSet"]</button>
+                }
+            </section>
+        }
+
         <section class="card">
             <h2>@Strings["PositionSummary"]</h2>
             <dl class="metrics">
@@ -69,4 +107,27 @@ else
     [Parameter] public Guid SimulationId { get; set; }
 
     private PlayerView? View => Screen?.View;
+
+    private decimal _allowances;
+    private decimal _offsets;
+    private bool _filled;
+
+    protected override void OnParametersSet()
+    {
+        // The form starts from what the company has set, or from the surrender that would cover the
+        // year as far as its holdings go, once; after that it keeps what the player typed.
+        if (_filled || View?.Surrender is not { Manual: true } plan)
+        {
+            return;
+        }
+
+        _offsets = plan.HasInstruction ? plan.Offsets : plan.OffsetsAvailable;
+        _allowances = plan.HasInstruction
+            ? plan.Allowances
+            : Math.Min(plan.AllowancesAvailable, Math.Max(0m, plan.Obligation - _offsets));
+        _filled = true;
+    }
+
+    private Task SetSurrenderAsync() =>
+        Context.ActAsync(session => session.SetSurrenderAsync(SimulationId, _allowances, _offsets), Strings["SurrenderAmountSet"]);
 }

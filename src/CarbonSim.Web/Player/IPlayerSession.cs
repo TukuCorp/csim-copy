@@ -40,6 +40,9 @@ public interface IPlayerSession
     /// <summary>Puts one of the company's units on AutoTrade or takes it off, where the exercise allows it.</summary>
     Task SetAutoTradeAsync(Guid simulationId, int unitId, bool enabled, CancellationToken cancellationToken = default);
 
+    /// <summary>Sets what the company surrenders for the live year, where surrender is manual.</summary>
+    Task SetSurrenderAsync(Guid simulationId, decimal allowances, decimal offsets, CancellationToken cancellationToken = default);
+
     /// <summary>Withdraws one of the company's bids from the auction that is open.</summary>
     Task CancelBidAsync(Guid simulationId, int bidId, CancellationToken cancellationToken = default);
 

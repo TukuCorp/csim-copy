@@ -93,6 +93,14 @@ else
                     <dd><input id="setup-pause-after-auction" type="checkbox" checked="@(Draft.Parameters.PauseAfterAuction ?? false)" @onchange="e => Draft.Parameters.PauseAfterAuction = e.Value is true" /></dd>
                 </div>
                 <div>
+                    <dt><label for="setup-automatic-surrender">@Strings["AdminAutomaticSurrender"]</label></dt>
+                    <dd><input id="setup-automatic-surrender" type="checkbox" checked="@(Draft.Parameters.AutomaticSurrender ?? true)" @onchange="e => Draft.Parameters.AutomaticSurrender = e.Value is true" /></dd>
+                </div>
+                <div>
+                    <dt><label for="setup-unlimited-banking">@Strings["AdminUnlimitedBanking"]</label></dt>
+                    <dd><input id="setup-unlimited-banking" type="checkbox" checked="@(Draft.Parameters.UnlimitedBanking ?? false)" @onchange="e => Draft.Parameters.UnlimitedBanking = e.Value is true" /></dd>
+                </div>
+                <div>
                     <dt><label for="setup-ai-difficulty">@Strings["AIDifficulty"]</label></dt>
                     <dd>
                         <select id="setup-ai-difficulty" value="@Difficulty(Draft.Parameters.AiDifficulty)" @onchange="e => Draft.Parameters.AiDifficulty = e.Value?.ToString()">

@@ -64,6 +64,20 @@ public sealed class ReconciledCompanyYearRecord
     public int Year { get; set; }
 }
 
+/// <summary>A surrender a human company set for a year under manual surrender.</summary>
+public sealed class SurrenderInstructionRecord
+{
+    public Guid SimulationId { get; set; }
+
+    public int CompanyId { get; set; }
+
+    public int Year { get; set; }
+
+    public decimal Allowances { get; set; }
+
+    public decimal Offsets { get; set; }
+}
+
 /// <summary>
 /// One trade the run has seen, on any channel, in the order it happened. A null seller is the
 /// government, which is how auction sales are recorded.
@@ -142,6 +156,23 @@ internal sealed class ReconciledCompanyYearRecordConfiguration : IEntityTypeConf
             .HasOne<CompanyRecord>()
             .WithMany()
             .HasForeignKey(reconciled => new { reconciled.SimulationId, reconciled.CompanyId })
+            .OnDelete(DeleteBehavior.Cascade);
+    }
+}
+
+internal sealed class SurrenderInstructionRecordConfiguration : IEntityTypeConfiguration<SurrenderInstructionRecord>
+{
+    public void Configure(EntityTypeBuilder<SurrenderInstructionRecord> builder)
+    {
+        ArgumentNullException.ThrowIfNull(builder);
+
+        builder.ToTable("SurrenderInstructions");
+        builder.HasKey(instruction => new { instruction.SimulationId, instruction.CompanyId, instruction.Year });
+
+        builder
+            .HasOne<CompanyRecord>()
+            .WithMany()
+            .HasForeignKey(instruction => new { instruction.SimulationId, instruction.CompanyId })
             .OnDelete(DeleteBehavior.Cascade);
     }
 }

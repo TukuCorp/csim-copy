@@ -47,6 +47,11 @@ else
 
     <section class="card wide" tabindex="0">
         <h2>@Strings["AvailableEmissionReductionOpportunities"]</h2>
+        <div role="group" aria-label="@Strings["AvailableEmissionReductionOpportunities"]">
+            <button id="abatement-view-simulation" class="button small-button @(_lifetime ? "ghost" : null)" aria-pressed="@(!_lifetime)" @onclick="() => _lifetime = false">@Strings["SimuliationTotal"]</button>
+            <button id="abatement-view-lifetime" class="button small-button @(_lifetime ? null : "ghost")" aria-pressed="@_lifetime" @onclick="() => _lifetime = true">@Strings["Lifetime"]</button>
+        </div>
+        <p class="muted small">@Strings["NOTE_OnceAnEmmissionReductionHasBeenImplemented"]</p>
         <QuickGrid Items="@Items(view).AsQueryable()" Class="grid grid-wide">
             <TemplateColumn Title="@Strings["Project"]" Context="row">@row.Code @row.Name</TemplateColumn>
             <TemplateColumn Title="@Strings["UnitName"]" Context="row">@row.UnitName</TemplateColumn>
@@ -55,8 +60,12 @@ else
             <TemplateColumn Title="@Strings["ImplementationTime"]" Context="row">@row.ImplementationYears</TemplateColumn>
             <TemplateColumn Title="@Strings["ProjectLifetime"]" Context="row">@row.LifetimeYears</TemplateColumn>
             <TemplateColumn Title="@Strings["AnnualNetRevenueCost"]" Context="row">@Display.Signed(row.AnnualNetRevenue)</TemplateColumn>
-            <TemplateColumn Title="@Strings["ForecastROI"]" Context="row">@Display.Percent(row.ForecastRoi)</TemplateColumn>
-            <TemplateColumn Title="@Strings["CostPerTonne"]" Context="row">@Display.Number(row.CostPerTonne)</TemplateColumn>
+            @if (!_lifetime)
+            {
+                <TemplateColumn Title="@Strings["SimulationReductions_tCO2e"]" Context="row"><span class="abatement-simulation-tonnes">@Display.Tonnes(row.SimulationTonnes)</span></TemplateColumn>
+            }
+            <TemplateColumn Title="@Strings["ForecastROI"]" Context="row"><span class="abatement-roi">@Roi(row)</span></TemplateColumn>
+            <TemplateColumn Title="@Strings["CostPerTonne"]" Context="row"><span class="abatement-cost">@Cost(row)</span></TemplateColumn>
             <TemplateColumn Title="@Strings["Implement"]" Context="row">
                 @if (row.Implemented)
                 {
@@ -80,6 +89,15 @@ else
     [Parameter] public Guid SimulationId { get; set; }
 
     private PlayerView? View => Screen?.View;
+
+    // The original opens the table over the simulation; the lifetime view is the one players switch to.
+    private bool _lifetime;
+
+    private string Roi(AbatementOpportunityView row) =>
+        (_lifetime ? row.ForecastRoi : row.SimulationRoi) is { } roi ? Display.Percent(roi) : "-";
+
+    private string Cost(AbatementOpportunityView row) =>
+        (_lifetime ? row.CostPerTonne : row.SimulationCostPerTonne) is { } cost ? Display.Number(cost) : "-";
 
     private static List<AbatementOpportunityView> Opportunities(PlayerView view) =>
         [.. view.Units.SelectMany(unit => unit.Opportunities)];

@@ -1,0 +1,164 @@
+{
+  "task": "Manual surrender, unlimited banking, surrender plan preview, abatement over the simulation horizon, dashboard/exchange history and OTC last trade",
+  "claims": [
+    {
+      "id": "manual-surrender-engine",
+      "claim": "With AutomaticSurrender false a human company surrenders only what it set via SetSurrender (nothing if unset); AI companies still surrender automatically; SetSurrender is refused under automatic surrender, above the offset limit, above holdings, and for a settled year",
+      "run": "dotnet test tests/CarbonSim.Engine.Tests --filter \"FullyQualifiedName~CarbonSim.Engine.Tests.Compliance.ManualSurrenderTests.A_manual|FullyQualifiedName~CarbonSim.Engine.Tests.Compliance.ManualSurrenderTests.A_surrender|FullyQualifiedName~CarbonSim.Engine.Tests.Compliance.ManualSurrenderTests.Offsets_above|FullyQualifiedName~CarbonSim.Engine.Tests.Compliance.ManualSurrenderTests.More_than|FullyQualifiedName~CarbonSim.Engine.Tests.Compliance.ManualSurrenderTests.Setting_|FullyQualifiedName~CarbonSim.Engine.Tests.Compliance.ManualSurrenderTests.An_ai_company\"",
+      "expect_exit": 0,
+      "expect_output": "Passed!\\s+-\\s+Failed:\\s+0, Passed:\\s+10,",
+      "timeout": 600,
+      "fails_on_base": true,
+      "base_fail_pattern": "error CS\\d+"
+    },
+    {
+      "id": "unlimited-banking",
+      "claim": "UnlimitedBanking banks every unused allowance with nothing forfeited",
+      "run": "dotnet test tests/CarbonSim.Engine.Tests --filter \"FullyQualifiedName~CarbonSim.Engine.Tests.Compliance.ManualSurrenderTests.Unlimited_banking_keeps_every_unused_allowance\"",
+      "expect_exit": 0,
+      "expect_output": "Passed!\\s+-\\s+Failed:\\s+0, Passed:\\s+1,",
+      "timeout": 600,
+      "fails_on_base": true,
+      "base_fail_pattern": "error CS\\d+"
+    },
+    {
+      "id": "plan-preview-engine",
+      "claim": "ComplianceRegister.Plan previews the year end without moving anything and matches the year end under manual surrender",
+      "run": "dotnet test tests/CarbonSim.Engine.Tests --filter \"FullyQualifiedName~CarbonSim.Engine.Tests.Compliance.ManualSurrenderTests.The_plan_\"",
+      "expect_exit": 0,
+      "expect_output": "Passed!\\s+-\\s+Failed:\\s+0, Passed:\\s+2,",
+      "timeout": 600,
+      "fails_on_base": true,
+      "base_fail_pattern": "error CS\\d+"
+    },
+    {
+      "id": "plan-penalty-end-to-end",
+      "claim": "Through the web host, the player's estimated penalty equals the penalty the year end charges; under automatic surrender setting is refused",
+      "run": "dotnet test tests/CarbonSim.Web.Tests --filter \"FullyQualifiedName~CarbonSim.Web.Tests.Simulations.PlayerSurrenderTests\"",
+      "expect_exit": 0,
+      "expect_output": "Passed!\\s+-\\s+Failed:\\s+0, Passed:\\s+2,",
+      "timeout": 900,
+      "fails_on_base": true,
+      "base_fail_pattern": "error CS\\d+"
+    },
+    {
+      "id": "switches-scenario-snapshot",
+      "claim": "The scenario file defaults to automatic surrender with the banking limit, can ask for manual surrender and unlimited banking, and an engine snapshot keeps them",
+      "run": "dotnet test tests/CarbonSim.Engine.Tests --filter \"FullyQualifiedName~CarbonSim.Engine.Tests.Scenarios.SurrenderModeTests\"",
+      "expect_exit": 0,
+      "expect_output": "Passed!\\s+-\\s+Failed:\\s+0, Passed:\\s+2,",
+      "timeout": 600,
+      "fails_on_base": true,
+      "base_fail_pattern": "error CS\\d+"
+    },
+    {
+      "id": "switches-db-roundtrip",
+      "claim": "AutomaticSurrender, UnlimitedBanking and surrender instructions survive the EF/SQLite save and load (all RoundTripTests pass)",
+      "run": "dotnet test tests/CarbonSim.Data.Tests --filter \"FullyQualifiedName~CarbonSim.Data.Tests.RoundTripTests\"",
+      "expect_exit": 0,
+      "expect_output": "Passed!\\s+-\\s+Failed:\\s+0, Passed:\\s+[1-9]",
+      "timeout": 600,
+      "fails_on_base": true,
+      "base_fail_pattern": "error CS\\d+"
+    },
+    {
+      "id": "migration-default-true",
+      "claim": "Migration ManualSurrender exists and its Up adds AutomaticSurrender with defaultValue true so saved exercises keep automatic surrender, plus the SurrenderInstructions table",
+      "run": "awk '/void Up\\(/,/void Down\\(/' src/CarbonSim.Data/Migrations/*_ManualSurrender.cs | tr -d '\n ' | grep -oE 'name:\"AutomaticSurrender\"[^;]*defaultValue:true\\)|name:\"SurrenderInstructions\"'",
+      "expect_exit": 0,
+      "expect_output": "(?s)AutomaticSurrender.*defaultValue:true.*SurrenderInstructions",
+      "timeout": 60,
+      "fails_on_base": true,
+      "base_fail_pattern": "No such file|cannot open|can't open|^\\s*$"
+    },
+    {
+      "id": "surrender-screens",
+      "claim": "Player Surrender and Banking screen shows usable allowances/offsets, position, estimated penalty and a manual form; console setup has both switches; console surrender status shows who has set a surrender",
+      "run": "dotnet test tests/CarbonSim.Web.Tests --filter \"FullyQualifiedName~CarbonSim.Web.Tests.Components.SurrenderScreenTests|FullyQualifiedName~The_setup_screen_sets_manual_surrender_and_unlimited_banking_and_the_scenario_carries_them|FullyQualifiedName~Under_manual_surrender_the_trainer_sees_who_has_set_a_surrender\"",
+      "expect_exit": 0,
+      "expect_output": "Passed!\\s+-\\s+Failed:\\s+0, Passed:\\s+[1-9]",
+      "timeout": 900,
+      "fails_on_base": true,
+      "base_fail_pattern": "error CS\\d+"
+    },
+    {
+      "id": "abatement-horizon-engine",
+      "claim": "AbatementPortfolio.OverSimulation counts only years operable before the run ends; an unfinishable project has null cost per tonne and -100% ROI",
+      "run": "dotnet test tests/CarbonSim.Engine.Tests --filter \"FullyQualifiedName~CarbonSim.Engine.Tests.Abatement.SimulationHorizonTests\"",
+      "expect_exit": 0,
+      "expect_output": "Passed!\\s+-\\s+Failed:\\s+0, Passed:\\s+4,",
+      "timeout": 600,
+      "fails_on_base": true,
+      "base_fail_pattern": "error CS\\d+"
+    },
+    {
+      "id": "abatement-horizon-screen",
+      "claim": "The Abatement screen reads over the simulation by default and toggles to lifetime figures",
+      "run": "dotnet test tests/CarbonSim.Web.Tests --filter \"FullyQualifiedName~CarbonSim.Web.Tests.Components.AbatementHorizonTests\"",
+      "expect_exit": 0,
+      "expect_output": "Passed!\\s+-\\s+Failed:\\s+0, Passed:\\s+2,",
+      "timeout": 900,
+      "fails_on_base": true,
+      "base_fail_pattern": "error CS\\d+"
+    },
+    {
+      "id": "dashboard-history",
+      "claim": "Dashboard auction history has one row per own bid; trade history shows buy/sell and cost",
+      "run": "dotnet test tests/CarbonSim.Web.Tests --filter \"FullyQualifiedName~CarbonSim.Web.Tests.Components.DashboardHistoryTests\"",
+      "expect_exit": 0,
+      "expect_output": "Passed!\\s+-\\s+Failed:\\s+0, Passed:\\s+2,",
+      "timeout": 900,
+      "fails_on_base": true,
+      "base_fail_pattern": "error CS\\d+"
+    },
+    {
+      "id": "exchange-summary-otc",
+      "claim": "Exchange summary has a row per product including offsets with OTC last trade; an OTC deal becomes the top bar's last trade",
+      "run": "dotnet test tests/CarbonSim.Web.Tests --filter \"FullyQualifiedName~CarbonSim.Web.Tests.Components.ExchangeSummaryTests|FullyQualifiedName~CarbonSim.Web.Tests.Simulations.OtcLastTradeTests\"",
+      "expect_exit": 0,
+      "expect_output": "Passed!\\s+-\\s+Failed:\\s+0, Passed:\\s+3,",
+      "timeout": 900,
+      "fails_on_base": true,
+      "base_fail_pattern": "error CS\\d+"
+    },
+    {
+      "id": "golden-only-hash-lines",
+      "claim": "fidelity-golden.md differs from HEAD only in the two 'BotAction log ... sha256' lines, with action counts unchanged",
+      "run": "bash .verify/checks/golden-only-hash-lines.sh",
+      "expect_exit": 0,
+      "expect_output": "GOLDEN_CHECK_OK",
+      "timeout": 60
+    },
+    {
+      "id": "golden-test",
+      "claim": "The golden test The_seeded_run_still_matches_the_golden passes",
+      "run": "dotnet test tests/CarbonSim.Engine.Tests --filter \"FullyQualifiedName~The_seeded_run_still_matches_the_golden\"",
+      "expect_exit": 0,
+      "expect_output": "Passed!\\s+-\\s+Failed:\\s+0, Passed:\\s+1,",
+      "timeout": 900
+    },
+    {
+      "id": "build-clean",
+      "claim": "dotnet build CarbonSim.sln has 0 warnings and 0 errors",
+      "run": "dotnet build CarbonSim.sln",
+      "expect_exit": 0,
+      "expect_output": "0 Warning\\(s\\)\\s+0 Error\\(s\\)",
+      "timeout": 900
+    },
+    {
+      "id": "format-clean",
+      "claim": "dotnet format CarbonSim.sln --verify-no-changes is clean",
+      "run": "dotnet format CarbonSim.sln --verify-no-changes",
+      "expect_exit": 0,
+      "timeout": 900
+    },
+    {
+      "id": "full-suite",
+      "claim": "The full test suite passes across Engine, Data and Web test projects",
+      "run": "dotnet test CarbonSim.sln",
+      "expect_exit": 0,
+      "expect_output": "(?s)(?=.*Passed!\\s+-\\s+Failed:\\s+0,[^\n]*CarbonSim\\.Engine\\.Tests\\.dll)(?=.*Passed!\\s+-\\s+Failed:\\s+0,[^\n]*CarbonSim\\.Data\\.Tests\\.dll)(?=.*Passed!\\s+-\\s+Failed:\\s+0,[^\n]*CarbonSim\\.Web\\.Tests\\.dll)",
+      "timeout": 1500
+    }
+  ]
+}

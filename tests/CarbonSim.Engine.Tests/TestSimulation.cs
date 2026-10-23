@@ -39,7 +39,9 @@ internal static class TestSimulation
         // This hand-made scenario sells nothing forward, so its auctions are one lot each; the
         // shipped scenario sells a fifth of the next year's vintage in the year's last auction,
         // which is what the forward-vintage tests ask for explicitly.
-        decimal forwardVintageShare = 0m)
+        decimal forwardVintageShare = 0m,
+        bool automaticSurrender = true,
+        bool unlimitedBanking = false)
     {
         return new Parameters
         {
@@ -60,6 +62,8 @@ internal static class TestSimulation
             OverdraftInterestRate = 0.07m,
             GovernmentReserveToAuctionPercent = governmentReserveToAuctionPercent,
             ForwardVintageShare = forwardVintageShare,
+            AutomaticSurrender = automaticSurrender,
+            UnlimitedBanking = unlimitedBanking,
             BausGrowthBySector =
             [
                 new SectorBausGrowth("Power", 0.02m, 0.06m),
@@ -88,7 +92,9 @@ internal static class TestSimulation
         decimal? capital = null,
         decimal? overdraftLimit = null,
         decimal governmentReserveToAuctionPercent = 0m,
-        decimal forwardVintageShare = 0m)
+        decimal forwardVintageShare = 0m,
+        bool automaticSurrender = true,
+        bool unlimitedBanking = false)
     {
         decimal companyCapital = capital ?? CompanyCapital;
         decimal credit = overdraftLimit ?? 0m;
@@ -114,7 +120,9 @@ internal static class TestSimulation
                 years,
                 auctionDuration: auctionDuration,
                 governmentReserveToAuctionPercent: governmentReserveToAuctionPercent,
-                forwardVintageShare: forwardVintageShare),
+                forwardVintageShare: forwardVintageShare,
+                automaticSurrender: automaticSurrender,
+                unlimitedBanking: unlimitedBanking),
             [power, cement],
             [evn, cementCompany, aiPower]);
 

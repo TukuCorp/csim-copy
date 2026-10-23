@@ -439,4 +439,32 @@
   <data name="AdminAnnounced" xml:space="preserve"><value>Message sent.</value></data>
   <data name="VirtualDate" xml:space="preserve"><value>Date in the year</value></data>
   <data name="AdminAccessSaved" xml:space="preserve"><value>Market access saved.</value></data>
+  <data name="ManualSurrenderNote" xml:space="preserve"><value>Surrender is manual in this exercise: set what to surrender before the year closes. If you set nothing, nothing is surrendered.</value></data>
+  <data name="AllowancesOffsetsToSurrenderForComplianceThisYear" xml:space="preserve"><value>Surrender for this year</value></data>
+  <data name="AllowancesAvailableForComplianceThisYear" xml:space="preserve"><value>Allowances usable this year</value></data>
+  <data name="OffsetsAvailableForComplianceThisYear" xml:space="preserve"><value>Offsets usable this year</value></data>
+  <data name="MaximumOffsetsAbleToBeSurrendered" xml:space="preserve"><value>Most offsets you may surrender</value></data>
+  <data name="ResultingLongShortPosition" xml:space="preserve"><value>Position against the obligation</value></data>
+  <data name="TotalToBeSurrendered" xml:space="preserve"><value>Total to be surrendered</value></data>
+  <data name="EstimatedPenalty" xml:space="preserve"><value>Estimated penalty</value></data>
+  <data name="WarningComplianceShortfall_Penalty_X" xml:space="preserve"><value>{0} t would be left uncovered, and the year end would charge a penalty for it.</value></data>
+  <data name="AutomaticUnlimitedAllowanceBanking" xml:space="preserve"><value>Every unused allowance is banked, whatever the banking limit.</value></data>
+  <data name="VolumeToBeSurrendered_tCO2e" xml:space="preserve"><value>Allowances to surrender (tCO2e)</value></data>
+  <data name="OffsetsToBeSurrendered_tCO2e" xml:space="preserve"><value>Offsets to surrender (tCO2e)</value></data>
+  <data name="SurrenderAmountSet" xml:space="preserve"><value>Set surrender</value></data>
+  <data name="AdminAutomaticSurrender" xml:space="preserve"><value>Surrender automatically at the year end</value></data>
+  <data name="AdminUnlimitedBanking" xml:space="preserve"><value>Bank every unused allowance (no banking limit)</value></data>
+  <data name="HasDoneSurrenderAction" xml:space="preserve"><value>Surrender set</value></data>
+  <data name="Yes" xml:space="preserve"><value>Yes</value></data>
+  <data name="No" xml:space="preserve"><value>No</value></data>
+  <data name="SimuliationTotal" xml:space="preserve"><value>Over the simulation</value></data>
+  <data name="Lifetime" xml:space="preserve"><value>Over the project lifetime</value></data>
+  <data name="SimulationReductions_tCO2e" xml:space="preserve"><value>Reductions before the run ends (tCO2e)</value></data>
+  <data name="NOTE_OnceAnEmmissionReductionHasBeenImplemented" xml:space="preserve"><value>A project cannot be undone or sold once it is implemented. Over the simulation, a project that cannot start operating before the last year closes shows no cost per tonne.</value></data>
+  <data name="YouWon" xml:space="preserve"><value>You won</value></data>
+  <data name="YouPaid" xml:space="preserve"><value>You paid</value></data>
+  <data name="BuySell" xml:space="preserve"><value>Buy / sell</value></data>
+  <data name="Counterparty" xml:space="preserve"><value>Counterparty</value></data>
+  <data name="InProgress" xml:space="preserve"><value>In progress</value></data>
+  <data name="OtcLastTrade" xml:space="preserve"><value>OTC last trade</value></data>
 </root>
